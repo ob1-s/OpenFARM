@@ -1,0 +1,10 @@
+{
+  "choices": {
+    "agents": [
+      "opencode"
+    ],
+    "primary_agent": "opencode",
+    "use_multiple_agents": false
+  },
+  "setup_source": "prime lab setup"
+}

@@ -1,0 +1,14 @@
+[project]
+name = "happy-farm"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "verifiers>=0.1.11",
+]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.15.10",
+]

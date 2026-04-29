@@ -1,10 +1,15 @@
 """Tier 2 — Valence Classification (Positive / Negative)."""
 
+import logging
+
 import verifiers as vf
 from datasets import Dataset, load_dataset, Audio
 
 from prompts import SYSTEM_PROMPT_ETHOLOGIST, PROMPT_VALENCE
 from utils import build_audio_content_part
+
+
+logger = logging.getLogger("verifiers.env.soundwel_pvwb.valence")
 
 
 def build_task(
@@ -16,9 +21,7 @@ def build_task(
     """Build a SingleTurnEnv for binary valence classification."""
 
     def build_dataset() -> Dataset:
-        ds = load_dataset(
-            "oliveirabruno01/soundwel-pig-vocalizations", split="train"
-        )
+        ds = load_dataset("oliveirabruno01/soundwel-pig-vocalizations", split="train")
         ds = ds.cast_column("audio", Audio(decode=False))
 
         def transform(row):
@@ -36,7 +39,7 @@ def build_task(
                         {"type": "text", "text": PROMPT_VALENCE},
                         media_part,
                     ],
-                }
+                },
             ]
             return {"prompt": prompt, "answer": valence}
 

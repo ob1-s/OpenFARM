@@ -3,22 +3,13 @@
 A multi-task benchmark suite evaluating Multimodal LLMs on pig vocalization
 understanding, built on the Soundwel dataset.
 
-Tasks span 4 difficulty tiers:
+Tasks span 2 core difficulty tiers:
 
     Tier 1 — Acoustic Perception
         call_type_classification       HF/LF binary classification
-        acoustic_property_estimation   MCQ on duration/pitch/peak frequency
 
     Tier 2 — Emotional & Welfare Assessment
         valence_classification         Positive/Negative valence
-        pain_severity_ranking          Pairwise pain comparison
-
-    Tier 3 — Contextual Reasoning
-        context_classification         MCQ context identification
-        cross_age_generalization       OOD valence across age groups
-
-    Tier 4 — Veterinary Diagnostic Reasoning
-        veterinary_reasoning           Open-ended analysis with LLM-as-judge
 """
 
 import logging
@@ -35,9 +26,6 @@ def load_environment(
     modality: str = "audio",
     seed: int = 42,
     max_examples_per_task: int = -1,
-    judge_model: str = "gpt-4o-mini",
-    judge_base_url: str = "https://api.openai.com/v1",
-    judge_api_key_var: str = "OPENAI_API_KEY",
     **kwargs,
 ) -> vf.Environment:
     """Load the Porcine Vocal Welfare Benchmark environment.
@@ -45,16 +33,11 @@ def load_environment(
     Args:
         task: Which task(s) to include. Pass ``"all"`` for the full suite,
             a single task name string, or a list of task name strings.
-            Valid names: call_type_classification, acoustic_property_estimation,
-            valence_classification, pain_severity_ranking, context_classification,
-            cross_age_generalization, veterinary_reasoning.
+            Valid names: call_type_classification, valence_classification.
         modality: Input modality — ``"audio"`` (raw wav) or ``"spectrogram"``
             (spectrogram image).
-        seed: Random seed for dataset shuffling and MCQ generation.
+        seed: Random seed for dataset shuffling.
         max_examples_per_task: Maximum examples per task (-1 for all).
-        judge_model: Model for LLM-as-judge in Tier 4.
-        judge_base_url: API base URL for the judge model.
-        judge_api_key_var: Environment variable name holding the judge API key.
         **kwargs: Additional keyword arguments forwarded to sub-environments.
 
     Returns:
@@ -72,16 +55,7 @@ def load_environment(
     # Validate task names
     for t in selected_tasks:
         if t not in TASK_REGISTRY:
-            raise ValueError(
-                f"Unknown task: {t!r}. Valid tasks: {ALL_TASK_NAMES}"
-            )
-
-    # --- Check if judge is needed ---
-    needs_judge = any(
-        TASK_REGISTRY[t][1] for t in selected_tasks  # [1] = requires_judge
-    )
-    if needs_judge:
-        vf.ensure_keys([judge_api_key_var])
+            raise ValueError(f"Unknown task: {t!r}. Valid tasks: {ALL_TASK_NAMES}")
 
     # --- Build sub-environments ---
     envs: list[vf.Environment] = []
@@ -94,22 +68,11 @@ def load_environment(
         "max_examples": max_examples_per_task,
     }
 
-    # Judge kwargs only for tasks that need them
-    judge_kwargs = {
-        "judge_model": judge_model,
-        "judge_base_url": judge_base_url,
-        "judge_api_key_var": judge_api_key_var,
-    }
-
     for task_name in selected_tasks:
-        builder_fn, requires_judge = TASK_REGISTRY[task_name]
-
-        task_kwargs = {**common_kwargs}
-        if requires_judge:
-            task_kwargs.update(judge_kwargs)
+        builder_fn = TASK_REGISTRY[task_name]
 
         logger.info(f"Building task: {task_name}")
-        env = builder_fn(**task_kwargs)
+        env = builder_fn(**common_kwargs)
         envs.append(env)
         env_names.append(task_name)
 

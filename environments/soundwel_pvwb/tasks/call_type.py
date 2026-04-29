@@ -1,10 +1,15 @@
 """Tier 1 — Call Type Classification (HF / LF)."""
 
+import logging
+
 import verifiers as vf
 from datasets import Dataset, load_dataset, Audio
 
 from prompts import SYSTEM_PROMPT_ETHOLOGIST, PROMPT_CALL_TYPE
 from utils import build_audio_content_part
+
+
+logger = logging.getLogger("verifiers.env.soundwel_pvwb.call_type")
 
 
 def build_task(
@@ -16,10 +21,9 @@ def build_task(
     """Build a SingleTurnEnv for binary HF/LF call type classification."""
 
     def build_dataset() -> Dataset:
-        ds = load_dataset(
-            "oliveirabruno01/soundwel-pig-vocalizations", split="train"
-        )
+        ds = load_dataset("oliveirabruno01/soundwel-pig-vocalizations", split="train")
         ds = ds.cast_column("audio", Audio(decode=False))
+        ds = ds.filter(lambda x: x["Type"] is not None)
 
         def transform(row):
             media_part = build_audio_content_part(row, modality)
@@ -34,7 +38,7 @@ def build_task(
                         {"type": "text", "text": PROMPT_CALL_TYPE},
                         media_part,
                     ],
-                }
+                },
             ]
             return {"prompt": prompt, "answer": row["Type"]}
 

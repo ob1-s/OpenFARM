@@ -1,29 +1,63 @@
-"""Shared utilities for the Soundwel PVWB benchmark suite."""
+"""Shared media processing and dataset utilities for the Soundwel PVWB suite."""
 
 import io
 import base64
-from PIL import Image
-
-import verifiers as vf
 import logging
+import numpy as np
+from PIL import Image
 
 logger = logging.getLogger("verifiers.env.soundwel_pvwb.utils")
 
 
-def encode_audio_to_base64(audio_dict: dict) -> str:
-    """Convert an HF Audio feature dict to a base64-encoded WAV data URI."""
+def pad_audio_array(
+    audio_array: np.ndarray, sr: int, target_seconds: float
+) -> np.ndarray:
+    """Centrally zero-pads an audio array to reach a safe VLM duration threshold."""
+    target_length = int(target_seconds * sr)
+    current_length = len(audio_array)
+
+    if current_length >= target_length:
+        return audio_array
+
+    pad_total = target_length - current_length
+    pad_left = pad_total // 2
+    pad_right = pad_total - pad_left
+
+    return np.pad(
+        audio_array, (pad_left, pad_right), mode="constant", constant_values=0
+    )
+
+
+def encode_audio_to_base64(audio_dict: dict, target_pad_seconds: float = 3.595) -> str:
+    """JIT decodes audio bytes, applies padding, and converts to base64 WAV."""
+    import soundfile as sf
+
+    # 1. Extract raw bytes (since decode=False)
     if "bytes" in audio_dict and audio_dict["bytes"] is not None:
         audio_bytes = audio_dict["bytes"]
     elif "path" in audio_dict and audio_dict["path"] is not None:
         with open(audio_dict["path"], "rb") as f:
             audio_bytes = f.read()
     else:
-        import soundfile as sf
-        buf = io.BytesIO()
-        sf.write(buf, audio_dict["array"], audio_dict["sampling_rate"], format="WAV")
-        audio_bytes = buf.getvalue()
+        # Fallback if somehow already decoded
+        audio_bytes = None
+        array = audio_dict.get("array")
+        sr = audio_dict.get("sampling_rate")
 
-    return base64.b64encode(audio_bytes).decode("utf-8")
+    # 2. JIT Decode using soundfile if we have bytes
+    if audio_bytes is not None:
+        array, sr = sf.read(io.BytesIO(audio_bytes))
+
+    # 3. Apply paper-aligned central zero-padding
+    if target_pad_seconds > 0:
+        array = pad_audio_array(array, sr, target_pad_seconds)
+
+    # 4. Write back to WAV format
+    buf = io.BytesIO()
+    sf.write(buf, array, sr, format="WAV")
+    padded_bytes = buf.getvalue()
+
+    return base64.b64encode(padded_bytes).decode("utf-8")
 
 
 def encode_spectrogram_to_base64(image: Image.Image) -> str:
@@ -36,194 +70,157 @@ def encode_spectrogram_to_base64(image: Image.Image) -> str:
     return f"data:image/jpeg;base64,{img_str}"
 
 
-def build_multimodal_content_parts(row: dict, modality: str) -> list[dict]:
-    """Build the appropriate sequenced multimodal content parts for a dataset row."""
+def build_multimodal_content_parts(
+    row: dict, modality: str, target_pad_seconds: float = 3.595
+) -> list[dict]:
+    """Build the sequenced multimodal content parts for a dataset row."""
     parts = []
-    
-    # Notebook findings dictate Audio should precede Image when Multimodal
+
     if modality in ["audio", "multimodal"]:
-        b64 = encode_audio_to_base64(row["audio"])
-        parts.append({
-            "type": "input_audio",
-            "input_audio": {"data": b64, "format": "wav"},
-        })
-        
+        b64 = encode_audio_to_base64(row["audio"], target_pad_seconds)
+        parts.append(
+            {
+                "type": "input_audio",
+                "input_audio": {"data": b64, "format": "wav"},
+            }
+        )
+
     if modality in ["vision", "multimodal"]:
         b64_uri = encode_spectrogram_to_base64(row["spectrogram"])
-        parts.append({
-            "type": "image_url",
-            "image_url": {"url": b64_uri},
-        })
-        
+        parts.append(
+            {
+                "type": "image_url",
+                "image_url": {"url": b64_uri},
+            }
+        )
+
     return parts
 
 
-def get_dataset_builder(
-    task_name: str,
-    modality: str,
+def get_stratified_dataset(
     data_subset: str,
-    use_escape_hatch: bool,
-    seed: int,
-    max_examples: int,
-) -> vf.DatasetBuilder:
-    """Lazy Dataset Builder handling HF dataset loading, stratification, and prompt mapping."""
-    
-    def build():
-        from datasets import load_dataset, Audio
-        from prompts import SYSTEM_PROMPT_ETHOLOGIST, build_task_prompt
-        
-        ds = load_dataset("oliveirabruno01/soundwel-pig-vocalizations", split="train")
+    dataset_name: str,
+    clear_entropy_threshold: float,
+    clear_dur_threshold: float,
+    hard_entropy_threshold: float,
+    hard_dur_threshold: float,
+):
+    """Loads the base dataset and applies the F.A.R.M. class-relative Z-score filtering."""
+    from datasets import load_dataset, Audio
 
-        # CRITICAL FIX: Cast audio with decode=False IMMEDIATELY after loading
-        # This prevents HF datasets from crashing on missing audio libraries during .filter()
-        ds = ds.cast_column("audio", Audio(decode=False))
+    logger.info(f"Loading raw HF dataset from {dataset_name}...")
+    ds = load_dataset(dataset_name, split="train")
 
-        # F.A.R.M. Stratification Logic
-        if data_subset == "rich":
-            ds = ds.filter(lambda x: x["Dur"] is not None and x["Harmonicity"] is not None and x["Dur"] >= 0.5 and x["Harmonicity"] >= 3.5)
-        elif data_subset == "hard_short":
-            ds = ds.filter(lambda x: x["Dur"] is not None and x["Dur"] < 0.3)
-        elif data_subset == "hard_noisy":
-            ds = ds.filter(lambda x: x["Dur"] is not None and x["Harmonicity"] is not None and x["Dur"] >= 0.3 and x["Harmonicity"] < 0.0)
+    # Keep decode=False so HF doesn't crash requiring torchcodec globally
+    ds = ds.cast_column("audio", Audio(decode=False))
+
+    if data_subset != "all":
+        logger.info(
+            f"Computing biologically-aligned Z-scores for '{data_subset}' stratification..."
+        )
+
+        # Extract ONLY the lightweight columns needed for math (prevents OOM)
+        lightweight_ds = ds.select_columns(["Type", "Valence", "Dur", "WienEntrMean"])
+        df = lightweight_ds.to_pandas()
+
+        # Group ONLY by Type to see deviations from the baseline call type
+        df["Dur_Z"] = df.groupby("Type")["Dur"].transform(
+            lambda x: (x - x.mean()) / x.std()
+        )
+        df["Entropy_Z"] = df.groupby("Type")["WienEntrMean"].transform(
+            lambda x: (x - x.mean()) / x.std()
+        )
+
+        # Define magnitudes (allowing user to pass either positive or negative floats in config)
+        c_dur_mag = abs(clear_dur_threshold)
+        h_dur_mag = abs(hard_dur_threshold)
+        c_ent_mag = abs(clear_entropy_threshold)
+        h_ent_mag = abs(hard_entropy_threshold)
+
+        # 1. DURATION LOGIC (Pos = Shorter, Neg = Longer)
+        is_dur_clear = ((df["Valence"] == "Pos") & (df["Dur_Z"] <= -c_dur_mag)) | (
+            (df["Valence"] == "Neg") & (df["Dur_Z"] >= c_dur_mag)
+        )
+
+        is_dur_hard = ((df["Valence"] == "Pos") & (df["Dur_Z"] >= h_dur_mag)) | (
+            (df["Valence"] == "Neg") & (df["Dur_Z"] <= -h_dur_mag)
+        )
+
+        # 2. ENTROPY LOGIC (LF Pos = Lower, LF Neg = Higher | HF Pos = Higher, HF Neg = Lower)
+        is_ent_clear_lf = (df["Type"] == "LF") & (
+            ((df["Valence"] == "Pos") & (df["Entropy_Z"] <= -c_ent_mag))
+            | ((df["Valence"] == "Neg") & (df["Entropy_Z"] >= c_ent_mag))
+        )
+        is_ent_clear_hf = (df["Type"] == "HF") & (
+            ((df["Valence"] == "Pos") & (df["Entropy_Z"] >= c_ent_mag))
+            | ((df["Valence"] == "Neg") & (df["Entropy_Z"] <= -c_ent_mag))
+        )
+        is_ent_clear = is_ent_clear_lf | is_ent_clear_hf
+
+        is_ent_hard_lf = (df["Type"] == "LF") & (
+            ((df["Valence"] == "Pos") & (df["Entropy_Z"] >= h_ent_mag))
+            | ((df["Valence"] == "Neg") & (df["Entropy_Z"] <= -h_ent_mag))
+        )
+        is_ent_hard_hf = (df["Type"] == "HF") & (
+            ((df["Valence"] == "Pos") & (df["Entropy_Z"] <= -h_ent_mag))
+            | ((df["Valence"] == "Neg") & (df["Entropy_Z"] >= h_ent_mag))
+        )
+        is_ent_hard = is_ent_hard_lf | is_ent_hard_hf
+
+        # 3. APPLY MASKS
+        mask_clear = is_dur_clear & is_ent_clear
+        mask_hard = is_dur_hard | is_ent_hard
+
+        # Get the list of row indices that pass the filter
+        if data_subset == "clear":
+            keep_indices = df.index[mask_clear].tolist()
+        elif data_subset == "challenging":
+            keep_indices = df.index[mask_hard].tolist()
         elif data_subset == "average":
-            ds = ds.filter(lambda x: x["Dur"] is not None and x["Harmonicity"] is not None and not (x["Dur"] >= 0.5 and x["Harmonicity"] >= 3.5) and not (x["Dur"] < 0.3) and not (x["Dur"] >= 0.3 and x["Harmonicity"] < 0.0))
-
-        # Filter missing target labels
-        if task_name == "call_type_classification":
-            ds = ds.filter(lambda x: x["Type"] is not None)
+            keep_indices = df.index[~mask_clear & ~mask_hard].tolist()
         else:
-            ds = ds.filter(lambda x: x["Valence"] is not None)
+            keep_indices = df.index.tolist()
 
-        prompt_text = build_task_prompt(task_name, modality, use_escape_hatch)
+        # Apply the indices back to the original multimodal dataset
+        ds = ds.select(keep_indices)
+        logger.info(f"Filtered {data_subset} subset down to {len(ds)} examples.")
 
-        def transform(row):
-            media_parts = build_multimodal_content_parts(row, modality)
-            prompt = [
-                {
-                    "role": "system",
-                    "content": [{"type": "text", "text": SYSTEM_PROMPT_ETHOLOGIST}],
-                },
-                {
-                    "role": "user",
-                    "content": media_parts + [{"type": "text", "text": prompt_text}],
-                },
-            ]
-
-            if task_name == "call_type_classification":
-                answer = row["Type"]
-            else:
-                answer = "Positive" if row["Valence"] == "Pos" else "Negative"
-
-            return {"prompt": prompt, "answer": answer}
-
-        ds = ds.map(transform, remove_columns=ds.column_names)
-        ds = ds.shuffle(seed=seed)
-        
-        if max_examples > 0:
-            from datasets import concatenate_datasets
-            
-            # Split by the standardized "answer" column we just created in the transform step
-            if task_name == "call_type_classification":
-                class_a = ds.filter(lambda x: x["answer"] == "HF")
-                class_b = ds.filter(lambda x: x["answer"] == "LF")
-            else: # valence_classification
-                class_a = ds.filter(lambda x: x["answer"] == "Positive")
-                class_b = ds.filter(lambda x: x["answer"] == "Negative")
-            
-            # Calculate how many examples to take per class (50/50 split)
-            target_per_class = max_examples // 2
-            
-            # Safely select up to the available amount in the minority class
-            take_a = min(target_per_class, len(class_a))
-            take_b = min(target_per_class, len(class_b))
-            
-            # If one class is severely lacking, you might want to fill the rest with the majority class
-            # to hit the exact max_examples requested (optional):
-            # if take_a < target_per_class: take_b = min(max_examples - take_a, len(class_b))
-            # if take_b < target_per_class: take_a = min(max_examples - take_b, len(class_a))
-            
-            logger.info(f"Taking {take_a} examples from class {class_a} and {take_b} examples from class {class_b} (out of {len(ds)} total examples)")
-
-            ds = concatenate_datasets([
-                class_a.select(range(take_a)), 
-                class_b.select(range(take_b))
-            ])
-            # Reshuffle so they aren't grouped by class
-            ds = ds.shuffle(seed=seed)
-            
-        return ds
-
-    return build
+    return ds
 
 
-# Shared F.A.R.M. Evaluation Rubric 
-REFUSAL_KEYWORDS = ["missing", "empty", "audio file", "please provide"]
+def balance_and_shuffle(
+    ds,
+    class_a_label: str,
+    class_b_label: str,
+    max_examples: int,
+    seed: int,
+    strategy: str = "proportional",
+):
+    """
+    Subsamples and shuffles the dataset.
+    strategy="balanced" forces a 50/50 split (may aggressively downsample majority class).
+    strategy="proportional" respects the natural class imbalance of the dataset.
+    """
+    if max_examples > 0:
+        from datasets import concatenate_datasets
 
-class FARMRubric(vf.Rubric):
-    """Centralized F.A.R.M. rubric handling granular parsing and validation states."""
-    
-    def __init__(self, use_escape_hatch: bool = False):
-        self.parser = vf.XMLParser(fields=["reasoning", "answer"], answer_field="answer")
-        super().__init__(parser=self.parser)
-        self.use_escape_hatch = use_escape_hatch
+        class_a = ds.filter(lambda x: x["answer"] == class_a_label)
+        class_b = ds.filter(lambda x: x["answer"] == class_b_label)
 
-        # 1. High-priority parser executes first
-        self.add_reward_func(self.parse_and_categorize, weight=0.0)
-        
-        # 2. Granular tracker metrics (Zero weight)
-        self.add_metric(self.clean_refusals)
-        self.add_metric(self.messy_refusals)
-        self.add_metric(self.format_failures)
-        self.add_metric(self.valid_attempts)
-        
-        # 3. Standard Accuracy Reward 
-        self.add_reward_func(self.accuracy_reward, weight=1.0)
-        
-        # 4. Built-in Format Check
-        format_reward = self.parser.get_format_reward_func()
-        format_reward.__name__ = "format_reward"
-        self.add_reward_func(format_reward, weight=0.0)
+        if strategy == "balanced":
+            take_a = min(max_examples // 2, len(class_a))
+            take_b = min(max_examples // 2, len(class_b))
+        else:  # proportional
+            total_avail = len(class_a) + len(class_b)
+            if total_avail == 0:
+                return ds.shuffle(seed=seed)
+            ratio_a = len(class_a) / total_avail
+            take_a = min(int(max_examples * ratio_a), len(class_a))
+            # allocate the remainder to b, bounded by b's total size
+            take_b = min(max_examples - take_a, len(class_b))
 
-    async def parse_and_categorize(self, completion, answer, state):
-        """Single-pass parsing to set the categorization in the shared rollout state."""
-        raw_text = ""
-        for msg in completion:
-            if isinstance(msg, dict):
-                if msg.get("role") == "assistant":
-                    raw_text += str(msg.get("content", ""))
-            else:
-                if getattr(msg, "role", "") == "assistant":
-                    raw_text += str(getattr(msg, "content", ""))
-        raw_text_lower = raw_text.lower()
-        
-        parsed = self.parser.parse_answer(completion)
-        pred = parsed.strip().upper() if parsed else None
-        
-        if pred:
-            if self.use_escape_hatch and "UNINTELLIGIBLE" in pred:
-                state["farm_outcome"] = "clean_refusal"
-            else:
-                state["farm_outcome"] = "valid_attempt"
-                # Normalize prediction
-                if "HF" in pred: final_pred = "HF"
-                elif "LF" in pred: final_pred = "LF"
-                elif "POSITIVE" in pred or "POS" in pred: final_pred = "Positive"
-                elif "NEGATIVE" in pred or "NEG" in pred: final_pred = "Negative"
-                else: final_pred = pred
-                
-                state["farm_pred"] = final_pred
-                state["farm_correct"] = (final_pred.lower() == answer.strip().lower())
-        else:
-            if any(kw in raw_text_lower for kw in REFUSAL_KEYWORDS):
-                state["farm_outcome"] = "messy_refusal"
-            else:
-                state["farm_outcome"] = "format_failure"
-        return 0.0
+        ds = concatenate_datasets(
+            [class_a.select(range(take_a)), class_b.select(range(take_b))]
+        )
 
-    async def clean_refusals(self, state): return 1.0 if state.get("farm_outcome") == "clean_refusal" else 0.0
-    async def messy_refusals(self, state): return 1.0 if state.get("farm_outcome") == "messy_refusal" else 0.0
-    async def format_failures(self, state): return 1.0 if state.get("farm_outcome") == "format_failure" else 0.0
-    async def valid_attempts(self, state): return 1.0 if state.get("farm_outcome") == "valid_attempt" else 0.0
-    
-    async def accuracy_reward(self, state):
-        return 1.0 if state.get("farm_correct", False) else 0.0
+    return ds.shuffle(seed=seed)

@@ -1,0 +1,20 @@
+# Global defaults for all combinations
+num_examples = 10           # Sample size per tier
+rollouts_per_example = 3    # 0-shot pass@3 evaluation
+max_concurrent = 15         # 2 models * 10 keys = we can hit the APIs decently hard
+save_results = true         # Ensure it saves locally and uploads to Hub
+
+[[ablation]]
+env_id = "soundwel-pvwb"
+
+[ablation.sweep]
+# Sweep 1: The models (using the endpoint aliases defined above)
+endpoint_id = [
+    "gemini-3.1-flash-lite-preview",
+    "gemini-3-flash-preview",
+]
+
+[ablation.sweep.env_args]
+# Sweep 2: The difficulty subsets (creates 2 x 3 = 6 total evaluations)
+data_subset = ["clear", "average", "challenging"]
+modality = ["audio"]

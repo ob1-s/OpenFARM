@@ -40,7 +40,13 @@ ESCAPE_HATCH_NOTES = {
 
 CALL_TYPE_TEMPLATE = """{modality_instruction} Is this a High Frequency (HF) call or a Low Frequency (LF) call?
 
-{escape_hatch_note}Respond using this format:
+{escape_hatch_note}{format_instructions}"""
+
+VALENCE_TEMPLATE = """{modality_instruction} Is the emotional valence of this animal Positive or Negative?
+
+{escape_hatch_note}{format_instructions}"""
+
+FORMAT_WITH_REASONING = """Respond using this format:
 <reasoning>
 [your step-by-step analysis]
 </reasoning>
@@ -48,12 +54,7 @@ CALL_TYPE_TEMPLATE = """{modality_instruction} Is this a High Frequency (HF) cal
 [{options}]
 </answer>"""
 
-VALENCE_TEMPLATE = """{modality_instruction} Is the emotional valence of this animal Positive or Negative?
-
-{escape_hatch_note}Respond using this format:
-<reasoning>
-[your step-by-step analysis]
-</reasoning>
+FORMAT_WITHOUT_REASONING = """Respond using this format:
 <answer>
 [{options}]
 </answer>"""
@@ -68,10 +69,9 @@ REFUSAL_KEYWORDS = ["missing", "empty", "audio file", "please provide"]
 class FARMRubric(vf.Rubric):
     """Centralized F.A.R.M. rubric handling granular parsing and validation states."""
 
-    def __init__(self, use_escape_hatch: bool = False):
-        self.parser = vf.XMLParser(
-            fields=["reasoning", "answer"], answer_field="answer"
-        )
+    def __init__(self, use_escape_hatch: bool = False, require_reasoning: bool = True):
+        fields = ["reasoning", "answer"] if require_reasoning else ["answer"]
+        self.parser = vf.XMLParser(fields=fields, answer_field="answer")
         super().__init__(parser=self.parser)
         self.use_escape_hatch = use_escape_hatch
 
@@ -163,6 +163,7 @@ def build_call_type_env(
     hard_dur_threshold: float,
     system_prompt_override: str | None,
     user_prompt_override: str | None,
+    require_reasoning: bool = True,
 ) -> vf.SingleTurnEnv:
     """Build a SingleTurnEnv for binary HF/LF classification."""
 
@@ -193,15 +194,23 @@ def build_call_type_env(
                     else CALL_TYPE_TEMPLATE
                 )
 
+                format_instr = (
+                    FORMAT_WITH_REASONING
+                    if require_reasoning
+                    else FORMAT_WITHOUT_REASONING
+                )
+
                 # Format the text prompt declaratively
                 prompt_text = user_template.format(
                     modality_instruction=MODALITY_INSTRUCTIONS[modality],
                     escape_hatch_note=ESCAPE_HATCH_NOTES[modality]
                     if use_escape_hatch
                     else "",
-                    options="HF, LF, or UNINTELLIGIBLE"
-                    if use_escape_hatch
-                    else "HF or LF",
+                    format_instructions=format_instr.format(
+                        options="HF, LF, or UNINTELLIGIBLE"
+                        if use_escape_hatch
+                        else "HF or LF"
+                    ),
                     age_category=age,  # Extra context available for custom override prompts
                 )
 
@@ -259,6 +268,7 @@ def build_valence_env(
     hard_dur_threshold: float,
     system_prompt_override: str | None,
     user_prompt_override: str | None,
+    require_reasoning: bool = True,
 ) -> vf.SingleTurnEnv:
     """Build a SingleTurnEnv for binary Positive/Negative valence classification."""
 
@@ -288,14 +298,21 @@ def build_valence_env(
                     else VALENCE_TEMPLATE
                 )
 
+                format_instr = (
+                    FORMAT_WITH_REASONING
+                    if require_reasoning
+                    else FORMAT_WITHOUT_REASONING
+                )
                 prompt_text = user_template.format(
                     modality_instruction=MODALITY_INSTRUCTIONS[modality],
                     escape_hatch_note=ESCAPE_HATCH_NOTES[modality]
                     if use_escape_hatch
                     else "",
-                    options="Positive, Negative, or UNINTELLIGIBLE"
-                    if use_escape_hatch
-                    else "Positive or Negative",
+                    format_instructions=format_instr.format(
+                        options="Positive, Negative, or UNINTELLIGIBLE"
+                        if use_escape_hatch
+                        else "Positive or Negative"
+                    ),
                     age_category=age,
                 )
 
@@ -334,7 +351,9 @@ def build_valence_env(
 
         return build
 
-    rubric = FARMRubric(use_escape_hatch=use_escape_hatch)
+    rubric = FARMRubric(
+        use_escape_hatch=use_escape_hatch, require_reasoning=require_reasoning
+    )
     return vf.SingleTurnEnv(
         dataset=get_dataset_builder(), parser=rubric.parser, rubric=rubric
     )
@@ -365,6 +384,7 @@ def load_environment(
     hard_dur_threshold: float = -1.0,
     system_prompt_override: str | None = None,
     user_prompt_override: str | None = None,
+    require_reasoning: bool = True,
     **kwargs,
 ) -> vf.Environment:
     """Load the Porcine Vocal Welfare Benchmark environment.
@@ -385,6 +405,7 @@ def load_environment(
         hard_dur_threshold: Max Z-score duration for challenging subset.
         system_prompt_override: Optional custom string to replace system prompt.
         user_prompt_override: Optional custom template string for the user task prompt.
+        require_reasoning: Whether to require reasoning in the model's response.
     """
     if task == "all":
         selected_tasks = list(TASK_BUILDERS.keys())
@@ -413,6 +434,7 @@ def load_environment(
         "hard_dur_threshold": hard_dur_threshold,
         "system_prompt_override": system_prompt_override,
         "user_prompt_override": user_prompt_override,
+        "require_reasoning": require_reasoning,
     }
 
     envs = []

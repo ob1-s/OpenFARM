@@ -11,7 +11,7 @@ import verifiers as vf
 
 from utils import (
     build_multimodal_content_parts,
-    get_stratified_dataset,
+    get_dataset,
     balance_and_shuffle,
 )
 
@@ -69,7 +69,7 @@ REFUSAL_KEYWORDS = ["missing", "empty", "audio file", "please provide"]
 class FARMRubric(vf.Rubric):
     """Centralized F.A.R.M. rubric handling granular parsing and validation states."""
 
-    def __init__(self, use_escape_hatch: bool = False, require_reasoning: bool = True):
+    def __init__(self, use_escape_hatch: bool = False, require_reasoning: bool = False):
         fields = ["reasoning", "answer"] if require_reasoning else ["answer"]
         self.parser = vf.XMLParser(fields=fields, answer_field="answer")
         super().__init__(parser=self.parser)
@@ -151,32 +151,22 @@ class FARMRubric(vf.Rubric):
 
 def build_call_type_env(
     modality: str,
-    data_subset: str,
     use_escape_hatch: bool,
     max_examples: int,
-    seed: int,
     dataset_name: str,
+    train_split: str,
+    test_split: str,
+    seed: int,
     target_pad_seconds: float,
-    clear_entropy_threshold: float,
-    clear_dur_threshold: float,
-    hard_entropy_threshold: float,
-    hard_dur_threshold: float,
     system_prompt_override: str | None,
     user_prompt_override: str | None,
-    require_reasoning: bool = True,
+    require_reasoning: bool = False,
 ) -> vf.SingleTurnEnv:
     """Build a SingleTurnEnv for binary HF/LF classification."""
 
-    def get_dataset_builder():
+    def get_dataset_builder(split: str):
         def build():
-            ds = get_stratified_dataset(
-                data_subset=data_subset,
-                dataset_name=dataset_name,
-                clear_entropy_threshold=clear_entropy_threshold,
-                clear_dur_threshold=clear_dur_threshold,
-                hard_entropy_threshold=hard_entropy_threshold,
-                hard_dur_threshold=hard_dur_threshold,
-            )
+            ds = get_dataset(dataset_name=dataset_name, split=split)
             ds = ds.filter(lambda x: x["Type"] is not None)
 
             def transform(row):
@@ -240,7 +230,7 @@ def build_call_type_env(
                     },
                 }
 
-            logger.info("Applying mapping and formatting prompts...")
+            logger.info(f"Applying mapping and formatting prompts (split={split})...")
             ds = ds.map(transform, remove_columns=ds.column_names, num_proc=1)
             return balance_and_shuffle(
                 ds, "HF", "LF", max_examples, seed, strategy="proportional"
@@ -248,40 +238,35 @@ def build_call_type_env(
 
         return build
 
-    rubric = FARMRubric(use_escape_hatch=use_escape_hatch)
+    rubric = FARMRubric(
+        use_escape_hatch=use_escape_hatch, require_reasoning=require_reasoning
+    )
     return vf.SingleTurnEnv(
-        dataset=get_dataset_builder(), parser=rubric.parser, rubric=rubric
+        dataset=get_dataset_builder(train_split),
+        eval_dataset=get_dataset_builder(test_split),
+        parser=rubric.parser,
+        rubric=rubric,
     )
 
 
 def build_valence_env(
     modality: str,
-    data_subset: str,
     use_escape_hatch: bool,
     max_examples: int,
-    seed: int,
     dataset_name: str,
+    train_split: str,
+    test_split: str,
+    seed: int,
     target_pad_seconds: float,
-    clear_entropy_threshold: float,
-    clear_dur_threshold: float,
-    hard_entropy_threshold: float,
-    hard_dur_threshold: float,
     system_prompt_override: str | None,
     user_prompt_override: str | None,
-    require_reasoning: bool = True,
+    require_reasoning: bool = False,
 ) -> vf.SingleTurnEnv:
     """Build a SingleTurnEnv for binary Positive/Negative valence classification."""
 
-    def get_dataset_builder():
+    def get_dataset_builder(split: str):
         def build():
-            ds = get_stratified_dataset(
-                data_subset=data_subset,
-                dataset_name=dataset_name,
-                clear_entropy_threshold=clear_entropy_threshold,
-                clear_dur_threshold=clear_dur_threshold,
-                hard_entropy_threshold=hard_entropy_threshold,
-                hard_dur_threshold=hard_dur_threshold,
-            )
+            ds = get_dataset(dataset_name=dataset_name, split=split)
             ds = ds.filter(lambda x: x["Valence"] is not None)
 
             def transform(row):
@@ -343,7 +328,7 @@ def build_valence_env(
                     },
                 }
 
-            logger.info("Applying mapping and formatting prompts...")
+            logger.info(f"Applying mapping and formatting prompts (split={split})...")
             ds = ds.map(transform, remove_columns=ds.column_names, num_proc=1)
             return balance_and_shuffle(
                 ds, "Positive", "Negative", max_examples, seed, strategy="proportional"
@@ -355,7 +340,10 @@ def build_valence_env(
         use_escape_hatch=use_escape_hatch, require_reasoning=require_reasoning
     )
     return vf.SingleTurnEnv(
-        dataset=get_dataset_builder(), parser=rubric.parser, rubric=rubric
+        dataset=get_dataset_builder(train_split),
+        eval_dataset=get_dataset_builder(test_split),
+        parser=rubric.parser,
+        rubric=rubric,
     )
 
 
@@ -372,19 +360,16 @@ TASK_BUILDERS = {
 def load_environment(
     task: str | list[str] = "valence_classification",
     modality: str = "audio",
-    data_subset: str = "all",
     use_escape_hatch: bool = False,
-    seed: int = 42,
     max_examples_per_task: int = -1,
     dataset_name: str = "oliveirabruno01/soundwel-pig-vocalizations",
+    train_split: str = "train",
+    test_split: str = "test",
+    seed: int = 42,
     target_pad_seconds: float = 3.595,
-    clear_entropy_threshold: float = 0.5,
-    clear_dur_threshold: float = -0.5,
-    hard_entropy_threshold: float = 1.0,
-    hard_dur_threshold: float = -1.0,
     system_prompt_override: str | None = None,
     user_prompt_override: str | None = None,
-    require_reasoning: bool = True,
+    require_reasoning: bool = False,
     **kwargs,
 ) -> vf.Environment:
     """Load the Porcine Vocal Welfare Benchmark environment.
@@ -393,16 +378,13 @@ def load_environment(
         task: Which task(s) to include. Pass "all" for the full suite,
             a single task name string, or a list of task name strings.
         modality: "audio" (wav), "vision" (spectrogram image), or "multimodal" (both).
-        data_subset: Stratification tier. Valid: "all", "clear", "challenging", "average".
         use_escape_hatch: If True, allow the model to classify poor quality samples as UNINTELLIGIBLE.
-        seed: Random seed for dataset shuffling.
         max_examples_per_task: Maximum examples per task (-1 for all).
         dataset_name: HuggingFace dataset ID or local path.
+        train_split: Split to use for training.
+        test_split: Split to use for testing.
+        seed: Random seed for dataset shuffling.
         target_pad_seconds: Centrally pad audio arrays to this length.
-        clear_entropy_threshold: Max Z-score entropy for clear subset.
-        clear_dur_threshold: Min Z-score duration for clear subset.
-        hard_entropy_threshold: Min Z-score entropy for challenging subset.
-        hard_dur_threshold: Max Z-score duration for challenging subset.
         system_prompt_override: Optional custom string to replace system prompt.
         user_prompt_override: Optional custom template string for the user task prompt.
         require_reasoning: Whether to require reasoning in the model's response.
@@ -422,16 +404,13 @@ def load_environment(
 
     common_kwargs = {
         "modality": modality,
-        "data_subset": data_subset,
         "use_escape_hatch": use_escape_hatch,
         "seed": seed,
         "max_examples": max_examples_per_task,
         "dataset_name": dataset_name,
+        "train_split": train_split,
+        "test_split": test_split,
         "target_pad_seconds": target_pad_seconds,
-        "clear_entropy_threshold": clear_entropy_threshold,
-        "clear_dur_threshold": clear_dur_threshold,
-        "hard_entropy_threshold": hard_entropy_threshold,
-        "hard_dur_threshold": hard_dur_threshold,
         "system_prompt_override": system_prompt_override,
         "user_prompt_override": user_prompt_override,
         "require_reasoning": require_reasoning,

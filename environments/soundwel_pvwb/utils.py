@@ -97,93 +97,21 @@ def build_multimodal_content_parts(
     return parts
 
 
-def get_stratified_dataset(
-    data_subset: str,
-    dataset_name: str,
-    clear_entropy_threshold: float,
-    clear_dur_threshold: float,
-    hard_entropy_threshold: float,
-    hard_dur_threshold: float,
-):
-    """Loads the base dataset and applies the F.A.R.M. class-relative Z-score filtering."""
+def get_dataset(dataset_name: str, split: str = "train"):
+    """Loads the base dataset split without algorithmic difficulty filtering."""
     from datasets import load_dataset, Audio
 
-    logger.info(f"Loading raw HF dataset from {dataset_name}...")
-    ds = load_dataset(dataset_name, split="train")
+    logger.info(f"Loading raw HF dataset from {dataset_name} (split={split})...")
+    try:
+        ds = load_dataset(dataset_name, split=split)
+    except Exception as e:
+        logger.warning(
+            f"Failed to load split '{split}', falling back to 'train'. Error: {e}"
+        )
+        ds = load_dataset(dataset_name, split="train")
 
     # Keep decode=False so HF doesn't crash requiring torchcodec globally
     ds = ds.cast_column("audio", Audio(decode=False))
-
-    if data_subset != "all":
-        logger.info(
-            f"Computing biologically-aligned Z-scores for '{data_subset}' stratification..."
-        )
-
-        # Extract ONLY the lightweight columns needed for math (prevents OOM)
-        lightweight_ds = ds.select_columns(["Type", "Valence", "Dur", "WienEntrMean"])
-        df = lightweight_ds.to_pandas()
-
-        # Group ONLY by Type to see deviations from the baseline call type
-        df["Dur_Z"] = df.groupby("Type")["Dur"].transform(
-            lambda x: (x - x.mean()) / x.std()
-        )
-        df["Entropy_Z"] = df.groupby("Type")["WienEntrMean"].transform(
-            lambda x: (x - x.mean()) / x.std()
-        )
-
-        # Define magnitudes (allowing user to pass either positive or negative floats in config)
-        c_dur_mag = abs(clear_dur_threshold)
-        h_dur_mag = abs(hard_dur_threshold)
-        c_ent_mag = abs(clear_entropy_threshold)
-        h_ent_mag = abs(hard_entropy_threshold)
-
-        # 1. DURATION LOGIC (Pos = Shorter, Neg = Longer)
-        is_dur_clear = ((df["Valence"] == "Pos") & (df["Dur_Z"] <= -c_dur_mag)) | (
-            (df["Valence"] == "Neg") & (df["Dur_Z"] >= c_dur_mag)
-        )
-
-        is_dur_hard = ((df["Valence"] == "Pos") & (df["Dur_Z"] >= h_dur_mag)) | (
-            (df["Valence"] == "Neg") & (df["Dur_Z"] <= -h_dur_mag)
-        )
-
-        # 2. ENTROPY LOGIC (LF Pos = Lower, LF Neg = Higher | HF Pos = Higher, HF Neg = Lower)
-        is_ent_clear_lf = (df["Type"] == "LF") & (
-            ((df["Valence"] == "Pos") & (df["Entropy_Z"] <= -c_ent_mag))
-            | ((df["Valence"] == "Neg") & (df["Entropy_Z"] >= c_ent_mag))
-        )
-        is_ent_clear_hf = (df["Type"] == "HF") & (
-            ((df["Valence"] == "Pos") & (df["Entropy_Z"] >= c_ent_mag))
-            | ((df["Valence"] == "Neg") & (df["Entropy_Z"] <= -c_ent_mag))
-        )
-        is_ent_clear = is_ent_clear_lf | is_ent_clear_hf
-
-        is_ent_hard_lf = (df["Type"] == "LF") & (
-            ((df["Valence"] == "Pos") & (df["Entropy_Z"] >= h_ent_mag))
-            | ((df["Valence"] == "Neg") & (df["Entropy_Z"] <= -h_ent_mag))
-        )
-        is_ent_hard_hf = (df["Type"] == "HF") & (
-            ((df["Valence"] == "Pos") & (df["Entropy_Z"] <= -h_ent_mag))
-            | ((df["Valence"] == "Neg") & (df["Entropy_Z"] >= h_ent_mag))
-        )
-        is_ent_hard = is_ent_hard_lf | is_ent_hard_hf
-
-        # 3. APPLY MASKS
-        mask_clear = is_dur_clear & is_ent_clear
-        mask_hard = is_dur_hard | is_ent_hard
-
-        # Get the list of row indices that pass the filter
-        if data_subset == "clear":
-            keep_indices = df.index[mask_clear].tolist()
-        elif data_subset == "challenging":
-            keep_indices = df.index[mask_hard].tolist()
-        elif data_subset == "average":
-            keep_indices = df.index[~mask_clear & ~mask_hard].tolist()
-        else:
-            keep_indices = df.index.tolist()
-
-        # Apply the indices back to the original multimodal dataset
-        ds = ds.select(keep_indices)
-        logger.info(f"Filtered {data_subset} subset down to {len(ds)} examples.")
 
     return ds
 

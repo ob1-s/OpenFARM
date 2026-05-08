@@ -68,12 +68,14 @@ Notes:
 | `system_prompt_override`| `str` | `null` | Optional custom string to replace the default ethologist system prompt. |
 | `user_prompt_override` | `str` | `null` | Optional custom template string for the user task prompt. |
 | `require_reasoning` | `bool` | `false` | Whether to require a `<reasoning>` block before the `<answer>` block. |
+| `format_reward_weight` | `float` | `0.0` | Weight for the format reward. |
 
 ### Metrics
 
 | Metric | Meaning |
 | --- | --- |
-| `accuracy_reward` | **Main scalar reward**. `1.0` if the parsed answer matches ground truth, `0.0` otherwise. |
+| `reward` | Weighted sum of accuracy and format rewards. |
+| `accuracy_reward` | `1.0` if the parsed answer matches ground truth, `0.0` otherwise. |
 | `format_reward` | `1.0` if the required XML schema was successfully generated, `0.0` otherwise. |
 | `valid_attempts` | `1.0` if the model successfully provided a parsable, non-refusal prediction. |
 | `clean_refusals` | `1.0` if the model explicitly used the escape hatch (`UNINTELLIGIBLE`). |

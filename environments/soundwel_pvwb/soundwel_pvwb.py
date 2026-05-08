@@ -69,7 +69,7 @@ REFUSAL_KEYWORDS = ["missing", "empty", "audio file", "please provide"]
 class FARMRubric(vf.Rubric):
     """Centralized F.A.R.M. rubric handling granular parsing and validation states."""
 
-    def __init__(self, use_escape_hatch: bool = False, require_reasoning: bool = False):
+    def __init__(self, use_escape_hatch: bool = False, require_reasoning: bool = False, format_reward_weight: float = 0.0):
         fields = ["reasoning", "answer"] if require_reasoning else ["answer"]
         self.parser = vf.XMLParser(fields=fields, answer_field="answer")
         super().__init__(parser=self.parser)
@@ -90,7 +90,7 @@ class FARMRubric(vf.Rubric):
         # 4. Built-in Format Check (weight=0, tracked as metric)
         format_reward = self.parser.get_format_reward_func()
         format_reward.__name__ = "format_reward"
-        self.add_reward_func(format_reward, weight=0.0)
+        self.add_reward_func(format_reward, weight=format_reward_weight)
 
     async def parse_and_categorize(self, completion, answer, state):
         """Single-pass parsing to set the categorization in the shared rollout state."""
@@ -161,6 +161,7 @@ def build_call_type_env(
     system_prompt_override: str | None,
     user_prompt_override: str | None,
     require_reasoning: bool = False,
+    format_reward_weight: float = 0.0,
 ) -> vf.SingleTurnEnv:
     """Build a SingleTurnEnv for binary HF/LF classification."""
 
@@ -239,7 +240,7 @@ def build_call_type_env(
         return build
 
     rubric = FARMRubric(
-        use_escape_hatch=use_escape_hatch, require_reasoning=require_reasoning
+        use_escape_hatch=use_escape_hatch, require_reasoning=require_reasoning, format_reward_weight=format_reward_weight
     )
     return vf.SingleTurnEnv(
         dataset=get_dataset_builder(train_split),
@@ -261,6 +262,7 @@ def build_valence_env(
     system_prompt_override: str | None,
     user_prompt_override: str | None,
     require_reasoning: bool = False,
+    format_reward_weight: float = 0.0,
 ) -> vf.SingleTurnEnv:
     """Build a SingleTurnEnv for binary Positive/Negative valence classification."""
 
@@ -337,7 +339,7 @@ def build_valence_env(
         return build
 
     rubric = FARMRubric(
-        use_escape_hatch=use_escape_hatch, require_reasoning=require_reasoning
+        use_escape_hatch=use_escape_hatch, require_reasoning=require_reasoning, format_reward_weight=format_reward_weight
     )
     return vf.SingleTurnEnv(
         dataset=get_dataset_builder(train_split),
@@ -370,6 +372,7 @@ def load_environment(
     system_prompt_override: str | None = None,
     user_prompt_override: str | None = None,
     require_reasoning: bool = False,
+    format_reward_weight: float = 0.0,
     **kwargs,
 ) -> vf.Environment:
     """Load the Porcine Vocal Welfare Benchmark environment.
@@ -388,6 +391,7 @@ def load_environment(
         system_prompt_override: Optional custom string to replace system prompt.
         user_prompt_override: Optional custom template string for the user task prompt.
         require_reasoning: Whether to require reasoning in the model's response.
+        format_reward_weight: Weight for the formatting reward.
     """
     if task == "all":
         selected_tasks = list(TASK_BUILDERS.keys())
@@ -414,6 +418,7 @@ def load_environment(
         "system_prompt_override": system_prompt_override,
         "user_prompt_override": user_prompt_override,
         "require_reasoning": require_reasoning,
+        "format_reward_weight": format_reward_weight,
     }
 
     envs = []

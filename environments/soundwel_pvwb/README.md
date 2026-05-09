@@ -69,6 +69,7 @@ Notes:
 | `user_prompt_override` | `str` | `null` | Optional custom template string for the user task prompt. |
 | `require_reasoning` | `bool` | `false` | Whether to require a `<reasoning>` block before the `<answer>` block. |
 | `format_reward_weight` | `float` | `0.0` | Weight for the format reward. |
+| `strategy` | `str` | `"proportional"` | How to balance classes. `"proportional"` to class balance, `"balanced"` to force a 50/50 split. |
 
 ### Metrics
 
@@ -80,4 +81,3 @@ Notes:
 | `valid_attempts` | `1.0` if the model successfully provided a parsable, non-refusal prediction. |
 | `clean_refusals` | `1.0` if the model explicitly used the escape hatch (`UNINTELLIGIBLE`). |
 | `messy_refusals` | `1.0` if the model output conversational refusal keywords (e.g. "missing audio file"). |
-| `format_failures` | `1.0` if the model failed to use the requested XML tags entirely. |

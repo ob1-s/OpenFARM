@@ -81,7 +81,6 @@ class FARMRubric(vf.Rubric):
         # 2. Granular tracker metrics (weight=0)
         self.add_metric(self.clean_refusals)
         self.add_metric(self.messy_refusals)
-        self.add_metric(self.format_failures)
         self.add_metric(self.valid_attempts)
 
         # 3. Standard Accuracy Reward
@@ -134,9 +133,6 @@ class FARMRubric(vf.Rubric):
     async def messy_refusals(self, state):
         return 1.0 if state.get("farm_outcome") == "messy_refusal" else 0.0
 
-    async def format_failures(self, state):
-        return 1.0 if state.get("farm_outcome") == "format_failure" else 0.0
-
     async def valid_attempts(self, state):
         return 1.0 if state.get("farm_outcome") == "valid_attempt" else 0.0
 
@@ -162,6 +158,7 @@ def build_call_type_env(
     user_prompt_override: str | None,
     require_reasoning: bool = False,
     format_reward_weight: float = 0.0,
+    balancing_strategy: str = "proportional",
 ) -> vf.SingleTurnEnv:
     """Build a SingleTurnEnv for binary HF/LF classification."""
 
@@ -234,7 +231,7 @@ def build_call_type_env(
             logger.info(f"Applying mapping and formatting prompts (split={split})...")
             ds = ds.map(transform, remove_columns=ds.column_names, num_proc=1)
             return balance_and_shuffle(
-                ds, "HF", "LF", max_examples, seed, strategy="proportional"
+                ds, "HF", "LF", max_examples, seed, strategy=balancing_strategy
             )
 
         return build
@@ -263,6 +260,7 @@ def build_valence_env(
     user_prompt_override: str | None,
     require_reasoning: bool = False,
     format_reward_weight: float = 0.0,
+    balancing_strategy: str = "proportional",
 ) -> vf.SingleTurnEnv:
     """Build a SingleTurnEnv for binary Positive/Negative valence classification."""
 
@@ -333,7 +331,7 @@ def build_valence_env(
             logger.info(f"Applying mapping and formatting prompts (split={split})...")
             ds = ds.map(transform, remove_columns=ds.column_names, num_proc=1)
             return balance_and_shuffle(
-                ds, "Positive", "Negative", max_examples, seed, strategy="proportional"
+                ds, "Positive", "Negative", max_examples, seed, strategy=balancing_strategy
             )
 
         return build
@@ -373,6 +371,7 @@ def load_environment(
     user_prompt_override: str | None = None,
     require_reasoning: bool = False,
     format_reward_weight: float = 0.0,
+    balancing_strategy: str = "proportional",
     **kwargs,
 ) -> vf.Environment:
     """Load the Porcine Vocal Welfare Benchmark environment.
@@ -392,6 +391,7 @@ def load_environment(
         user_prompt_override: Optional custom template string for the user task prompt.
         require_reasoning: Whether to require reasoning in the model's response.
         format_reward_weight: Weight for the formatting reward.
+        balancing_strategy: "proportional" or "balanced". "proportional" to class balance, "balanced" to balance classes.
     """
     if task == "all":
         selected_tasks = list(TASK_BUILDERS.keys())
@@ -419,6 +419,7 @@ def load_environment(
         "user_prompt_override": user_prompt_override,
         "require_reasoning": require_reasoning,
         "format_reward_weight": format_reward_weight,
+        "balancing_strategy": balancing_strategy,
     }
 
     envs = []

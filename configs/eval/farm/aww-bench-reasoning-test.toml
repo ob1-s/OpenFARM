@@ -1,0 +1,25 @@
+endpoints_path = "../../endpoints.toml"
+
+model = "Qwen/Qwen3.5-0.8B"
+num_examples = 15
+rollouts_per_example = 3
+max_concurrent = 32
+max_retries = 5
+
+save_results = true
+state_columns = ["aww_pred","aww_correct","aww_outcome","judge_reasoning"]
+
+disable_env_server = true
+
+[[ablation]]
+env_id = "aww-bench"
+
+[ablation.env_args]
+max_examples_per_task = 15
+require_reasoning = true
+judge_mode = "external"
+seed = 37
+
+[ablation.sweep.env_args]
+include_adversarial_context = [true]
+judge_model = ["Qwen/Qwen3-0.8B", "Qwen/Qwen3.5-4B"]

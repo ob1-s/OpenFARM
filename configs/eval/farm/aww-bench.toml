@@ -1,0 +1,25 @@
+endpoints_path = "../../endpoints.toml"
+
+model = "gemini-3.1-flash-lite"
+num_examples = 5
+rollouts_per_example = 3
+max_concurrent = 32
+max_retries = 5
+
+save_results = true
+state_columns = ["aww_pred","aww_correct","aww_outcome","judge_reasoning"]
+
+
+[[ablation]]
+env_id = "aww-bench"
+
+[ablation.env_args]
+max_examples_per_task = 1
+require_reasoning = true
+judge_mode = "self" # "self" | "external" | "none"
+# judge_model = "gemini-3.1-flash-lite"
+# judge_api_key_var = "GEMINI_API_KEY"
+# judge_base_url = "https://generativelanguage.googleapis.com/v1beta/openai/"
+
+[ablation.sweep.env_args]
+include_adversarial_context = [true, false]

@@ -12,14 +12,15 @@
 
 ### Datasets
 
-- **Primary dataset**: [`oliveirabruno01/soundwel-pig-vocalizations`](https://huggingface.co/datasets/oliveirabruno01/soundwel-pig-vocalizations)
+- **Primary dataset**:[`oliveirabruno01/soundwel-pig-vocalizations`](https://huggingface.co/datasets/oliveirabruno01/soundwel-pig-vocalizations)
 - **Source links**: 
   - [Original Zenodo Dataset](https://zenodo.org/records/8252482) (Raw Audio, Spectrograms, and Labels)
-  - [Paper: Classification of pig calls produced from birth to slaughter according to their emotional valence and context of production (Briefer et al., 2022)](https://www.nature.com/articles/s41598-022-07174-8)
+  -[Paper: Classification of pig calls produced from birth to slaughter according to their emotional valence and context of production (Briefer et al., 2022)](https://www.nature.com/articles/s41598-022-07174-8)
 
 ### Task
 
-- **Type**: Single-turn classification (binary).
+- **Type**: Single-turn classification (binary & multi-class).
+- **Available Tasks**: `call_type_classification`, `valence_classification`, `context_classification`, `age_classification`.
 - **Output format expectations**: Strict XML tags parsed via `vf.XMLParser`. 
   - By default (`require_reasoning=False`), it expects:
       ```xml
@@ -40,7 +41,7 @@ Run a quick smoke-test evaluation with default settings (audio modality, valence
 prime eval run soundwel-pvwb -m openai/gpt-4.1-mini -n 5
 ```
 
-Run a benchmark sweep with specific environment arguments (e.g., evaluating both audio and vision simultaneously):
+Run a benchmark sweep with specific environment arguments (e.g., evaluating both audio and vision cross-modality across all tasks):
 
 ```bash
 prime eval run soundwel-pvwb \
@@ -56,27 +57,29 @@ Notes:
 
 | Arg | Type | Default | Description |
 | --- | --- | --- | --- |
-| `task` | `str` | `list` | `"valence_classification"` | Which task(s) to run. Pass `"all"` for the full suite, or a list of task names (`call_type_classification`, `valence_classification`). |
-| `modality` | `str` | `"audio"` | Data modality to present: `"audio"` (wav), `"vision"` (spectrogram), or `"multimodal"` (both). |
+| `task` | `str` \| `list` | `"valence_classification"` | Which task(s) to run. Pass `"all"` for the full suite, or a list of task names (`call_type_classification`, `valence_classification`, `context_classification`, `age_classification`). |
+| `modality` | `str` | `"audio"` | Data modality to present: `"audio"` (wav), `"vision"` (spectrogram), `"multimodal"` (both), or `"text"` (tabular only). |
+| `include_tabular_data` | `bool` | `false` | If `true`, injects programmatic acoustic and demographic features as a markdown list in the prompt. (Forced `true` if `modality="text"`). |
 | `use_escape_hatch` | `bool` | `false` | If `true`, allows the model to output `UNINTELLIGIBLE` for missing or completely silent samples without penalty. |
+| `extra_refusal_keywords`| `list[str]`| `null` | Optional list of extra strings appended to the messy refusal keyword list. |
 | `max_examples_per_task`| `int` | `-1` | Limit on dataset size per task (use `-1` for all available rows). |
 | `dataset_name` | `str` | `"oliveirabruno01/...`" | HuggingFace dataset ID or local path. |
 | `train_split` | `str` | `"train"` | Split used to populate the RL training dataset. |
 | `test_split` | `str` | `"test"` | Split used to populate the evaluation dataset. |
 | `seed` | `int` | `42` | Random seed for dataset shuffling and balancing. |
-| `target_pad_seconds` | `float` | `3.595` | Seconds to centrally zero-pad audio arrays (paper alignment). |
+| `target_pad_seconds` | `float` | `3.592` | Seconds to centrally zero-pad audio arrays. Set to `0.0` or `-1.0` to disable padding. |
 | `system_prompt_override`| `str` | `null` | Optional custom string to replace the default ethologist system prompt. |
 | `user_prompt_override` | `str` | `null` | Optional custom template string for the user task prompt. |
 | `require_reasoning` | `bool` | `false` | Whether to require a `<reasoning>` block before the `<answer>` block. |
 | `format_reward_weight` | `float` | `0.0` | Weight for the format reward. |
-| `strategy` | `str` | `"proportional"` | How to balance classes. `"proportional"` to class balance, `"balanced"` to force a 50/50 split. |
+| `balancing_strategy` | `str` | `"proportional"` | How to balance classes. `"proportional"` to class balance, `"balanced"` to force equal splits across all N classes. |
 
 ### Metrics
 
 | Metric | Meaning |
 | --- | --- |
 | `reward` | Weighted sum of accuracy and format rewards. |
-| `accuracy_reward` | `1.0` if the parsed answer matches ground truth, `0.0` otherwise. |
+| `accuracy_reward` | `1.0` if the parsed answer correctly identifies the true label, `0.0` otherwise. |
 | `format_reward` | `1.0` if the required XML schema was successfully generated, `0.0` otherwise. |
 | `valid_attempts` | `1.0` if the model successfully provided a parsable, non-refusal prediction. |
 | `clean_refusals` | `1.0` if the model explicitly used the escape hatch (`UNINTELLIGIBLE`). |

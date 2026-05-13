@@ -1,0 +1,26 @@
+endpoints_path = "../../endpoints.toml"
+
+model = "gemini-3.1-flash-lite"
+num_examples = 4
+rollouts_per_example = 3
+
+save_results = true
+state_columns = ["farm_pred","farm_correct","farm_outcome"]
+
+[[ablation]]
+env_id = "soundwel-pvwb"
+
+[ablation.env_args]
+max_examples_per_task = 4
+require_reasoning = true
+balancing_strategy = "balanced"
+task = "valence_classification"
+
+[ablation.sweep.env_args]
+modality = [
+    "text",
+    "audio",
+    # "vision",
+    # "multimodal",
+]
+include_tabular_data = [true, false]

@@ -28,7 +28,7 @@ def pad_audio_array(
     )
 
 
-def encode_audio_to_base64(audio_dict: dict, target_pad_seconds: float = 3.595) -> str:
+def encode_audio_to_base64(audio_dict: dict, target_pad_seconds: float = 0.0) -> str:
     """JIT decodes audio bytes, applies padding, and converts to base64 WAV."""
     import soundfile as sf
 
@@ -71,10 +71,13 @@ def encode_spectrogram_to_base64(image: Image.Image) -> str:
 
 
 def build_multimodal_content_parts(
-    row: dict, modality: str, target_pad_seconds: float = 3.595
+    row: dict, modality: str, target_pad_seconds: float = 0.0
 ) -> list[dict]:
     """Build the sequenced multimodal content parts for a dataset row."""
     parts = []
+
+    if modality == "text":
+        return parts
 
     if modality in ["audio", "multimodal"]:
         b64 = encode_audio_to_base64(row["audio"], target_pad_seconds)
@@ -118,37 +121,50 @@ def get_dataset(dataset_name: str, split: str = "train"):
 
 def balance_and_shuffle(
     ds,
-    class_a_label: str,
-    class_b_label: str,
+    label_column: str,
     max_examples: int,
     seed: int,
     strategy: str = "proportional",
 ):
     """
     Subsamples and shuffles the dataset.
-    strategy="balanced" forces a 50/50 split (may aggressively downsample majority class).
+    strategy="balanced" forces an equal split across all unique classes.
     strategy="proportional" respects the natural class imbalance of the dataset.
     """
-    if max_examples > 0:
-        from datasets import concatenate_datasets
+    if max_examples <= 0:
+        return ds.shuffle(seed=seed)
 
-        class_a = ds.filter(lambda x: x["answer"] == class_a_label)
-        class_b = ds.filter(lambda x: x["answer"] == class_b_label)
+    from datasets import concatenate_datasets
 
-        if strategy == "balanced":
-            take_a = min(max_examples // 2, len(class_a))
-            take_b = min(max_examples // 2, len(class_b))
-        else:  # proportional
-            total_avail = len(class_a) + len(class_b)
-            if total_avail == 0:
-                return ds.shuffle(seed=seed)
-            ratio_a = len(class_a) / total_avail
-            take_a = min(int(max_examples * ratio_a), len(class_a))
-            # allocate the remainder to b, bounded by b's total size
-            take_b = min(max_examples - take_a, len(class_b))
+    unique_labels = list(set(ds[label_column]))
+    unique_labels = [label for label in unique_labels if label is not None]
 
-        ds = concatenate_datasets(
-            [class_a.select(range(take_a)), class_b.select(range(take_b))]
-        )
+    class_datasets = {
+        label: ds.filter(lambda x: x[label_column] == label) for label in unique_labels
+    }
+    total_avail = sum(len(c_ds) for c_ds in class_datasets.values())
 
+    if total_avail == 0:
+        return ds.shuffle(seed=seed)
+
+    selected_datasets = []
+    if strategy == "balanced":
+        take_per_class = max_examples // len(unique_labels)
+        remainder = max_examples % len(unique_labels)
+        for i, (label, c_ds) in enumerate(class_datasets.items()):
+            take = min(take_per_class + (1 if i < remainder else 0), len(c_ds))
+            selected_datasets.append(c_ds.select(range(take)))
+    else:  # proportional
+        taken_total = 0
+        for i, (label, c_ds) in enumerate(class_datasets.items()):
+            if i == len(unique_labels) - 1:
+                # Last class takes whatever is left (bounded by its size)
+                take = min(max_examples - taken_total, len(c_ds))
+            else:
+                ratio = len(c_ds) / total_avail
+                take = min(int(max_examples * ratio), len(c_ds))
+            selected_datasets.append(c_ds.select(range(take)))
+            taken_total += take
+
+    ds = concatenate_datasets(selected_datasets)
     return ds.shuffle(seed=seed)

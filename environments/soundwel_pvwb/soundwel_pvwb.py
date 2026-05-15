@@ -153,7 +153,7 @@ class FARMRubric(vf.Rubric):
         self.add_metric(self.clean_refusals)
         self.add_metric(self.messy_refusals)
         self.add_metric(self.valid_attempts)
-        
+
         # Add dynamic trackers to surface mode-collapse directly in the Verifiers TUI
         for c in self.classes:
             self.add_metric(self._make_pred_tracker(c))
@@ -169,20 +169,24 @@ class FARMRubric(vf.Rubric):
 
     def _make_pred_tracker(self, class_name: str):
         """Creates a tracking metric for how often the model predicts this class."""
+
         async def tracker(state: dict) -> float:
             pred = state.get("farm_pred", "")
             if not pred:
                 return 0.0
             return 1.0 if str(pred).lower() == class_name.lower() else 0.0
+
         tracker.__name__ = f"pred_{class_name.lower()}"
         return tracker
 
     def _make_actual_tracker(self, class_name: str):
         """Creates a tracking metric for how often this class is the true target."""
+
         async def tracker(answer: str) -> float:
             if not answer:
                 return 0.0
             return 1.0 if str(answer).lower() == class_name.lower() else 0.0
+
         tracker.__name__ = f"actual_{class_name.lower()}"
         return tracker
 
@@ -272,10 +276,23 @@ TASK_CONFIGS = {
         "template": CONTEXT_TEMPLATE,
         "options": "AfterNursing, Barren, BeforeNursing, Castration, Crushing, Enriched, Fighting, Huddling, Isolation, MissedNursing, NegativeConditioning, NovelObject, PositiveConditioning, Restrain, Reunion, Run, or Surprise",
         "classes": [
-            "AfterNursing", "Barren", "BeforeNursing", "Castration", "Crushing", 
-            "Enriched", "Fighting", "Huddling", "Isolation", "MissedNursing", 
-            "NegativeConditioning", "NovelObject", "PositiveConditioning", 
-            "Restrain", "Reunion", "Run", "Surprise"
+            "AfterNursing",
+            "Barren",
+            "BeforeNursing",
+            "Castration",
+            "Crushing",
+            "Enriched",
+            "Fighting",
+            "Huddling",
+            "Isolation",
+            "MissedNursing",
+            "NegativeConditioning",
+            "NovelObject",
+            "PositiveConditioning",
+            "Restrain",
+            "Reunion",
+            "Run",
+            "Surprise",
         ],
     },
     "age_classification": {

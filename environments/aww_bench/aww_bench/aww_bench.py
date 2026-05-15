@@ -187,14 +187,16 @@ def load_environment(
     rubric.add_class_object("judge_parser", judge_parser)
 
     # 3. Declarative Reward & Metric Functions
-    async def accuracy_reward(parser, prompt, completion, answer, info, **kwargs) -> float:
+    async def accuracy_reward(
+        parser, prompt, completion, answer, info, **kwargs
+    ) -> float:
         parsed = parser.parse_answer(completion) or ""
         pred = parsed.strip().lower() if parsed else None
         ans_clean = str(info.get("target_label", "")).strip().lower()
         is_correct = (ans_clean == pred) or (ans_clean in pred)
         return 1.0 if is_correct else 0.0
 
-    async def hybrid_judge_reward(  
+    async def hybrid_judge_reward(
         prompt, completion, answer, state, judge, judge_parser, **kwargs
     ) -> float:
         """LLM-as-a-judge score using self-judge, external-judge, or none."""

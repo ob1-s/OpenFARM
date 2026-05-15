@@ -5,6 +5,8 @@ import verifiers as vf
 from datasets import load_dataset
 from openai import AsyncOpenAI
 
+from .adaptive_judge_rubric import AdaptiveJudgeRubric
+
 logger = logging.getLogger("verifiers.aww_bench")
 
 
@@ -164,7 +166,7 @@ def load_environment(
     assistant_parser = vf.XMLParser(fields=fields, answer_field="answer")
     judge_parser = vf.XMLParser(fields=["reasoning", "score"])
 
-    # 2. Setup the Judge Client & Standard Rubric
+    # 2. Setup the Judge Client & Adaptive Judge Rubric
     if judge_mode == "external":
         vf.ensure_keys([judge_api_key_var])
         judge_client = AsyncOpenAI(
@@ -173,86 +175,39 @@ def load_environment(
     else:
         judge_client = None
 
-    rubric = vf.Rubric(parser=assistant_parser)
+    rubric = AdaptiveJudgeRubric(
+        parser=assistant_parser,
+        judge_mode=judge_mode,
+        judge_client=judge_client,
+        judge_model=judge_model,
+        judge_prompt=JUDGE_PROMPT,
+    )
 
     # Inject the second parser so reward functions can request it via kwargs
     rubric.add_class_object("judge_parser", judge_parser)
 
     # 3. Declarative Reward & Metric Functions
-    async def parse_and_categorize(completion, info, state, parser, **kwargs) -> float:
-        """Single-pass parsing to set categorization in the shared rollout state."""
-        parsed = parser.parse_answer(completion)
-        pred = parsed.strip() if parsed else None
+    async def accuracy_reward(parser, prompt, completion, answer, info, **kwargs) -> float:
+        parsed = parser.parse_answer(completion) or ""
+        pred = parsed.strip().lower() if parsed else None
+        ans_clean = str(info.get("target_label", "")).strip().lower()
+        is_correct = (ans_clean == pred) or (ans_clean in pred)
+        return 1.0 if is_correct else 0.0
 
-        if pred:
-            state["aww_outcome"] = "valid_attempt"
-            state["aww_pred"] = pred
-            ans_clean = str(info.get("target_label", "")).strip().lower()
-            pred_clean = pred.lower()
-
-            state["aww_correct"] = (ans_clean == pred_clean) or (
-                ans_clean in pred_clean
-            )
-        else:
-            state["aww_outcome"] = "format_failure"
-            state["aww_pred"] = None
-            state["aww_correct"] = False
-        return 0.0
-
-    async def valid_attempts(state, **kwargs) -> float:
-        return 1.0 if state.get("aww_outcome") == "valid_attempt" else 0.0
-
-    async def format_failures(state, **kwargs) -> float:
-        return 1.0 if state.get("aww_outcome") == "format_failure" else 0.0
-
-    async def accuracy_reward(state, **kwargs) -> float:
-        return 1.0 if state.get("aww_correct", False) else 0.0
-
-    async def hybrid_judge_reward(
-        prompt, completion, answer, state, judge_parser, **kwargs
+    async def hybrid_judge_reward(  
+        prompt, completion, answer, state, judge, judge_parser, **kwargs
     ) -> float:
         """LLM-as-a-judge score using self-judge, external-judge, or none."""
         if judge_mode == "none":
             return 0.0
 
-        question_text = (
-            prompt[-1]["content"] if isinstance(prompt, list) else str(prompt)
-        )
-
-        if isinstance(completion, list):
-            response_text = str(completion[-1].get("content", ""))
-        else:
-            response_text = str(completion)
-
-        judge_text = JUDGE_PROMPT.format(
-            question=question_text, answer=answer, response=response_text
-        )
-
-        verdict = ""
         try:
-            if judge_mode == "self":
-                policy_client = state["client"]
-                policy_model = state["model"]
-
-                judge_response = await policy_client.get_response(
-                    prompt=[vf.UserMessage(content=judge_text)],
-                    model=policy_model,
-                    sampling_args={"temperature": 0.0, "max_tokens": 512},
-                    state=state,
-                )
-                from verifiers.utils.response_utils import parse_response_message
-
-                verdict_msgs = await parse_response_message(judge_response)
-                verdict = str(verdict_msgs[-1].content or "")
-
-            elif judge_mode == "external":
-                judge_response = await judge_client.chat.completions.create(
-                    model=judge_model,
-                    messages=[{"role": "user", "content": judge_text}],
-                    temperature=0.0,
-                    max_tokens=512,
-                )
-                verdict = judge_response.choices[0].message.content
+            verdict = await judge(
+                prompt=prompt,
+                completion=completion,
+                answer=answer,
+                state=state,
+            )
 
             if verdict:
                 state["judge_reasoning"] = verdict
@@ -279,9 +234,6 @@ def load_environment(
         return 0.0
 
     # 4. Attach Functions to Rubric
-    rubric.add_reward_func(parse_and_categorize, weight=0.0)  # Runs first
-    rubric.add_metric(valid_attempts)
-    rubric.add_metric(format_failures)
     rubric.add_reward_func(accuracy_reward, weight=accuracy_reward_weight)
 
     # Conditionally add the judge reward so it doesn't skew overall scale when ablated

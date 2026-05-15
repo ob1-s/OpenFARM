@@ -69,5 +69,3 @@ Notes:
 | `accuracy_reward` | (0.0 or 1.0) Exact or substring match on the correct Target Category |
 | `judge_reward_func` | (0.0 to 1.0) LLM judge score evaluating how well the model reasoned through the adversarial confounder |
 | `format_reward` | (0.0 to 1.0) Adherence to the requested XML tag format |
-| `valid_attempts` | (0.0 or 1.0) 1.0 if the model successfully outputted a parseable answer |
-| `format_failures` | (0.0 or 1.0) 1.0 if the model failed to output parseable XML tags |

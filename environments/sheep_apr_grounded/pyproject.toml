@@ -1,11 +1,11 @@
 [project]
 name = "sheep-apr-grounded"
 description = "Sheep Pain Recognition Benchmark."
-tags = ["animal-behavior", "animal-welfare", "livestock", "automatic-pain-recognition", "vision", "multimodal", "eval"]
-version = "0.1.0"
+tags = ["animal-behavior", "animal-welfare", "livestock", "automated-pain-recognition", "vision", "multimodal", "eval"]
+version = "0.1.1"
 requires-python = ">=3.10"
 dependencies = [
-    "verifiers>=0.1.11",
+    "verifiers>=0.1.14",
     "Pillow>=12.2.0",
 ]
 

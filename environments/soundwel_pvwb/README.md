@@ -8,7 +8,7 @@
 
 - **Environment ID**: `soundwel-pvwb`
 - **Short description**: Porcine Vocal Welfare Benchmark (PVWB) — a multi-task audio and multimodal evaluation suite for pig vocalization understanding.
-- **Tags**: `animal-welfare`, `audio`, `multimodal`, `eval`, `benchmark`, `livestock`
+- **Tags**: `animal-behavior`, `animal-welfare`, `automated-pain-recognition`, `livestock`, `audio`, `multimodal`, `eval`, `train`
 
 ### Datasets
 
@@ -22,16 +22,15 @@
 - **Type**: Single-turn classification (binary & multi-class).
 - **Available Tasks**: `call_type_classification`, `valence_classification`, `context_classification`, `age_classification`.
 - **Output format expectations**: Strict XML tags parsed via `vf.XMLParser`. 
-  - By default (`require_reasoning=False`), it expects:
+  - By default (`require_explanation=False`), it expects:
       ```xml
       <answer>[Prediction]</answer>
       ```
-  - If `require_reasoning=True`, it expects:
+  - If `require_explanation=True`, it expects:
       ```xml
-      <reasoning>[Step-by-step analysis]</reasoning>
+      <explanation>[Step-by-step analysis]</explanation>
       <answer>[Prediction]</answer>
       ```
-  - **Note**: use `require_reasoning=False` when evaluating or training a reasoning-enabled model.
  
 ### Quickstart
 
@@ -70,7 +69,7 @@ Notes:
 | `target_pad_seconds` | `float` | `3.592` | Seconds to centrally zero-pad audio arrays. Set to `0.0` or `-1.0` to disable padding. |
 | `system_prompt_override`| `str` | `null` | Optional custom string to replace the default ethologist system prompt. |
 | `user_prompt_override` | `str` | `null` | Optional custom template string for the user task prompt. |
-| `require_reasoning` | `bool` | `false` | Whether to require a `<reasoning>` block before the `<answer>` block. |
+| `require_explanation` | `bool` | `false` | Whether to require a `<explanation>` block before the `<answer>` block. |
 | `format_reward_weight` | `float` | `0.0` | Weight for the format reward. |
 | `balancing_strategy` | `str` | `"proportional"` | How to balance classes. `"proportional"` to class balance, `"balanced"` to force equal splits across all N classes. |
 

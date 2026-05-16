@@ -60,8 +60,8 @@ AGE_TEMPLATE = """{modality_instruction} What is the age category of the pig? (P
 {escape_hatch_note}{format_instructions}"""
 
 FORMAT_WITH_REASONING = """Respond using this format:
-<reasoning>[your step-by-step analysis]
-</reasoning>
+<explanation>[your step-by-step analysis]
+</explanation>
 <answer>
 [{options}]
 </answer>"""
@@ -132,11 +132,11 @@ class FARMRubric(vf.Rubric):
         self,
         classes: list[str] | None = None,
         use_escape_hatch: bool = False,
-        require_reasoning: bool = False,
+        require_explanation: bool = False,
         format_reward_weight: float = 0.0,
         extra_refusal_keywords: list[str] | None = None,
     ):
-        fields = ["reasoning", "answer"] if require_reasoning else ["answer"]
+        fields = ["explanation", "answer"] if require_explanation else ["answer"]
         self.parser = vf.XMLParser(fields=fields, answer_field="answer")
         super().__init__(parser=self.parser)
         self.use_escape_hatch = use_escape_hatch
@@ -311,6 +311,7 @@ def build_pvwb_env(
     use_escape_hatch: bool,
     max_examples: int,
     dataset_name: str,
+    dataset_revision: str | None,
     train_split: str,
     test_split: str,
     seed: int,
@@ -318,7 +319,7 @@ def build_pvwb_env(
     system_prompt_override: str | None,
     user_prompt_override: str | None,
     extra_refusal_keywords: list[str] | None,
-    require_reasoning: bool = False,
+    require_explanation: bool = False,
     format_reward_weight: float = 0.0,
     balancing_strategy: str = "proportional",
 ) -> vf.SingleTurnEnv:
@@ -328,7 +329,7 @@ def build_pvwb_env(
 
     def get_dataset_builder(split: str):
         def build():
-            ds = get_dataset(dataset_name=dataset_name, split=split)
+            ds = get_dataset(dataset_name=dataset_name, split=split, revision=dataset_revision)
             ds = ds.filter(lambda x: x[label_col] is not None)
 
             # 1. Balance and subsample BEFORE mapping.
@@ -352,7 +353,7 @@ def build_pvwb_env(
 
                 format_instr = (
                     FORMAT_WITH_REASONING
-                    if require_reasoning
+                    if require_explanation
                     else FORMAT_WITHOUT_REASONING
                 )
 
@@ -417,7 +418,7 @@ def build_pvwb_env(
     rubric = FARMRubric(
         classes=task_config.get("classes", []),
         use_escape_hatch=use_escape_hatch,
-        require_reasoning=require_reasoning,
+        require_explanation=require_explanation,
         format_reward_weight=format_reward_weight,
         extra_refusal_keywords=extra_refusal_keywords,
     )
@@ -442,13 +443,14 @@ def load_environment(
     extra_refusal_keywords: list[str] | None = None,
     max_examples_per_task: int = -1,
     dataset_name: str = "oliveirabruno01/soundwel-pig-vocalizations",
+    dataset_revision: str | None = None,
     train_split: str = "train",
     test_split: str = "test",
     seed: int = 42,
     target_pad_seconds: float = 3.592,
     system_prompt_override: str | None = None,
     user_prompt_override: str | None = None,
-    require_reasoning: bool = False,
+    require_explanation: bool = False,
     format_reward_weight: float = 0.0,
     balancing_strategy: str = "proportional",
     **kwargs,
@@ -464,13 +466,14 @@ def load_environment(
         extra_refusal_keywords: List of extra refusal keywords to append to the default list.
         max_examples_per_task: Maximum examples per task (-1 for all).
         dataset_name: HuggingFace dataset ID or local path.
+        dataset_revision: HuggingFace dataset revision.
         train_split: Split to use for training.
         test_split: Split to use for testing.
         seed: Random seed for dataset shuffling.
         target_pad_seconds: Centrally pad audio arrays to this length. Set to 0.0 or -1.0 to disable padding.
         system_prompt_override: Optional custom string to replace system prompt.
         user_prompt_override: Optional custom template string for the user task prompt.
-        require_reasoning: Whether to require reasoning in the model's response.
+        require_explanation: Whether to require reasoning in the model's response.
         format_reward_weight: Weight for the formatting reward.
         balancing_strategy: "proportional" or "balanced". "proportional" to class balance, "balanced" to balance classes.
     """
@@ -498,12 +501,13 @@ def load_environment(
         "seed": seed,
         "max_examples": max_examples_per_task,
         "dataset_name": dataset_name,
+        "dataset_revision": dataset_revision,
         "train_split": train_split,
         "test_split": test_split,
         "target_pad_seconds": target_pad_seconds,
         "system_prompt_override": system_prompt_override,
         "user_prompt_override": user_prompt_override,
-        "require_reasoning": require_reasoning,
+        "require_explanation": require_explanation,
         "format_reward_weight": format_reward_weight,
         "balancing_strategy": balancing_strategy,
     }

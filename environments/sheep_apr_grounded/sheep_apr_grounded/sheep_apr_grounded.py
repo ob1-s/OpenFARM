@@ -10,7 +10,8 @@ from datasets import load_dataset
 from openai import AsyncOpenAI
 
 from .adaptive_judge_rubric import AdaptiveJudgeRubric
-from .cheatsheet import CHEATSHEET
+from .cheatsheet import CHEATSHEET as FULL_CHEATSHEET
+from .cheatsheet_short import CHEATSHEET as SHORT_CHEATSHEET
 
 logger = logging.getLogger("verifiers.sheep_apr_grounded")
 
@@ -24,9 +25,9 @@ Provide your reasoning, then conclude with a final binary classification score (
 {format_instructions}"""
 
 FORMAT_WITH_REASONING = """Respond using this format:
-<reasoning>
+<explanation>
 [your step-by-step analysis of facial features]
-</reasoning>
+</explanation>
 <answer>
 [0 or 1]
 </answer>"""
@@ -71,24 +72,27 @@ def encode_image_to_base64(image: Image.Image) -> str:
 
 def load_environment(
     dataset_id: str = "oliveirabruno01/sheep-facial-expression-benchmark",
+    dataset_revision: str | None = None,
     test_split: str = "train",
     max_examples: int = -1,
     seed: int = 42,
-    require_reasoning: bool = True,
+    require_explanation: bool = True,
     accuracy_reward_weight: float = 1.0,
     judge_reward_weight: float = 1.0,
     format_reward_weight: float = 0.0,
-    judge_mode: Literal["external", "self", "none"] = "external",
+    judge_mode: Literal["external", "self", "none"] = "none",
     judge_model: str = "gpt-4o-mini",
     judge_api_key_var: str = "PRIME_API_KEY",
     judge_base_url: str = "https://api.pinference.ai/api/v1",
     system_prompt_override: str | None = None,
     user_prompt_override: str | None = None,
+    cheatsheet_version: Literal["full", "short"] = "short",
+    cheatsheet_override: str | None = None,
     **kwargs,
 ) -> vf.Environment:
 
     def build_dataset():
-        ds = load_dataset(dataset_id, split=test_split)
+        ds = load_dataset(dataset_id,split=test_split, revision=dataset_revision)
         if seed:
             ds = ds.shuffle(seed=seed)
         if max_examples > 0:
@@ -109,7 +113,7 @@ def load_environment(
                 else USER_PROMPT_TEMPLATE
             )
             format_instr = (
-                FORMAT_WITH_REASONING if require_reasoning else FORMAT_WITHOUT_REASONING
+                FORMAT_WITH_REASONING if require_explanation else FORMAT_WITHOUT_REASONING
             )
 
             prompt_text = user_template.format(
@@ -139,7 +143,7 @@ def load_environment(
         return ds.map(map_to_standard, remove_columns=ds.column_names)
 
     # 1. Define Dual Parsers
-    fields = ["reasoning", "answer"] if require_reasoning else ["answer"]
+    fields = ["explanation", "answer"] if require_explanation else ["answer"]
     assistant_parser = vf.XMLParser(fields=fields, answer_field="answer")
     judge_parser = vf.XMLParser(fields=["assessment", "score"])
 
@@ -161,6 +165,13 @@ def load_environment(
     )
     rubric.add_class_object("judge_parser", judge_parser)
 
+    FINAL_CHEATSHEET = SHORT_CHEATSHEET
+    if cheatsheet_version == "full":
+        FINAL_CHEATSHEET = FULL_CHEATSHEET
+
+    if cheatsheet_override is not None:
+        FINAL_CHEATSHEET = cheatsheet_override
+
     # 3. Declarative Reward & Metric Functions
     async def accuracy_reward(completion, info, parser, **kwargs) -> float:
         parsed = parser.parse_answer(completion)
@@ -180,7 +191,7 @@ def load_environment(
             response_text = str(completion)
 
         parsed_assistant = parser.parse(response_text)
-        reasoning_text = getattr(parsed_assistant, "reasoning", "")
+        reasoning_text = getattr(parsed_assistant, "explanation", "")
 
         if not reasoning_text or not reasoning_text.strip():
             state["judge_assessment"] = "No reasoning provided to evaluate."
@@ -189,7 +200,7 @@ def load_environment(
         # Combine cheatsheet and ground truth for the canonical '{answer}' placeholder
         ground_truth = str(info.get("target_label", "")).strip()
         compound_answer = (
-            f"Ground Truth Label: {ground_truth}\n\nCheatsheet:\n{CHEATSHEET}"
+            f"Ground Truth Label: {ground_truth}\n\nCheatsheet:\n{FINAL_CHEATSHEET}"
         )
 
         # To use the canonical judge() method for evaluating reasoning specifically,
@@ -232,7 +243,7 @@ def load_environment(
     # 4. Attach Functions to the Single Rubric
     rubric.add_reward_func(accuracy_reward, weight=accuracy_reward_weight)
 
-    if judge_mode != "none" and require_reasoning:
+    if judge_mode != "none" and require_explanation:
         rubric.add_reward_func(hybrid_judge_reward, weight=judge_reward_weight)
 
     format_reward = assistant_parser.get_format_reward_func()

@@ -32,14 +32,15 @@ Based on the visual cues and context provided, analyze the animal's affective st
 - Neutral_Resting
 - False_Positive_Morphological
 - False_Positive_Physiological
+- False_Positive_Contextual
 - False_Negative_Masking
 
 {format_instructions}"""
 
 FORMAT_WITH_REASONING = """Respond using this format:
-<reasoning>
+<explanation>
 [your step-by-step analysis]
-</reasoning>
+</explanation>
 <answer>
 [your final classification]
 </answer>"""
@@ -66,9 +67,9 @@ Score the model from 0 to 10 based on:
 2. Did it correctly identify and reason through the adversarial distractor/confounder?
 
 Respond in the following format:
-<reasoning>
+<explanation>
 Briefly explain your reasoning for the score, comparing the model response to the gold standard.
-</reasoning>
+</explanation>
 <score>
 A single number from 0 to 10
 </score>"""
@@ -80,16 +81,17 @@ A single number from 0 to 10
 
 def load_environment(
     dataset_id: str = "oliveirabruno01/AWW-bench",
+    dataset_revision: str | None = None,
     train_split: str = "train",
     test_split: str = "test",
     max_examples: int = -1,
     seed: int = 42,
     include_adversarial_context: bool = True,
-    require_reasoning: bool = False,
+    require_explanation: bool = False,
     accuracy_reward_weight: float = 1.0,
     judge_reward_weight: float = 1.0,
     format_reward_weight: float = 0.0,
-    judge_mode: str = "external",  # "external", "self", or "none"
+    judge_mode: str = "none",  # "external", "self", or "none"
     judge_model: str = "gpt-4.1-mini",
     judge_api_key_var: str = "PRIME_API_KEY",
     judge_base_url: str = "https://api.pinference.ai/api/v1",
@@ -101,7 +103,7 @@ def load_environment(
 
     def get_dataset_builder(split: str) -> callable:
         def build_dataset():
-            ds = load_dataset(dataset_id, split=split)
+            ds = load_dataset(dataset_id, split=split, revision=dataset_revision)
             if seed:
                 ds = ds.shuffle(seed=seed)
             if max_examples > 0:
@@ -126,17 +128,17 @@ def load_environment(
                 )
                 format_instr = (
                     FORMAT_WITH_REASONING
-                    if require_reasoning
+                    if require_explanation
                     else FORMAT_WITHOUT_REASONING
                 )
 
                 adversarial_section = ""
                 if include_adversarial_context and row.get("adversarial_distractor"):
-                    adversarial_section = f"\n[ADDITIONAL INFO]\n{row.get('adversarial_distractor', '')}\n"
+                    adversarial_section = f"\n[FARM MANAGER ASSESSMENT/EXTERNAL CONTEXT]\n{row.get('adversarial_distractor', '')}\n"
 
                 prompt_text = user_template.format(
                     species_class=str(row.get("species_class", "")).capitalize(),
-                    subject_description=row.get("subject_description", ""),
+                    subject_description=row.get("subject_description", "") or row.get("target_subject_species", ""), # retro-compat with older dataset versions
                     context_metadata=row.get("context_metadata", ""),
                     visual_cues=row.get("visual_cues", ""),
                     adversarial_section=adversarial_section,
@@ -162,9 +164,9 @@ def load_environment(
         return build_dataset
 
     # 1. Define Dual Parsers
-    fields = ["reasoning", "answer"] if require_reasoning else ["answer"]
+    fields = ["explanation", "answer"] if require_explanation else ["answer"]
     assistant_parser = vf.XMLParser(fields=fields, answer_field="answer")
-    judge_parser = vf.XMLParser(fields=["reasoning", "score"])
+    judge_parser = vf.XMLParser(fields=["explanation", "score"])
 
     # 2. Setup the Judge Client & Adaptive Judge Rubric
     if judge_mode == "external":
@@ -191,9 +193,9 @@ def load_environment(
         parser, prompt, completion, answer, info, **kwargs
     ) -> float:
         parsed = parser.parse_answer(completion) or ""
-        pred = parsed.strip().lower() if parsed else None
+        pred = parsed.strip().lower() 
         ans_clean = str(info.get("target_label", "")).strip().lower()
-        is_correct = (ans_clean == pred) or (ans_clean in pred)
+        is_correct = bool(pred) and ((ans_clean == pred) or (ans_clean in pred))
         return 1.0 if is_correct else 0.0
 
     async def hybrid_judge_reward(

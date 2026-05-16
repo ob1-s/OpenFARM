@@ -7,7 +7,7 @@
 ### Overview
 - **Environment ID**: `sheep-apr-grounded`
 - **Short description**: Sheep Pain Recognition Benchmark.
-- **Tags**: animal behavior, animal welfare, livestock, automated pain recognition, vision, multimodal, eval
+- **Tags**: animal-behavior, animal-welfare, livestock, automated-pain-recognition, vision, multimodal, eval
 
 ### Datasets
 - **Primary dataset(s)**: `oliveirabruno01/sheep-facial-expression-benchmark`
@@ -16,7 +16,7 @@
 
 ### Task
 - **Type**: single-turn
-- **Output format expectations**: XML tags. Depending on `require_reasoning`, models must output just `<score>...</score>` or both `<thought>...</thought>` (or `<reasoning>...</reasoning>`) and `<score>...</score>`.
+- **Output format expectations**: XML tags. Depending on `require_explanation`, models must output just `<answer>...</answer>` or both `<explanation>...</explanation>` and `<answer>...</answer>`.
 - **Rubric overview**: Evaluates exact-match classification accuracy (0 or 1), XML format adherence, and optionally uses an LLM-as-a-judge to score the model's reasoning against a veterinary clinical cheatsheet.
 
 ### Quickstart
@@ -32,7 +32,7 @@ Configure model and sampling:
 prime eval run sheep-apr-grounded \
   -m openai/gpt-4.1-mini \
   -n 20 -r 3 -t 1024 -T 0.7 \
-  -a '{"require_reasoning": true, "judge_mode": "none"}'  # env-specific args as JSON
+  -a '{"require_explanation": true, "judge_mode": "external"}'  # env-specific args as JSON
 ```
 
 Notes:
@@ -51,10 +51,12 @@ Notes:
 | judge_model | str | "gpt-4o-mini" | The external judge model. |
 | judge_base_url | str | "https://api.openai.com/v1" | The base url for the judge OpenAI client. |
 | judge_api_key_var | str | "OPENAI_API_KEY" | The environment variable containing the judge's API key. |
-| require_reasoning | bool | True | Whether to require step-by-step reasoning in the output. |
+| require_explanation | bool | True | Whether to require step-by-step reasoning in the output. |
 | accuracy_reward_weight | float | 1.0 | The reward weight for matching the exact label. |
 | judge_reward_weight | float | 1.0 | The reward weight for the grounded judge analysis. |
 | format_reward_weight | float | 0.0 | The reward weight for correct XML formatting. |
+| cheatsheet_version | str | "short" | The version of the cheatsheet to use. Can be "short" or "full". |
+| cheatsheet_override | str | None | An override for the cheatsheet. |
 
 ### Metrics
 

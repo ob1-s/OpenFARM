@@ -5,18 +5,26 @@
 
 ### Overview
 - **Environment ID**: `sheep-apr-grounded`
-- **Short description**: Sheep Pain Recognition Benchmark.
-- **Tags**: animal-behavior, animal-welfare, livestock, automated-pain-recognition, vision, multimodal, eval
+- **Short description**: Sheep facial pain-expression benchmark using SPFES-style proxy labels.
+- **Tags**: animal-behavior, animal-welfare, livestock, automated-pain-recognition, facial-expression, pain-proxy-labels, spfes, vision, multimodal, eval
 
 ### Datasets
 - **Primary dataset(s)**: `oliveirabruno01/sheep-facial-expression-benchmark`
-- **Source links**: https://huggingface.co/datasets/oliveirabruno01/sheep-facial-expression-benchmark
-- **Split sizes**: Evaluates on the `train` split by  (246 multimodal examples).
+- **Source links**:
+  - https://huggingface.co/datasets/oliveirabruno01/sheep-facial-expression-benchmark
+  - Original paper: Noor et al. (2020), "Automated sheep facial expression classification using deep transfer learning" (`10.1016/j.compag.2020.105528`)
+  - Original data: Mendeley "Sheep Facial Expression Primary Data-set" (`10.17632/y5sm4smnfr.3`)
+- **Split sizes**: Evaluates on the `train` split (246 multimodal examples).
+
+### Source Caveat
+
+This environment evaluates image-only facial-expression classification. The source paper frames the task as normal/no-pain vs abnormal/pain sheep face classification under Sheep Pain Facial Expression Scale (SPFES) rules, but the original images were gathered from web sources and labeled from visible facial cues. Treat labels as SPFES-style pain-expression proxy labels rather than full clinical pain diagnoses.
 
 ### Task
 - **Type**: single-turn
+- **Target labels**: `0` = normal/no-pain facial expression, `1` = pain-associated/abnormal facial expression.
 - **Output format expectations**: XML tags. Depending on `require_explanation`, models must output just `<answer>...</answer>` or both `<explanation>...</explanation>` and `<answer>...</answer>`.
-- **Rubric overview**: Evaluates exact-match classification accuracy (0 or 1), XML format adherence, and optionally uses an LLM-as-a-judge to score the model's reasoning against a veterinary clinical cheatsheet.
+- **Rubric overview**: Evaluates exact-match classification accuracy (0 or 1), XML format adherence, and optionally uses an LLM-as-a-judge to score whether the model's reasoning is biologically consistent with ovine facial pain-expression scales without overclaiming a clinical diagnosis.
 
 ### Quickstart
 Run an evaluation with default settings:
@@ -64,4 +72,4 @@ Notes:
 | `reward` | Main scalar reward (weighted sum of criteria) |
 | `accuracy_reward` | (0.0 or 1.0) Exact match on target answer (0 or 1) |
 | `format_reward` | (0.0 or 1.0) Reward for correct XML formatting |
-| `judge_reward` | (0.0 to 1.0) Reward for correct reasoning and recall via the clinical cheatsheet |
+| `judge_reward` | (0.0 to 1.0) Reward for biologically sound reasoning against the ovine facial-expression cheatsheet |

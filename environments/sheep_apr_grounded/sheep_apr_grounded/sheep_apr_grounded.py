@@ -15,12 +15,16 @@ from .cheatsheet_short import CHEATSHEET as SHORT_CHEATSHEET
 
 logger = logging.getLogger("verifiers.sheep_apr_grounded")
 
-SYSTEM_PROMPT = "You are a veterinary clinical evaluator. Assess this sheep for pain based on its facial expressions."
+SYSTEM_PROMPT = (
+    "You are evaluating sheep facial-expression cues associated with pain. "
+    "Estimate whether the image matches SPFES-style pain-associated facial features; "
+    "this is an image-only facial-expression classification task, not a full clinical diagnosis."
+)
 
-USER_PROMPT_TEMPLATE = """Recall what you know about established ovine pain assessment methods and apply it to this image.
+USER_PROMPT_TEMPLATE = """Recall what you know about established ovine facial pain-expression scales and apply it to this image.
 
 [TASK]
-Provide your reasoning, then conclude with a final binary classification score (0 = No Pain, 1 = Pain).
+Provide your reasoning, then conclude with a final binary classification score (0 = normal/no-pain facial expression, 1 = pain-associated/abnormal facial expression).
 
 {format_instructions}"""
 
@@ -37,7 +41,7 @@ FORMAT_WITHOUT_REASONING = """Respond using this format:
 [0 or 1]
 </answer>"""
 
-JUDGE_PROMPT = """Evaluate this multimodal reasoning task about sheep pain detection.
+JUDGE_PROMPT = """Evaluate this multimodal reasoning task about sheep facial pain-expression classification.
 
 [BACKGROUND KNOWLEDGE & GROUND TRUTH]
 {answer}
@@ -49,6 +53,7 @@ Score the student's reasoning on a scale from 0 to 10 based purely on biological
 - Does the student correctly recall and define ovine Facial Action Units (FAUs) and recognized grimace scales?
 - Do they avoid hallucinating fake signals or misrepresenting how the scales work?
 - Is their medical logic internally consistent and matched to the facts?
+- Do they avoid overclaiming a full clinical diagnosis from an image-only facial-expression proxy label?
 (Note: You do not see the actual image; you are purely grading if their written medical logic is internally consistent).
 
 Respond in the following format:

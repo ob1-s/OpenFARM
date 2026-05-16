@@ -1,7 +1,7 @@
 [project]
 name = "sheep-apr-grounded"
-description = "Sheep Pain Recognition Benchmark."
-tags = ["animal-behavior", "animal-welfare", "livestock", "automated-pain-recognition", "vision", "multimodal", "eval"]
+description = "Sheep facial pain-expression benchmark using SPFES-style proxy labels."
+tags = ["animal-behavior", "animal-welfare", "livestock", "automated-pain-recognition", "facial-expression", "pain-proxy-labels", "spfes", "vision", "multimodal", "eval"]
 version = "0.1.2"
 requires-python = ">=3.10"
 dependencies = [

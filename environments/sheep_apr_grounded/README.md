@@ -1,8 +1,7 @@
 # sheep-apr-grounded
 
-<a href="https://github.com/ob1-s/happy-farm/tree/main/environments/sheep_apr_grounded">
-<img src="https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white" alt="Source Code">
-</a>
+[![GitHub](https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/ob1-s/happy-farm/tree/main/environments/sheep_apr_grounded)&nbsp;&nbsp;[![Prime Intellect](https://img.shields.io/badge/Prime%20Intellect-Envs%20Hub-181717?style=for-the-badge&labelColor=181717)](https://app.primeintellect.ai/dashboard/environments/hfarm/sheep-apr-grounded)&nbsp;&nbsp;[![Hugging Face](https://img.shields.io/badge/Hugging%20Face-Dataset-181717?style=for-the-badge&logo=huggingface&logoColor=yellow&labelColor=181717)](https://huggingface.co/datasets/oliveirabruno01/sheep-facial-expression-benchmark)
+
 
 ### Overview
 - **Environment ID**: `sheep-apr-grounded`

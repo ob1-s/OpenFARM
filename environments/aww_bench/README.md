@@ -1,8 +1,6 @@
 # aww-bench
 
-<a href="https://github.com/ob1-s/happy-farm/tree/main/environments/aww_bench">
-<img src="https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white" alt="Source Code">
-</a>
+[![GitHub](https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/ob1-s/happy-farm/tree/main/environments/aww_bench)&nbsp;&nbsp;[![Prime Intellect](https://img.shields.io/badge/Prime%20Intellect-Envs%20Hub-181717?style=for-the-badge&labelColor=181717)](https://app.primeintellect.ai/dashboard/environments/hfarm/aww-bench)&nbsp;&nbsp;[![Hugging Face](https://img.shields.io/badge/Hugging%20Face-Dataset-181717?style=for-the-badge&logo=huggingface&logoColor=yellow&labelColor=181717)](https://huggingface.co/datasets/oliveirabruno01/AWW-bench)
 
 ### Overview
 - **Environment ID**: `aww-bench`

@@ -1,10 +1,21 @@
-# aww-bench
+# openfarm-aww
 
-[![GitHub](https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/ob1-s/happy-farm/tree/main/environments/aww_bench)&nbsp;&nbsp;[![Prime Intellect](https://img.shields.io/badge/Prime%20Intellect-Envs%20Hub-181717?style=for-the-badge&labelColor=181717)](https://app.primeintellect.ai/dashboard/environments/hfarm/aww-bench)&nbsp;&nbsp;[![Hugging Face](https://img.shields.io/badge/Hugging%20Face-Dataset-181717?style=for-the-badge&logo=huggingface&logoColor=yellow&labelColor=181717)](https://huggingface.co/datasets/oliveirabruno01/AWW-bench)
+<p>
+  <a href="https://github.com/ob1-s/happy-farm/tree/main/environments/openfarm_aww">
+    <img align="left" hspace="4" src="https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white" alt="GitHub">
+  </a>
+  <a href="https://app.primeintellect.ai/dashboard/environments/openfarm/openfarm-aww">
+    <img align="left" hspace="4" src="https://img.shields.io/badge/Prime%20Intellect-Envs%20Hub-181717?style=for-the-badge&labelColor=181717&logoColor=white" alt="Prime Intellect Environments Hub">
+  </a>
+  <a href="https://huggingface.co/datasets/oliveirabruno01/AWW-bench">
+    <img align="left" hspace="4" src="https://img.shields.io/badge/Hugging%20Face-Dataset-181717?style=for-the-badge&logo=huggingface&logoColor=yellow&labelColor=181717" alt="Hugging Face Dataset">
+  </a>
+</p>
+<br clear="all" />
 
 ### Overview
-- **Environment ID**: `aww-bench`
-- **Short description**: Animal Welfare Watcher: Single-turn evaluation environment testing a model's ability to classify animal welfare states while reasoning through biological confounders and adversarial distractors.
+- **Environment ID**: `openfarm-aww`
+- **Short description**: Adversarial Animal Welfare Watcher: Single-turn evaluation environment testing a model's ability to classify animal welfare states while reasoning through biological confounders and adversarial distractors.
 - **Tags**: animal-behavior, animal-welfare, livestock, automated-pain-recognition, llm-judge, self-judge, single-turn, reasoning, eval, train
 
 ### Datasets
@@ -21,13 +32,13 @@
 Run an evaluation with default settings:
 
 ```bash
-prime eval run aww-bench
+prime eval run openfarm-aww
 ```
 
 Configure model and sampling:
 
 ```bash
-prime eval run aww-bench \
+prime eval run openfarm-aww \
   -m openai/gpt-4.1-mini \
   -n 20 -r 3 -t 1024 -T 0.7 \
   -a '{"require_explanation": true, "include_adversarial_context": false}'  # env-specific args as JSON

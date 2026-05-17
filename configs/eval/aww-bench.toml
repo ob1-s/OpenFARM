@@ -6,7 +6,7 @@ max_retries = 5
 save_results = true
 
 [[ablation]]
-env_id = "aww-bench"
+env_id = "openfarm-aww"
 
 [ablation.sweep]
 model = ["Qwen/Qwen3.5-0.8B:a7pu386ne6ymi57920ipa54x", "Qwen/Qwen3.5-0.8B"]

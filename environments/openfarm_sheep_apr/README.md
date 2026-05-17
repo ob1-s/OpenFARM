@@ -1,10 +1,20 @@
-# sheep-apr-grounded
+# openfarm-sheep-apr
 
-[![GitHub](https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/ob1-s/happy-farm/tree/main/environments/sheep_apr_grounded)&nbsp;&nbsp;[![Prime Intellect](https://img.shields.io/badge/Prime%20Intellect-Envs%20Hub-181717?style=for-the-badge&labelColor=181717)](https://app.primeintellect.ai/dashboard/environments/hfarm/sheep-apr-grounded)&nbsp;&nbsp;[![Hugging Face](https://img.shields.io/badge/Hugging%20Face-Dataset-181717?style=for-the-badge&logo=huggingface&logoColor=yellow&labelColor=181717)](https://huggingface.co/datasets/oliveirabruno01/sheep-facial-expression-benchmark)
-
+<p>
+  <a href="https://github.com/ob1-s/happy-farm/tree/main/environments/openfarm_sheep_apr">
+    <img align="left" hspace="4" src="https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white" alt="GitHub">
+  </a>
+  <a href="https://app.primeintellect.ai/dashboard/environments/openfarm/openfarm-sheep-apr">
+    <img align="left" hspace="4" src="https://img.shields.io/badge/Prime%20Intellect-Envs%20Hub-181717?style=for-the-badge&labelColor=181717&logoColor=white" alt="Prime Intellect Environments Hub">
+  </a>
+  <a href="https://huggingface.co/datasets/oliveirabruno01/sheep-facial-expression-benchmark">
+    <img align="left" hspace="4" src="https://img.shields.io/badge/Hugging%20Face-Dataset-181717?style=for-the-badge&logo=huggingface&logoColor=yellow&labelColor=181717" alt="Hugging Face Dataset">
+  </a>
+</p>
+<br clear="all" />
 
 ### Overview
-- **Environment ID**: `sheep-apr-grounded`
+- **Environment ID**: `openfarm-sheep-apr`
 - **Short description**: Sheep facial pain-expression benchmark using SPFES-style proxy labels.
 - **Tags**: animal-behavior, animal-welfare, livestock, automated-pain-recognition, facial-expression, pain-proxy-labels, spfes, vision, multimodal, eval
 
@@ -30,13 +40,13 @@ This environment evaluates image-only facial-expression classification. The sour
 Run an evaluation with default settings:
 
 ```bash
-prime eval run sheep-apr-grounded
+prime eval run openfarm-sheep-apr
 ```
 
 Configure model and sampling:
 
 ```bash
-prime eval run sheep-apr-grounded \
+prime eval run openfarm-sheep-apr \
   -m openai/gpt-4.1-mini \
   -n 20 -r 3 -t 1024 -T 0.7 \
   -a '{"require_explanation": true, "judge_mode": "external"}'  # env-specific args as JSON

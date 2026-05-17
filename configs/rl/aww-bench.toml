@@ -10,7 +10,7 @@ temperature = 1.0
 enable_thinking = false
 
 [[env]]
-id = "hfarm/aww-bench"
+id = "openfarm/openfarm-aww"
 name = "aww-casual"
 
 [env.args]

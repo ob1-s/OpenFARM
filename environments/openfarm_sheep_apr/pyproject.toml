@@ -1,8 +1,8 @@
 [project]
-name = "sheep-apr-grounded"
+name = "openfarm-sheep-apr"
 description = "Sheep facial pain-expression benchmark using SPFES-style proxy labels."
 tags = ["animal-behavior", "animal-welfare", "livestock", "automated-pain-recognition", "facial-expression", "pain-proxy-labels", "spfes", "vision", "multimodal", "eval"]
-version = "0.1.2"
+version = "0.1.0"
 requires-python = ">=3.10"
 dependencies = [
     "verifiers>=0.1.14",
@@ -15,10 +15,11 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build]
 include = [
-    "sheep_apr_grounded/**/*",
+    "openfarm_sheep_apr/**/*",
     "pyproject.toml",
     "README.md"
 ]
+
 [tool.verifiers.eval]
 num_examples = 5
 rollouts_per_example = 3

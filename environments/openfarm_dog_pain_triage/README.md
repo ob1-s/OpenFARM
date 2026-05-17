@@ -1,9 +1,20 @@
-# dog-pain-triage
+# openfarm-dog-pain-triage
 
-[![GitHub](https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/ob1-s/happy-farm/tree/main/environments/dog_pain_triage)&nbsp;&nbsp;[![Prime Intellect](https://img.shields.io/badge/Prime%20Intellect-Envs%20Hub-181717?style=for-the-badge&labelColor=181717)](https://app.primeintellect.ai/dashboard/environments/hfarm/dog-pain-triage)&nbsp;&nbsp;[![Hugging Face](https://img.shields.io/badge/Hugging%20Face-Dataset-181717?style=for-the-badge&logo=huggingface&logoColor=yellow&labelColor=181717)](https://huggingface.co/datasets/oliveirabruno01/openfarm-dog-pain)
+<p>
+  <a href="https://github.com/ob1-s/happy-farm/tree/main/environments/openfarm_dog_pain_triage">
+    <img align="left" hspace="4" src="https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white" alt="GitHub">
+  </a>
+  <a href="https://app.primeintellect.ai/dashboard/environments/openfarm/openfarm-dog-pain-triage">
+    <img align="left" hspace="4" src="https://img.shields.io/badge/Prime%20Intellect-Envs%20Hub-181717?style=for-the-badge&labelColor=181717&logoColor=white" alt="Prime Intellect Environments Hub">
+  </a>
+  <a href="https://huggingface.co/datasets/oliveirabruno01/openfarm-dog-pain">
+    <img align="left" hspace="4" src="https://img.shields.io/badge/Hugging%20Face-Dataset-181717?style=for-the-badge&logo=huggingface&logoColor=yellow&labelColor=181717" alt="Hugging Face Dataset">
+  </a>
+</p>
+<br clear="all" />
 
 ### Overview
-- **Environment ID**: `dog-pain-triage`
+- **Environment ID**: `openfarm-dog-pain-triage`
 - **Short description**: A canine clinical text triage environment evaluating whether models can accurately deduce OpenFARM/AWW affective pain states from leakage-safe tabular veterinary metadata.
 - **Tags**: animal-welfare, veterinary, dog, pain, clinical-text, openfarm, llm-judge, single-turn, eval, train
 
@@ -31,13 +42,13 @@
 Run an evaluation with default settings (uses the balanced `test` split):
 
 ```bash
-prime eval run dog-pain-triage
+prime eval run openfarm-dog-pain-triage
 ```
 
 Evaluate on the natural, imbalanced raw distribution to check for mode collapse:
 
 ```bash
-prime eval run dog-pain-triage \
+prime eval run openfarm-dog-pain-triage \
   -m openai/gpt-4.1-mini \
   -n 100 -r 1 \
   -a '{"test_split": "test_raw", "require_explanation": true}'

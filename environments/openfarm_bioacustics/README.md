@@ -1,11 +1,21 @@
 # openfarm-bioacustics
 
+<p>
+  <a href="https://github.com/ob1-s/happy-farm/tree/main/environments/openfarm_bioacustics">
+    <img align="left" hspace="4" src="https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white" alt="GitHub">
+  </a>
+  <a href="https://app.primeintellect.ai/dashboard/environments/openfarm/openfarm-bioacustics">
+    <img align="left" hspace="4" src="https://img.shields.io/badge/Prime%20Intellect-Envs%20Hub-181717?style=for-the-badge&labelColor=181717&logoColor=white" alt="Prime Intellect Environments Hub">
+  </a>
+</p>
+<br clear="all" />
+
+## Overview
+
 OpenFARM Bioacoustics is a task-registry environment for animal vocalization
 benchmarks. It keeps each source dataset/task explicit, while exposing a single
 SoundWel-like interface for audio, spectrogram, multimodal, and text/acoustic
 metadata ablations.
-
-## Overview
 
 - **Environment ID**: `openfarm-bioacustics`
 - **Type**: single-turn classification / EnvGroup when multiple tasks are selected
@@ -29,10 +39,6 @@ time.
 | `laying_hen_stress_context` | `oliveirabruno01/openfarm-laying-hen-stress` | experimental stress context |
 | `laying_hen_stress_binary` | `oliveirabruno01/openfarm-laying-hen-stress` | stress-response binary |
 | `ungulate_valence` | `oliveirabruno01/openfarm-ungulate-valence` | `Positive` / `Negative` |
-
-Legacy SoundWel task names are accepted as aliases:
-`valence_classification`, `context_classification`, `call_type_classification`,
-and `age_classification`.
 
 ## Quickstart
 

@@ -7,15 +7,6 @@ max_retries = 5
 save_results = true
 
 [[eval]]
-env_id = "catmeows-audio-context"
-
-[eval.env_args]
-max_examples_per_task = -1
-require_explanation = true
-modality = "audio"
-seed = 42
-
-[[eval]]
 env_id = "openfarm-bioacustics"
 
 [eval.env_args]

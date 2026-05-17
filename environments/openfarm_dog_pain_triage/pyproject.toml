@@ -1,8 +1,8 @@
 [project]
-name = "dog-pain-triage"
+name = "openfarm-dog-pain-triage"
 description = "A canine clinical text triage environment evaluating whether models can accurately deduce OpenFARM/AWW affective pain states from leakage-safe tabular veterinary metadata."
 tags = ["animal-welfare", "veterinary", "dog", "pain", "clinical-text", "openfarm", "llm-judge", "single-turn", "eval", "train"]
-version = "0.1.1"
+version = "0.1.0"
 requires-python = ">=3.10"
 dependencies = [
     "verifiers>=0.1.14",
@@ -14,7 +14,7 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build]
 include = [
-    "dog_pain_triage/**/*", 
+    "openfarm_dog_pain_triage/**/*", 
     "pyproject.toml"
 ] 
 

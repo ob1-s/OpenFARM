@@ -1,7 +1,7 @@
 [project]
-name = "happy-farm"
+name = "openfarm"
 version = "0.1.0"
-description = "Add your description here"
+description = "OpenFarm Lab for Animal Welfare Research and Monitoring"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [

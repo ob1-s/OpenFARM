@@ -1,4 +1,4 @@
-# prime eval run sheep-apr-grounded -m Qwen/Qwen3.5-0.8B -a '{"max_examples_per_task": 2, "require_reasoning": true, "judge_mode": "self"}' -n 2 -r 2 --disable-env-server --disable-tui
+# prime eval run openfarm-sheep-apr -m Qwen/Qwen3.5-0.8B -a '{"max_examples_per_task": 2, "require_reasoning": true, "judge_mode": "self"}' -n 2 -r 2 --disable-env-server --disable-tui
 endpoints_path = "../../endpoints.toml"
 
 model = "Qwen/Qwen3.5-0.8B"
@@ -12,7 +12,7 @@ save_results = true
 disable_env_server = true
 
 [[eval]]
-env_id = "sheep-apr-grounded"
+env_id = "openfarm-sheep-apr"
 
 [eval.env_args]
 max_examples_per_task = 2

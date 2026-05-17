@@ -1,0 +1,22 @@
+model = "google/gemini-3-flash-preview"
+num_examples = -1
+rollouts_per_example = 3
+max_concurrent = 8
+max_retries = 5
+
+save_results = true
+
+[[ablation]]
+env_id = "openfarm-bioacustics"
+
+[ablation.env_args]
+task = "laying_hen_stress_context"
+max_examples_per_task = -1
+require_explanation = true
+include_tabular_data = false
+max_audio_seconds = 15.0
+audio_clip_strategy = "even_windows"
+seed = 42
+
+[ablation.sweep.env_args]
+modality = ["audio", "vision", "text"]

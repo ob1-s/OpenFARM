@@ -7,26 +7,21 @@ max_retries = 5
 save_results = true
 
 [[ablation]]
-env_id = "soundwel-pvwb"
+env_id = "openfarm-bioacustics"
 
 [ablation.env_args]
 max_examples_per_task = 4
-require_reasoning = true
+require_explanation = true
 balancing_strategy = "balanced"
-task = "valence_classification"
+task = "soundwel_valence"
 include_tabular_data = false
 seed = 42
 # system_prompt_override = "You are an expert ethologist specializing in swine welfare and vocalization analysis. CRITICAL ACOUSTIC RULES FOR THIS TASK: 1) Positive calls are consistently SHORTER in duration than negative calls. 2) Positive calls have a LOWER Amplitude Modulation Rate. Listen carefully to the length of the audio and the amplitude modulation to determine if it is Positive or Negative."
 
 [ablation.sweep.env_args]
 modality = [
-    "text",
     "audio",
     # "vision",
     # "multimodal", # cross-modal (img+audio)
-]
-data_subset = [
-    "clear",
-    "challenging",
-    # "average",
+    # "text", # text-only w/ tabular data
 ]

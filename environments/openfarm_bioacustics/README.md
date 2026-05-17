@@ -66,12 +66,18 @@ prime eval run openfarm-bioacustics \
 | `balancing_strategy` | str | `"proportional"` | `proportional` or `balanced` when subsampling. |
 | `target_pad_seconds` | float | `3.592` | Center-pads short audio before encoding. |
 | `max_audio_seconds` | float/null | `null` | Clips long audio before encoding or spectrogram generation. |
-| `audio_clip_strategy` | str | `"start"` | `start` or `center` for clipping long recordings. |
+| `audio_clip_strategy` | str | `"start"` | `start`, `center`, or `even_windows` for clipping long recordings. |
 | `require_explanation` | bool | `false` | Requires an `<explanation>` field before `<answer>`. |
 | `format_reward_weight` | float | `0.0` | Optional XML format reward weight. |
 
-The laying-hen tasks default to a 15-second audio budget because source recordings
-can be long.
+The laying-hen dataset prep now writes bounded public audio artifacts: 15-second
+mono 16 kHz excerpts built with `even_windows` from the longer Zenodo source
+recordings. The task still defaults to `max_audio_seconds=15.0` and
+`audio_clip_strategy="even_windows"` as a safety net for older dataset revisions
+or local experiments that point the env at full source recordings. The source
+data does not provide stress-event timestamps, so the windowing policy samples
+short positions across the recording instead of assuming the first or middle
+seconds contain the relevant vocal response.
 
 ## Metrics
 

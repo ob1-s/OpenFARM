@@ -17,7 +17,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build]
-include = ["openfarm_bioacustics.py", "pyproject.toml"] 
+include = ["openfarm_bioacustics/**/*", "pyproject.toml"]
 
 [tool.verifiers.eval]
 num_examples = 5

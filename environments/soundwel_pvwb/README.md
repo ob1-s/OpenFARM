@@ -57,8 +57,7 @@ Notes:
 | `task` | `str` \| `list` | `"valence_classification"` | Which task(s) to run. Pass `"all"` for the full suite, or a list of task names (`call_type_classification`, `valence_classification`, `context_classification`, `age_classification`). |
 | `modality` | `str` | `"audio"` | Data modality to present: `"audio"` (wav), `"vision"` (spectrogram), `"multimodal"` (both), or `"text"` (tabular only). |
 | `include_tabular_data` | `bool` | `false` | If `true`, injects programmatic acoustic and demographic features as a markdown list in the prompt. (Forced `true` if `modality="text"`). |
-| `use_escape_hatch` | `bool` | `false` | If `true`, allows the model to output `UNINTELLIGIBLE` for missing or completely silent samples without penalty. |
-| `extra_refusal_keywords`| `list[str]`| `null` | Optional list of extra strings appended to the messy refusal keyword list. |
+| `use_escape_hatch` | `bool` | `false` | If `true`, adds `UNINTELLIGIBLE` to the prompt options for missing or completely silent samples. Normal labeled samples still score against the gold label. |
 | `max_examples_per_task`| `int` | `-1` | Limit on dataset size per task (use `-1` for all available rows). |
 | `dataset_name` | `str` | `"oliveirabruno01/...`" | HuggingFace dataset ID or local path. |
 | `train_split` | `str` | `"train"` | Split used to populate the RL training dataset. |
@@ -78,6 +77,3 @@ Notes:
 | `reward` | Weighted sum of accuracy and format rewards. |
 | `accuracy_reward` | `1.0` if the parsed answer correctly identifies the true label, `0.0` otherwise. |
 | `format_reward` | `1.0` if the required XML schema was successfully generated, `0.0` otherwise. |
-| `valid_attempts` | `1.0` if the model successfully provided a parsable, non-refusal prediction. |
-| `clean_refusals` | `1.0` if the model explicitly used the escape hatch (`UNINTELLIGIBLE`). |
-| `messy_refusals` | `1.0` if the model output conversational refusal keywords (e.g. "missing audio file"). |

@@ -1,0 +1,24 @@
+[project]
+name = "openfarm-bioacustics"
+description = "OpenFARM bioacoustic classification suite for animal vocalization benchmarks"
+tags = ["openfarm", "bioacoustics", "audio", "multimodal", "train", "eval"]
+version = "0.1.0"
+requires-python = ">=3.10"
+dependencies = [
+    "datasets>=2.18.0",
+    "numpy>=1.24.0",
+    "pillow>=10.0.0",
+    "soundfile>=0.12.1",
+    "verifiers>=0.1.14",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build]
+include = ["openfarm_bioacustics.py", "pyproject.toml"] 
+
+[tool.verifiers.eval]
+num_examples = 5
+rollouts_per_example = 3

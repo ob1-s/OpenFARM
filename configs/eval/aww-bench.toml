@@ -1,0 +1,20 @@
+num_examples = -1
+rollouts_per_example = 3
+max_concurrent = 32
+max_retries = 5
+
+save_results = true
+
+[[ablation]]
+env_id = "aww-bench"
+
+[ablation.sweep]
+model = ["Qwen/Qwen3.5-0.8B:a7pu386ne6ymi57920ipa54x", "Qwen/Qwen3.5-0.8B"]
+
+[ablation.env_args]
+max_examples_per_task = -1
+require_reasoning = true
+judge_mode = "none" # "self" | "external" | "none"
+
+[ablation.sweep.env_args]
+include_adversarial_context = [true, false]

@@ -65,6 +65,7 @@ FORMAT_WITHOUT_REASONING = """Respond using this format:
 SOUNDWEL_DATASET = "oliveirabruno01/soundwel-pig-vocalizations"
 CATMEOWS_DATASET = "oliveirabruno01/openfarm-catmeows"
 LAYING_HEN_DATASET = "oliveirabruno01/openfarm-laying-hen-stress"
+UNGULATE_DATASET = "oliveirabruno01/openfarm-ungulate-valence"
 
 SOUNDWEL_TABULAR_KEYS = [
     "Age Category",
@@ -98,6 +99,16 @@ LAYING_HEN_TABULAR_KEYS = [
     "sample_rate_hz",
     "channels",
     "mfcc_segment_count",
+]
+
+UNGULATE_TABULAR_KEYS = [
+    "duration_sec",
+    "sample_rate_hz",
+    "channels",
+    "rms_energy",
+    "peak_abs_amplitude",
+    "zero_crossing_rate",
+    "spectral_centroid_hz",
 ]
 
 TASK_CONFIGS: dict[str, dict[str, Any]] = {
@@ -226,6 +237,28 @@ TASK_CONFIGS: dict[str, dict[str, Any]] = {
         "max_audio_seconds": 15.0,
         "audio_clip_strategy": "even_windows",
     },
+    "ungulate_valence": {
+        "dataset_name": UNGULATE_DATASET,
+        "label_column": "valence",
+        "subject": "an ungulate contact-call recording",
+        "question": (
+            "Is the source-labeled emotional valence of this ungulate "
+            "vocalization Positive or Negative?"
+        ),
+        "options": ["Positive", "Negative"],
+        "answer_aliases": {
+            "Positive": ["positive", "pos"],
+            "Negative": ["negative", "neg"],
+        },
+        "tabular_keys": UNGULATE_TABULAR_KEYS,
+        "info_keys": [
+            "species",
+            "duration_sec",
+            "soundwel_overlap_risk",
+            "audio_filename",
+        ],
+        "target_pad_seconds": 0.0,
+    },
 }
 
 TASK_ALIASES = {
@@ -237,4 +270,6 @@ TASK_ALIASES = {
     "cat_context": "catmeows_context",
     "hen_stress_context": "laying_hen_stress_context",
     "hen_stress_binary": "laying_hen_stress_binary",
+    "ungulate_audio_valence": "ungulate_valence",
+    "ungulate_valence_classification": "ungulate_valence",
 }

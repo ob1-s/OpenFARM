@@ -96,7 +96,6 @@ def format_tabular_data(row: dict, task_config: dict, label_column: str) -> str:
         "audio_filename",
         "source_filename",
         "source_path",
-        "openfarm_id",
     }
     exclude.update(task_config.get("exclude_columns", set()))
 

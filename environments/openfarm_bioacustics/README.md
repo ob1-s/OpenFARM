@@ -28,6 +28,7 @@ time.
 | `catmeows_context` | `oliveirabruno01/openfarm-catmeows` | feline source context |
 | `laying_hen_stress_context` | `oliveirabruno01/openfarm-laying-hen-stress` | experimental stress context |
 | `laying_hen_stress_binary` | `oliveirabruno01/openfarm-laying-hen-stress` | stress-response binary |
+| `ungulate_valence` | `oliveirabruno01/openfarm-ungulate-valence` | `Positive` / `Negative` |
 
 Legacy SoundWel task names are accepted as aliases:
 `valence_classification`, `context_classification`, `call_type_classification`,
@@ -54,6 +55,14 @@ prime eval run openfarm-bioacustics \
   -a '{"task": "catmeows_context", "modality": "vision", "max_examples_per_task": 20}'
 ```
 
+Run the ungulate valence benchmark on its balanced, non-pig animal-heldout test
+split:
+
+```bash
+prime eval run openfarm-bioacustics \
+  -a '{"task": "ungulate_valence", "modality": "audio", "max_examples_per_task": 20}'
+```
+
 ## Environment Arguments
 
 | Arg | Type | Default | Description |
@@ -70,14 +79,26 @@ prime eval run openfarm-bioacustics \
 | `require_explanation` | bool | `false` | Requires an `<explanation>` field before `<answer>`. |
 | `format_reward_weight` | float | `0.0` | Optional XML format reward weight. |
 
-The laying-hen dataset prep now writes bounded public audio artifacts: 15-second
-mono 16 kHz excerpts built with `even_windows` from the longer Zenodo source
-recordings. The task still defaults to `max_audio_seconds=15.0` and
-`audio_clip_strategy="even_windows"` as a safety net for older dataset revisions
-or local experiments that point the env at full source recordings. The source
-data does not provide stress-event timestamps, so the windowing policy samples
-short positions across the recording instead of assuming the first or middle
-seconds contain the relevant vocal response.
+## Dataset Notes
+
+### Laying Hen Stress
+
+- Public audio artifacts are bounded 15-second mono 16 kHz excerpts.
+- Excerpts use `even_windows` over the longer Zenodo recordings because the
+  source data does not provide stress-event timestamps.
+- The task still defaults to `max_audio_seconds=15.0` and
+  `audio_clip_strategy="even_windows"` as a safety net for older dataset
+  revisions or local experiments pointed at full source recordings.
+
+### Ungulate Valence
+
+- Headline evals should use the cleaned, balanced `train`/`test` split pair.
+- `train_raw` and `test_raw` preserve the natural non-pig class distribution for
+  explicit diagnostics.
+- `pig_family_heldout` isolates domestic pig and wild boar rows for optional
+  transfer checks against SoundWel/PVWB-adjacent work.
+- Default tabular prompts use only acoustic features. Context, source reference,
+  and animal ID can be predictive of the valence label.
 
 ## Metrics
 

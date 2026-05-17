@@ -1,10 +1,11 @@
 {
   "choices": {
     "agents": [
+      "codex",
       "opencode"
     ],
-    "primary_agent": "opencode",
-    "use_multiple_agents": false
+    "primary_agent": "codex",
+    "use_multiple_agents": true
   },
-  "setup_source": "prime lab setup"
+  "setup_source": "prime lab sync"
 }

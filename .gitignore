@@ -12,3 +12,18 @@ wheels/
 # outputs from `prime eval run`
 ./outputs
 ./environments/*/outputs
+
+data
+notebooks
+
+# Lab generated artifacts
+.env
+/outputs/
+/prime-rl/
+/environments/*/outputs/
+/environments/*/dist/
+/environments/*/*.egg-info/
+/environments/*/__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/

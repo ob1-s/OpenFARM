@@ -34,7 +34,7 @@ Classify the animal's affective state into exactly one of the following categori
 
 FORMAT_WITH_REASONING = """Respond using this format:
 <explanation>
-[your step-by-step clinical reasoning]
+[reasoning]
 </explanation>
 <answer>
 [your final classification]

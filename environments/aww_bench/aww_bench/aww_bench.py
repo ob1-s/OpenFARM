@@ -39,7 +39,7 @@ Based on the visual cues and context provided, analyze the animal's affective st
 
 FORMAT_WITH_REASONING = """Respond using this format:
 <explanation>
-[your step-by-step analysis]
+[reasoning]
 </explanation>
 <answer>
 [your final classification]

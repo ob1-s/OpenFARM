@@ -30,7 +30,7 @@ Provide your reasoning, then conclude with a final binary classification score (
 
 FORMAT_WITH_REASONING = """Respond using this format:
 <explanation>
-[your step-by-step analysis of facial features]
+[reasoning]
 </explanation>
 <answer>
 [0 or 1]

@@ -61,6 +61,7 @@ Notes:
 | Arg | Type | Default | Description |
 | --- | ---- | ------- | ----------- |
 | dataset_id | str | "oliveirabruno01/sheep-facial-expression-benchmark" | The ID of the dataset to use. |
+| train_split | str | "train" | The train split to use for training/rollout datasets. |
 | test_split | str | "test" | The test split to use. |
 | max_examples | int | -1 | The maximum number of examples to load from the dataset. |
 | seed | int | 42 | The seed to use for dataset shuffling. |

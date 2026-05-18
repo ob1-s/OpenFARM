@@ -78,7 +78,8 @@ def encode_image_to_base64(image: Image.Image) -> str:
 def load_environment(
     dataset_id: str = "oliveirabruno01/sheep-facial-expression-benchmark",
     dataset_revision: str | None = None,
-    test_split: str = "train",
+    train_split: str = "train",
+    test_split: str = "test",
     max_examples: int = -1,
     seed: int = 42,
     require_explanation: bool = True,
@@ -96,56 +97,63 @@ def load_environment(
     **kwargs,
 ) -> vf.Environment:
 
-    def build_dataset():
-        ds = load_dataset(dataset_id,split=test_split, revision=dataset_revision)
-        if seed:
-            ds = ds.shuffle(seed=seed)
-        if max_examples > 0:
-            ds = ds.select(range(min(max_examples, len(ds))))
+    def get_dataset_builder(split: str) -> callable:
+        def build_dataset():
+            ds = load_dataset(dataset_id, split=split, revision=dataset_revision)
+            if seed:
+                ds = ds.shuffle(seed=seed)
+            if max_examples > 0:
+                ds = ds.select(range(min(max_examples, len(ds))))
 
-        def map_to_standard(example):
-            base64_image = encode_image_to_base64(example["image"])
-            ground_truth = str(example["label"]).strip()
+            def map_to_standard(example):
+                base64_image = encode_image_to_base64(example["image"])
+                ground_truth = str(example["label"]).strip()
 
-            sys_prompt = (
-                system_prompt_override
-                if system_prompt_override is not None
-                else SYSTEM_PROMPT
-            )
-            user_template = (
-                user_prompt_override
-                if user_prompt_override is not None
-                else USER_PROMPT_TEMPLATE
-            )
-            format_instr = (
-                FORMAT_WITH_REASONING if require_explanation else FORMAT_WITHOUT_REASONING
-            )
+                sys_prompt = (
+                    system_prompt_override
+                    if system_prompt_override is not None
+                    else SYSTEM_PROMPT
+                )
+                user_template = (
+                    user_prompt_override
+                    if user_prompt_override is not None
+                    else USER_PROMPT_TEMPLATE
+                )
+                format_instr = (
+                    FORMAT_WITH_REASONING
+                    if require_explanation
+                    else FORMAT_WITHOUT_REASONING
+                )
 
-            prompt_text = user_template.format(
-                format_instructions=format_instr,
-            )
+                prompt_text = user_template.format(
+                    format_instructions=format_instr,
+                )
 
-            # Wrap the system prompt content in a list so it matches the multimodal user message schema
-            prompt = [
-                {"role": "system", "content": [{"type": "text", "text": sys_prompt}]},
-                {
-                    "role": "user",
-                    "content": [
-                        {"type": "text", "text": prompt_text},
-                        {"type": "image_url", "image_url": {"url": base64_image}},
-                    ],
-                },
-            ]
+                prompt = [
+                    {
+                        "role": "system",
+                        "content": [{"type": "text", "text": sys_prompt}],
+                    },
+                    {
+                        "role": "user",
+                        "content": [
+                            {"type": "text", "text": prompt_text},
+                            {"type": "image_url", "image_url": {"url": base64_image}},
+                        ],
+                    },
+                ]
 
-            return {
-                "prompt": prompt,
-                "answer": ground_truth,
-                "info": {
-                    "target_label": ground_truth,
-                },
-            }
+                return {
+                    "prompt": prompt,
+                    "answer": ground_truth,
+                    "info": {
+                        "target_label": ground_truth,
+                    },
+                }
 
-        return ds.map(map_to_standard, remove_columns=ds.column_names)
+            return ds.map(map_to_standard, remove_columns=ds.column_names)
+
+        return build_dataset
 
     # 1. Define Dual Parsers
     fields = ["explanation", "answer"] if require_explanation else ["answer"]
@@ -256,7 +264,8 @@ def load_environment(
     rubric.add_reward_func(format_reward, weight=format_reward_weight)
 
     return vf.SingleTurnEnv(
-        eval_dataset=build_dataset,
+        dataset=get_dataset_builder(train_split),
+        eval_dataset=get_dataset_builder(test_split),
         parser=assistant_parser,
         rubric=rubric,
         **kwargs,

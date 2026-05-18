@@ -1,0 +1,30 @@
+model = "Qwen/Qwen3.5-2B"
+
+# Run settings
+max_steps = 500
+batch_size = 256          
+rollouts_per_example = 8
+
+[sampling]
+max_tokens = 768
+temperature = 0.9
+enable_thinking = false
+
+[[env]]
+id = "openfarm/openfarm-aww"
+
+[env.args]
+max_examples = 160
+require_explanation = true
+judge_mode = "none"
+format_reward_weight = 0.2
+include_adversarial_context = true
+
+[[env]]
+id = "openfarm/openfarm-dog-pain-triage"
+
+[env.args]
+max_examples = -1
+require_explanation = true
+judge_mode = "none"
+format_reward_weight = 0.2

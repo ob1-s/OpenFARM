@@ -2,7 +2,7 @@
 # `vllm serve google/gemma-4-E2B-it --max-model-len 8192 --limit-mm-per-prompt '{"image": 1, "audio": 1, "video": 1}'`
 endpoint_id = "gemma-4-E2B-it"
 model = "google/gemma-4-E2B-it"
-url = "http://64.247.196.216:8000/v1"
+url = "http://204.52.30.247:8000/v1"
 key = "MY_API_KEY"
 type = "openai_chat_completions"
 
@@ -16,6 +16,13 @@ type = "openai_chat_completions"
 [[endpoint]]
 endpoint_id = "Qwen/Qwen3.5-2B"
 model = "Qwen/Qwen3.5-2B"
+url = "https://api.pinference.ai/api/v1"
+key = "PRIME_API_KEY"
+type = "openai_chat_completions"
+
+[[endpoint]]
+endpoint_id = "Qwen/Qwen3.5-2B:jisqi83hluqfucvp5t1f6ugh"
+model = "Qwen/Qwen3.5-2B:jisqi83hluqfucvp5t1f6ugh"
 url = "https://api.pinference.ai/api/v1"
 key = "PRIME_API_KEY"
 type = "openai_chat_completions"

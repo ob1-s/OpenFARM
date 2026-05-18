@@ -1,7 +1,7 @@
 endpoints_path = "../endpoints.toml"
 
-num_examples = -1
-rollouts_per_example = 4
+num_examples = 48
+rollouts_per_example = 3
 max_concurrent = 32
 max_retries = 5
 
@@ -11,16 +11,17 @@ save_results = true
 env_id = "openfarm-dog-pain-triage"
 
 [ablation.env_args]
-modality = "audio"
+modality = "vision"
 judge_mode = "none" # "self" | "external" | "none"
-require_explanation = false
-max_examples_per_task = -1
+require_explanation = true
+max_examples_per_task = 48
 seed = 42
 
 [ablation.sweep]
 endpoint_id = [
+    "Qwen/Qwen3.5-2B",
     "google/gemini-3-flash-preview",
 ]
 sampling_args = [
-    { extra_body = { chat_template_kwargs = { enable_thinking = true } } },
+    { extra_body = { chat_template_kwargs = { enable_thinking = false } } },
 ]

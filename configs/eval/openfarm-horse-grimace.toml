@@ -1,6 +1,6 @@
 endpoints_path = "../endpoints.toml"
 
-num_examples = 6
+num_examples = 24
 rollouts_per_example = 3
 max_concurrent = 6
 max_retries = 5
@@ -14,20 +14,21 @@ env_id = "openfarm-horse-grimace"
 test_split = "test"
 include_region_context = true
 judge_mode = "none" # "self" | "external" | "none"
-require_explanation = false
-max_examples_per_task = 6
+require_explanation = true
+max_examples_per_task = 24
 seed = 42
 
 [ablation.sweep]
 endpoint_id = [
+    "Qwen/Qwen3.5-2B",
     "google/gemini-3-flash-preview",
 ]
 sampling_args = [
-    { extra_body = { chat_template_kwargs = { enable_thinking = true } } },
+    { extra_body = { chat_template_kwargs = { enable_thinking = false } } },
 ]
 
 [ablation.sweep.env_args]
 task = [
-    "region_score",
+    # "region_score",
     "binary_pain",
 ]

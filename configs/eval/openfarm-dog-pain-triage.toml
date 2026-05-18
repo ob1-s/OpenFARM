@@ -1,0 +1,26 @@
+endpoints_path = "../endpoints.toml"
+
+num_examples = -1
+rollouts_per_example = 4
+max_concurrent = 32
+max_retries = 5
+
+save_results = true
+
+[[ablation]]
+env_id = "openfarm-dog-pain-triage"
+
+[ablation.env_args]
+modality = "audio"
+judge_mode = "none" # "self" | "external" | "none"
+require_explanation = false
+max_examples_per_task = -1
+seed = 42
+
+[ablation.sweep]
+endpoint_id = [
+    "google/gemini-3-flash-preview",
+]
+sampling_args = [
+    { extra_body = { chat_template_kwargs = { enable_thinking = true } } },
+]

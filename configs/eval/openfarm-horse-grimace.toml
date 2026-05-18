@@ -1,0 +1,33 @@
+endpoints_path = "../endpoints.toml"
+
+num_examples = 6
+rollouts_per_example = 3
+max_concurrent = 6
+max_retries = 5
+
+save_results = true
+
+[[ablation]]
+env_id = "openfarm-horse-grimace"
+
+[ablation.env_args]
+test_split = "test"
+include_region_context = true
+judge_mode = "none" # "self" | "external" | "none"
+require_explanation = false
+max_examples_per_task = 6
+seed = 42
+
+[ablation.sweep]
+endpoint_id = [
+    "google/gemini-3-flash-preview",
+]
+sampling_args = [
+    { extra_body = { chat_template_kwargs = { enable_thinking = true } } },
+]
+
+[ablation.sweep.env_args]
+task = [
+    "region_score",
+    "binary_pain",
+]

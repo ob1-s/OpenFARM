@@ -40,6 +40,15 @@ time.
 | `laying_hen_stress_binary` | `oliveirabruno01/openfarm-laying-hen-stress` | stress-response binary |
 | `ungulate_valence` | `oliveirabruno01/openfarm-ungulate-valence` | `Positive` / `Negative` |
 
+## Source Attribution
+
+| Dataset | Prepared HF Dataset | Source Dataset / Paper |
+| --- | --- | --- |
+| SoundWel pig vocalizations | [`oliveirabruno01/soundwel-pig-vocalizations`](https://huggingface.co/datasets/oliveirabruno01/soundwel-pig-vocalizations) | The Soundwel Database: a labeled pig vocalization repository, Zenodo record [`8252482`](https://zenodo.org/records/8252482), DOI [`10.1038/s41598-022-07174-8`](https://doi.org/10.1038/s41598-022-07174-8), CC-BY-4.0 |
+| CatMeows | [`oliveirabruno01/openfarm-catmeows`](https://huggingface.co/datasets/oliveirabruno01/openfarm-catmeows) | CatMeows: A Publicly-Available Dataset of Cat Vocalizations, Zenodo record [`4008297`](https://zenodo.org/records/4008297), DOI [`10.5281/zenodo.4008297`](https://doi.org/10.5281/zenodo.4008297), CC-BY-4.0 |
+| Laying hen stress vocalizations | [`oliveirabruno01/openfarm-laying-hen-stress`](https://huggingface.co/datasets/oliveirabruno01/openfarm-laying-hen-stress) | Vocalization Patterns in Laying Hens - An Analysis of Stress-Induced Audio Responses, Zenodo record [`10433023`](https://zenodo.org/records/10433023), DOI [`10.5281/zenodo.10433023`](https://doi.org/10.5281/zenodo.10433023), CC-BY-4.0 |
+| Ungulate vocalization valence | [`oliveirabruno01/openfarm-ungulate-valence`](https://huggingface.co/datasets/oliveirabruno01/openfarm-ungulate-valence) | Machine Learning Algorithms Can Predict Emotional Valence Across Ungulate Vocalizations, Zenodo record [`14636641`](https://zenodo.org/records/14636641), DOI [`10.5281/zenodo.14636641`](https://doi.org/10.5281/zenodo.14636641), CC-BY-4.0 |
+
 ## Quickstart
 
 ```bash

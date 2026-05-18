@@ -22,9 +22,9 @@
 - **Primary dataset(s)**: `oliveirabruno01/sheep-facial-expression-benchmark`
 - **Source links**:
   - https://huggingface.co/datasets/oliveirabruno01/sheep-facial-expression-benchmark
-  - Original paper: Noor et al. (2020), "Automated sheep facial expression classification using deep transfer learning" (`10.1016/j.compag.2020.105528`)
-  - Original data: Mendeley "Sheep Facial Expression Primary Data-set" (`10.17632/y5sm4smnfr.3`)
-- **Split sizes**: Evaluates on the `train` split (246 multimodal examples).
+  - Original paper: Noor et al. (2020), "Automated sheep facial expression classification using deep transfer learning" ([`10.1016/j.compag.2020.105528`](https://doi.org/10.1016/j.compag.2020.105528))
+  - Original data: Mendeley "Sheep Facial Expression Primary Data-set" ([`10.17632/y5sm4smnfr.5`](https://doi.org/10.17632/y5sm4smnfr.5)), CC-BY-4.0.
+- **Split sizes**: `train` 172 / `test` 74 balanced examples; `train_raw` 898 / `test_raw` 225 natural-distribution examples.
 
 ### Source Caveat
 
@@ -61,7 +61,7 @@ Notes:
 | Arg | Type | Default | Description |
 | --- | ---- | ------- | ----------- |
 | dataset_id | str | "oliveirabruno01/sheep-facial-expression-benchmark" | The ID of the dataset to use. |
-| test_split | str | "train" | The test split to use. |
+| test_split | str | "test" | The test split to use. |
 | max_examples | int | -1 | The maximum number of examples to load from the dataset. |
 | seed | int | 42 | The seed to use for dataset shuffling. |
 | judge_mode | str | "external" | The judging strategy: "external", "self", or "none". |

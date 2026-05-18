@@ -22,7 +22,7 @@
 - **Primary dataset(s)**: `oliveirabruno01/openfarm-dog-pain`
 - **Source links**:
   - [Hugging Face Datasets](https://huggingface.co/datasets/oliveirabruno01/openfarm-dog-pain)
-  - [Zenodo Record 15303646](https://zenodo.org/records/15303646)
+  - Dog Pain Database: A Multidimensional Dataset for Investigating Canine Pain, [Zenodo record 15303646](https://zenodo.org/records/15303646), DOI [`10.5281/zenodo.15303646`](https://doi.org/10.5281/zenodo.15303646), CC-BY-4.0.
 - **Split sizes**:
   - `train` (68 rows) / `test` (18 rows): Strictly class-balanced, dog-heldout splits to prevent majority-class memorization during RL training.
   - `train_raw` (441 rows) / `test_raw` (116 rows): The natural, highly imbalanced dog-heldout distribution.

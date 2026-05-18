@@ -1,29 +1,30 @@
 [[endpoint]]
+# `vllm serve google/gemma-4-E2B-it --max-model-len 8192 --limit-mm-per-prompt '{"image": 1, "audio": 1, "video": 1}'`
 endpoint_id = "gemma-4-E2B-it"
 model = "google/gemma-4-E2B-it"
-url = "http://0.0.0.0:8000/v1"
+url = "http://64.247.196.216:8000/v1"
 key = "MY_API_KEY"
 type = "openai_chat_completions"
 
 [[endpoint]]
-endpoint_id = "gemma-4-E4B-it"
-model = "google/gemma-4-E4B-it"
-url = "http://0.0.0.0:8000/v1"
-key = "MY_API_KEY"
+endpoint_id = "google/gemini-3-flash-preview"
+model = "google/gemini-3-flash-preview"
+url = "https://api.pinference.ai/api/v1"
+key = "PRIME_API_KEY"
 type = "openai_chat_completions"
 
 [[endpoint]]
-endpoint_id = "gemma-4-26B-A4B-it"
-model = "google/gemma-4-26B-A4B-it"
-url = "http://0.0.0.0:8000/v1"
-key = "MY_API_KEY"
+endpoint_id = "Qwen/Qwen3.5-2B"
+model = "Qwen/Qwen3.5-2B"
+url = "https://api.pinference.ai/api/v1"
+key = "PRIME_API_KEY"
 type = "openai_chat_completions"
 
 [[endpoint]]
-endpoint_id = "gemini-3.1-flash-lite"
-model = "gemini-3.1-flash-lite"
-url = "https://generativelanguage.googleapis.com/v1beta/openai/"
-key = "GEMINI_KEY_KEY"
+endpoint_id = "Qwen/Qwen3.5-4B"
+model = "Qwen/Qwen3.5-4B"
+url = "https://api.pinference.ai/api/v1"
+key = "PRIME_API_KEY"
 type = "openai_chat_completions"
 
 [[endpoint]]
@@ -113,13 +114,6 @@ type = "openai_chat_completions"
 [[endpoint]]
 endpoint_id = "gemini-2.5-pro"
 model = "google/gemini-2.5-pro"
-url = "https://api.pinference.ai/api/v1"
-key = "PRIME_API_KEY"
-type = "openai_chat_completions"
-
-[[endpoint]]
-endpoint_id = "gemini-3-flash-preview"
-model = "google/gemini-3-flash-preview"
 url = "https://api.pinference.ai/api/v1"
 key = "PRIME_API_KEY"
 type = "openai_chat_completions"

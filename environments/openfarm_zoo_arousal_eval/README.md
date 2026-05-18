@@ -34,9 +34,9 @@ scientific signal for this env.
 
 ## Dataset
 
-- **Primary dataset**: `oliveirabruno01/openfarm-zoo-valence-arousal`
-- **Source**: Figshare collection `10.6084/m9.figshare.c.7807931`
-- **Article**: Hiisivuori et al. (2025), *Human recognition of emotional valence and arousal of zoo animals*, `10.1038/s41598-025-28646-7`
+- **Primary dataset**: [`oliveirabruno01/openfarm-zoo-valence-arousal`](https://huggingface.co/datasets/oliveirabruno01/openfarm-zoo-valence-arousal)
+- **Source**: Figshare collection [`10.6084/m9.figshare.c.7807931`](https://doi.org/10.6084/m9.figshare.c.7807931)
+- **Article**: Hiisivuori et al. (2025), *Human recognition of emotional valence and arousal of zoo animals*, [`10.1038/s41598-025-28646-7`](https://doi.org/10.1038/s41598-025-28646-7)
 - **Split sizes**: 15 `test` examples
 - **Species**: Barbary macaque, Siberian tiger, Turkmenian markhor
 

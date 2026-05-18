@@ -21,6 +21,7 @@
 ### Datasets
 - **Primary dataset(s)**: `oliveirabruno01/AWW-bench` (Dataset containing visual cue descriptions, context metadata, and adversarial biological confounders)
 - **Source links**: [Hugging Face Datasets](https://huggingface.co/datasets/oliveirabruno01/AWW-bench)
+- **Source basis**: Synthetic OpenFARM benchmark items built from the local animal-welfare reference notes in [`animal-data`](https://github.com/ob1-s/animal-data), which compile species-specific pain, stress, and welfare-scale literature for the AWW task ontology.
 - **Split sizes**: 232 `train` tasks and 40 `test` tasks.
 
 ### Task

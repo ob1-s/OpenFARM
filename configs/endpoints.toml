@@ -5,12 +5,25 @@ url = "http://0.0.0.0:8000/v1"
 key = "MY_API_KEY"
 type = "openai_chat_completions"
 
+[[endpoint]]
+endpoint_id = "gemma-4-E4B-it"
+model = "google/gemma-4-E4B-it"
+url = "http://0.0.0.0:8000/v1"
+key = "MY_API_KEY"
+type = "openai_chat_completions"
+
+[[endpoint]]
+endpoint_id = "gemma-4-26B-A4B-it"
+model = "google/gemma-4-26B-A4B-it"
+url = "http://0.0.0.0:8000/v1"
+key = "MY_API_KEY"
+type = "openai_chat_completions"
 
 [[endpoint]]
 endpoint_id = "gemini-3.1-flash-lite"
 model = "gemini-3.1-flash-lite"
 url = "https://generativelanguage.googleapis.com/v1beta/openai/"
-key = "GEMINI_KEY_5"
+key = "GEMINI_KEY_KEY"
 type = "openai_chat_completions"
 
 [[endpoint]]
@@ -105,8 +118,8 @@ key = "PRIME_API_KEY"
 type = "openai_chat_completions"
 
 [[endpoint]]
-endpoint_id = "gemini-3-flash"
-model = "google/gemini-3-flash"
+endpoint_id = "gemini-3-flash-preview"
+model = "google/gemini-3-flash-preview"
 url = "https://api.pinference.ai/api/v1"
 key = "PRIME_API_KEY"
 type = "openai_chat_completions"

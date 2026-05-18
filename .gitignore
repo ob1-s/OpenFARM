@@ -14,7 +14,6 @@ wheels/
 ./environments/*/outputs
 
 data
-notebooks
 
 # Lab generated artifacts
 .env
@@ -28,6 +27,6 @@ notebooks
 .pytest_cache/
 .ruff_cache/
 
-.agents/
-.prime/
+/.agents/
+/.prime/
 .prime-managed-link

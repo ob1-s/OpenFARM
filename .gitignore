@@ -27,3 +27,7 @@ notebooks
 *.py[cod]
 .pytest_cache/
 .ruff_cache/
+
+.agents/
+.prime/
+.prime-managed-link

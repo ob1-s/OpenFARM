@@ -32,7 +32,8 @@ def _token(value: Any) -> str:
 
 
 def inspect_rows(splits: dict[str,list[dict]], key: str|None, group: str|None, label: str,
-                 expected_splits: list[str]|None, *, complete: bool=True) -> dict:
+                 expected_splits: list[str]|None, *, complete: bool=True,
+                 subset_key: str|None=None) -> dict:
     """Compare group/identity boundaries and raw-vs-balanced views; no green on missing evidence."""
     findings = []
     def note(level, code, detail):
@@ -71,11 +72,15 @@ def inspect_rows(splits: dict[str,list[dict]], key: str|None, group: str|None, l
     # Balanced train/test are EXPECTED to be subsets of their raw counterparts.
     for small,big in (('train','train_raw'),('test','test_raw')):
         if small in present and big in present:
-            if key:
-                a={_token(r.get(key)) for r in present[small]}
-                b={_token(r.get(key)) for r in present[big]}
+            effective_subset_key = subset_key or key
+            if effective_subset_key:
+                a={_token(r.get(effective_subset_key)) for r in present[small]}
+                b={_token(r.get(effective_subset_key)) for r in present[big]}
                 extra=a-b
+                extra.discard('')
                 if extra: note('error','view_not_subset',f'{small} has {len(extra)} IDs absent from {big}')
+                if '' in a or '' in b:
+                    note('incomplete','subset_key_missing',f'{small}/{big}: incomplete source identity fields')
             else: note('incomplete','subset_unverifiable',f'{small}/{big}: no stable sample ID')
 
     # Only compare source-disjoint splits, never train vs train_raw or test vs test_raw.
@@ -143,6 +148,13 @@ def hub_splits(dataset: str, revision: str, max_rows: int|None) -> dict[str,list
                 if isinstance(payload,dict) and isinstance(payload.get('bytes'),bytes):
                     safe_row[f'__{media_col}_bytes_sha256']=hashlib.sha256(
                         payload['bytes']).hexdigest()
+            if dataset == SOURCES['sheep'][0] and row.get('source_filename') is not None:
+                # Sheep filenames are reused *across label directories*. Their
+                # (filename, label) tuple is a candidate provenance key, not
+                # a cryptographic sample fingerprint.
+                safe_row['__sheep_source_label_key'] = (
+                    str(row['source_filename']) + '::' + str(row.get('label'))
+                )
             rows.append(safe_row)
         out[split]=rows
     return out
@@ -160,7 +172,10 @@ def main():
     sha=HfApi().dataset_info(dsid).sha
     if not sha: raise RuntimeError(f'Cannot resolve immutable revision for {dsid}')
     splits=hub_splits(dsid,sha,args.max_rows)
-    report=inspect_rows(splits,key,group,label,expected,complete=args.max_rows is None)
+    report=inspect_rows(
+        splits,key,group,label,expected,complete=args.max_rows is None,
+        subset_key='__sheep_source_label_key' if args.dataset=='sheep' else None
+    )
     report['dataset']=dsid; report['revision']=sha; report['sample_only']=args.max_rows is not None
     # Verify whether published audio_sha256 claims describe the actual media bytes.
     media_checks={}

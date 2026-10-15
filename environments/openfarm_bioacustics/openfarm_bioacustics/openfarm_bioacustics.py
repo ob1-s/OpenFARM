@@ -353,7 +353,7 @@ def build_task_env(
 
 
 def load_environment(
-    task: str | list[str] = "soundwel_valence",
+    task: str | list[str] = "catmeows_context",
     modality: str = "audio",
     include_tabular_data: bool = False,
     use_escape_hatch: bool = False,
@@ -402,8 +402,24 @@ def load_environment(
         raise ValueError(
             f"Unknown modality {modality!r}. Valid: {sorted(valid_modalities)}"
         )
-    if modality == "text":
-        include_tabular_data = True
+    # Our *retained* tasks test observable audio, not metadata reconstruction.
+    # Metadata-only features can reveal species/condition proxies and are
+    # not interchangeable with a recording-based decision.
+    if modality == "text" or include_tabular_data:
+        raise ValueError(
+            "Only recording/spectrogram observations are supported in the "
+            "retained OpenFARM suite. Metadata-only evaluation is retired."
+        )
+    if dataset_name is not None:
+        raise ValueError(
+            "Unreviewed dataset_name override is not an active-suite dataset. "
+            "Audit and register the new source revision before using it."
+        )
+    if (train_split,test_split) not in {("train","test"),("train_raw","test_raw")}:
+        raise ValueError(
+            "Unsupported split combination: use matched published train/test "
+            "or train_raw/test_raw only."
+        )
 
     if task == "all":
         selected_tasks = list(TASK_CONFIGS)
@@ -412,21 +428,14 @@ def load_environment(
     else:
         selected_tasks = [canonical_task_name(name) for name in task]
 
-    # Published ungulate raw train/test splits share 94 byte-identical audio
-    # recordings despite different group IDs (verified 2026-10-15).
-    # Balanced splits have not been independently certified. Require explicit
-    # diagnostic override until a new grouped/media-deduplicated split exists.
-    if (
-        "ungulate_valence" in selected_tasks
-        and not allow_uncertified_ungulate_eval
-    ):
-        raise ValueError(
-            "Ungulate valence evaluation is quarantined: published splits "
-            "have confirmed cross-split audio duplication (94 SHA-256 IDs in "
-            "train_raw/test_raw); balanced splits remain uncertified. "
-            "Pass allow_uncertified_ungulate_eval=True ONLY for forensic "
-            "diagnostics, not benchmark claims. See docs/system1/INITIAL_ASSET_AUDIT.md."
-        )
+    # Retired data cannot be reintroduced through the old forensic override.
+    # The commit history retains the original environment for reproduction.
+    retired = [name for name in selected_tasks if name not in TASK_CONFIGS]
+    if retired:
+        from .task_registry import RETIRED_TASK_REASONS
+        details = {name: RETIRED_TASK_REASONS.get(name, "not in active suite")
+                   for name in retired}
+        raise ValueError(f"Task retired from active OpenFARM suite: {details}")
 
     unknown = [name for name in selected_tasks if name not in TASK_CONFIGS]
     if unknown:
@@ -435,6 +444,19 @@ def load_environment(
             f"aliases: {list(TASK_ALIASES)}"
         )
 
+    pinned_revisions = {
+        "soundwel_call_type": "4164e39798c2e65bce5ef8d56159d98e1267f577",
+        "catmeows_context": "57fe220b22eae46eb555af9f4169bd4677584cea",
+    }
+    if dataset_revision is not None and any(
+        dataset_revision != pinned_revisions[name] for name in selected_tasks
+    ):
+        raise ValueError("Active suite requires the audited pinned Hugging Face revision.")
+    # Source HF revisions are immutable; never silently drift to latest.
+    if len(selected_tasks)>1:
+        # The tasks have different source revisions and cannot share one
+        # dataset_revision argument without breaking provenance.
+        raise ValueError("Run the two retained task datasets separately.")
     envs = []
     for task_name in selected_tasks:
         logger.info("Building OpenFARM Bioacoustics task: %s", task_name)
@@ -446,8 +468,8 @@ def load_environment(
                 include_tabular_data=include_tabular_data,
                 use_escape_hatch=use_escape_hatch,
                 max_examples=max_examples_per_task,
-                dataset_revision=dataset_revision,
-                dataset_name_override=dataset_name,
+                dataset_revision=pinned_revisions[task_name],
+                dataset_name_override=None,
                 train_split=train_split,
                 test_split=test_split,
                 seed=seed,

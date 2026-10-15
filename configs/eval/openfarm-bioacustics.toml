@@ -12,7 +12,7 @@ env_id = "openfarm-bioacustics"
 
 [ablation.env_args]
 modality = "vision"
-require_explanation = true
+require_explanation = false
 max_examples_per_task = 24
 seed = 3301
 
@@ -28,8 +28,5 @@ sampling_args = [
 [ablation.sweep.env_args]
 task = [
     "catmeows_context",
-    "soundwel_valence",
-    # "soundwel_call_type",
-    "ungulate_valence",
-    "laying_hen_stress_context"
+    "soundwel_call_type"
 ]

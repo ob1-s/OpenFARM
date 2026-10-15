@@ -371,6 +371,7 @@ def load_environment(
     require_explanation: bool = False,
     format_reward_weight: float = 0.0,
     balancing_strategy: str = "proportional",
+    allow_uncertified_ungulate_eval: bool = False,
     **kwargs,
 ) -> vf.Environment:
     """Load the OpenFARM Bioacoustics environment.
@@ -387,6 +388,8 @@ def load_environment(
             or spectrogram generation. Laying-hen tasks default to 15 seconds.
         balancing_strategy: "proportional" or "balanced" when subsampling with
             max_examples_per_task.
+        allow_uncertified_ungulate_eval: Forensic opt-in ONLY; published
+            ungulate splits have verified byte-identical cross-split media.
     """
     if train_split == test_split:
         raise ValueError(
@@ -408,6 +411,22 @@ def load_environment(
         selected_tasks = [canonical_task_name(task)]
     else:
         selected_tasks = [canonical_task_name(name) for name in task]
+
+    # Published ungulate raw train/test splits share 94 byte-identical audio
+    # recordings despite different group IDs (verified 2026-10-15).
+    # Balanced splits have not been independently certified. Require explicit
+    # diagnostic override until a new grouped/media-deduplicated split exists.
+    if (
+        "ungulate_valence" in selected_tasks
+        and not allow_uncertified_ungulate_eval
+    ):
+        raise ValueError(
+            "Ungulate valence evaluation is quarantined: published splits "
+            "have confirmed cross-split audio duplication (94 SHA-256 IDs in "
+            "train_raw/test_raw); balanced splits remain uncertified. "
+            "Pass allow_uncertified_ungulate_eval=True ONLY for forensic "
+            "diagnostics, not benchmark claims. See docs/system1/INITIAL_ASSET_AUDIT.md."
+        )
 
     unknown = [name for name in selected_tasks if name not in TASK_CONFIGS]
     if unknown:

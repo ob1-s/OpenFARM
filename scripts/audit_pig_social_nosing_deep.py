@@ -55,7 +55,7 @@ def diagnostics():
     # Pen name mapping in two source sheets appears different ("FP1" vs "P1"):
     # audit both literal and canonical suffix, never silently join with guesses.
     eventkeys=set((str(r.Batch),str(r.Pen),str(r.Pig)) for r in unique_interaction_ids.itertuples(index=False))
-    orig_keys=set((str(r.Batch),str(r[1]),str(r[2])) for r in unique_animals.itertuples(index=False,name=None))
+    orig_keys=set((str(r[0]),str(r[1]),str(r[2])) for r in unique_animals.itertuples(index=False,name=None))
     clean_keys=set((batch,pen.replace("FP","P"),pig) for batch,pen,pig in orig_keys)
     answer={
         "source":"https://figshare.com/articles/dataset/27960810",

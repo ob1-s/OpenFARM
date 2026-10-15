@@ -67,11 +67,8 @@ def normalize_answer(value: Any, task_config: dict) -> str:
         if text in values:
             return canonical
 
-    for canonical, values in aliases.items():
-        for alias in values:
-            if re.search(rf"\b{re.escape(alias)}\b", text):
-                return canonical
-
+    # Do not accept an answer merely because it contains a valid label.
+    # "Positive or Negative" is not an unambiguous decision.
     return str(mapped).strip()
 
 
@@ -123,13 +120,12 @@ def load_source_dataset(dataset_name: str, split: str, dataset_revision: str | N
     try:
         ds = load_dataset(dataset_name, split=split, revision=dataset_revision)
     except Exception as exc:
-        logger.warning(
-            "Failed to load split %r from %s; falling back to train. Error: %s",
-            split,
-            dataset_name,
-            exc,
-        )
-        ds = load_dataset(dataset_name, split="train", revision=dataset_revision)
+        # A missing or inaccessible test split MUST NOT silently become 'train'.
+        # Fail closed for every split, including transient network/revision errors.
+        raise RuntimeError(
+            f"Could not load requested split {split!r} from {dataset_name!r} "
+            f"(revision={dataset_revision!r}); no fallback dataset was used."
+        ) from exc
 
     if "audio" in ds.column_names:
         ds = ds.cast_column("audio", Audio(decode=False))

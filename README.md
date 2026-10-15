@@ -18,10 +18,9 @@ OpenFARM is an open research program investigating **small, fast, typed, calibra
 | Task | Exact supervised target | What it **doesn't** establish |
 |---|---|---|
 | `openfarm-horse-grimace` / `region_score` | Ordinal facial-region grimace cue score 0–2 | Clinical pain, welfare diagnosis, unseen-farm generalization |
-| `openfarm-bioacoustics` / `catmeows_context` | The recording's elicitation context | Animal distress, welfare valence or disease |
-| `openfarm-bioacoustics` / `soundwel_call_type` | Source-defined acoustic HF/LF class (provisional, grouping audit incomplete) | Calibrated welfare detection or pig-level independent transfer |
+| `openfarm-bioacoustics` / `catmeows_context` | Recording elicitation context, with **owner-heldout repaired train view** | Animal distress, welfare valence or disease |
 
-Other old environments and tasks have been removed from active evaluation. Their implementations and preparation notebooks remain for archaeological reproducibility; retired environment loaders refuse execution, and old eval/RL TOMLs were removed. The original Hugging Face repositories have **not** been deleted or edited.
+All other old environments and tasks (including SoundWel) have been removed from active evaluation. Their implementations and preparation notebooks remain for archaeological reproducibility; retired environment loaders refuse execution, and old eval/RL TOMLs were removed. The original Hugging Face repositories have **not** been deleted or edited.
 
 ### Reproducible checks
 

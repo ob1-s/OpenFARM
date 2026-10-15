@@ -27,6 +27,8 @@ Vision mode uses a source spectrogram column when one exists. For audio-only
 datasets, the environment generates a compact spectrogram from the audio at load
 time.
 
+> **Research integrity notice (2026-10-15):** The published `ungulate_valence` task is **quarantined by default**. Both balanced and raw train/test views share byte-identical audio recordings across partitions (4 and 94 distinct hashes respectively). Pass `allow_uncertified_ungulate_eval=True` only for forensic diagnostics; these scores are not valid independent held-out results. See [System-1 evaluation readiness](../../docs/system1/EVALUATION_READINESS.md).
+
 ## Tasks
 
 | Task | Dataset | Label |

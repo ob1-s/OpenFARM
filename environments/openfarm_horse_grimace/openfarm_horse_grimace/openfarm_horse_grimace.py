@@ -172,15 +172,8 @@ def normalize_answer(value: Any, task_config: dict) -> str:
         if text in values:
             return canonical
 
-    numbers = re.findall(r"\b[0-2]\b", text)
-    if numbers and numbers[-1] in task_config["options"]:
-        return numbers[-1]
-
-    for canonical, aliases in task_config["answer_aliases"].items():
-        for alias in aliases:
-            alias_text = normalized_text(alias)
-            if alias_text and re.search(rf"\b{re.escape(alias_text)}\b", text):
-                return canonical
+    # Require exactly one admissible response. Do not extract a score from
+    # "0 or 2" or accept a class mentioned in additional free text.
     return text
 
 

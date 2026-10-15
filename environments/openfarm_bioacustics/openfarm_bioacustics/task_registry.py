@@ -281,6 +281,7 @@ TASK_ALIASES = {
 # Archived metadata is not permission to run a retired benchmark.
 # ------------------------------------------------------------
 RETIRED_TASK_REASONS = {
+    "soundwel_call_type": "Acoustic label plausible, but 10 reconstructed base-subject groups cross the existing train/test boundary; no trusted repaired grouping yet.",
     "soundwel_valence": "Source context alone predicts valence 100% on covered test categories; not a context-independent welfare signal.",
     "soundwel_context": "17-way experimental-context recognition is not a validated animal-welfare observable; several test classes are absent in training.",
     "soundwel_age": "Source age/category is confounded with recording context and not verified animal-welfare supervision.",
@@ -288,7 +289,7 @@ RETIRED_TASK_REASONS = {
     "laying_hen_stress_binary": "Deterministically derived from treatment/phase; no independently annotated stress event.",
     "ungulate_valence": "Exact audio duplicates across all train/test pairings, inconsistent animal IDs and some contradictory labels.",
 }
-RETAINED_TASKS = frozenset({"soundwel_call_type", "catmeows_context"})
+RETAINED_TASKS = frozenset({"catmeows_context"})
 TASK_CONFIGS = {name: config for name, config in TASK_CONFIGS.items()
                 if name in RETAINED_TASKS}
 TASK_ALIASES = {alias: canonical for alias, canonical in TASK_ALIASES.items()

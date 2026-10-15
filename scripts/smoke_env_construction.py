@@ -6,7 +6,6 @@ from importlib import import_module
 
 ACTIVE = (
     ("openfarm_bioacustics", {"task": "catmeows_context", "modality": "vision"}),
-    ("openfarm_bioacustics", {"task": "soundwel_call_type", "modality": "audio"}),
     ("openfarm_horse_grimace", {"task": "region_score", "judge_mode": "none"}),
 )
 RETIRED = (
@@ -28,7 +27,7 @@ for package, kwargs in RETIRED:
     print(f"OK (retired): {package}")
 
 bio=import_module("openfarm_bioacustics").load_environment
-for task in ("ungulate_valence","laying_hen_stress_binary","soundwel_valence","soundwel_context","soundwel_age","laying_hen_stress_context"):
+for task in ("ungulate_valence","laying_hen_stress_binary","soundwel_call_type","soundwel_valence","soundwel_context","soundwel_age","laying_hen_stress_context"):
     try:bio(task=task)
     except ValueError as exc:
         if "retired" not in str(exc):raise

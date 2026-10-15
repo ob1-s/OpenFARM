@@ -195,7 +195,7 @@ def load_environment(
         parsed = parser.parse_answer(completion) or ""
         pred = parsed.strip().lower() 
         ans_clean = str(info.get("target_label", "")).strip().lower()
-        is_correct = bool(pred) and ((ans_clean == pred) or (ans_clean in pred))
+        is_correct = bool(pred) and ans_clean == pred
         return 1.0 if is_correct else 0.0
 
     async def hybrid_judge_reward(

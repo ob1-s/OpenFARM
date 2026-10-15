@@ -449,14 +449,6 @@ def load_environment(
     else:
         selected_tasks = [canonical_task_name(name) for name in task]
 
-    if not allow_auxiliary_context_task:
-        raise ValueError(
-            "CatMeows is an AUXILIARY acoustic-context probe, not an "
-            "animal-welfare System-1 benchmark. Explicitly set "
-            "allow_auxiliary_context_task=True for research-only use. "
-            "See docs/system1/FINAL_PRODUCT_FIT_AUDIT.md."
-        )
-
     # Retired data cannot be reintroduced through the old forensic override.
     # The commit history retains the original environment for reproduction.
     retired = [name for name in selected_tasks if name not in TASK_CONFIGS]
@@ -481,6 +473,14 @@ def load_environment(
     ):
         raise ValueError("Active suite requires the audited pinned Hugging Face revision.")
     # Source HF revisions are immutable; each task loads its own pin.
+    if not allow_auxiliary_context_task:
+        raise ValueError(
+            "CatMeows is an AUXILIARY acoustic-context probe, not an "
+            "animal-welfare System-1 benchmark. Explicitly set "
+            "allow_auxiliary_context_task=True for research-only use. "
+            "See docs/system1/FINAL_PRODUCT_FIT_AUDIT.md."
+        )
+
     envs = []
     for task_name in selected_tasks:
         logger.info("Building OpenFARM Bioacoustics task: %s", task_name)

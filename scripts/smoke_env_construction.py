@@ -1,37 +1,48 @@
-"""Instantiate OpenFARM Verifiers environments without loading any remote dataset.
+"""Verify that executable suite tasks construct and retired environments refuse runs.
 
-Run after installing all packages from environments/*:
-    python scripts/smoke_env_construction.py
-
-This only checks Python imports and environment construction. It is NOT a
-data-load check, evaluation, model test, or evidence of label/split validity.
+This is an offline import/construction test, not a model or data-quality check.
 """
 from importlib import import_module
 
-ENVS = (
-    ("openfarm_aww", {"judge_mode":"none"}),
-    ("openfarm_bioacustics", {"task":"catmeows_context","modality":"vision"}),
-    ("openfarm_dog_pain_triage", {"judge_mode":"none"}),
-    ("openfarm_horse_grimace", {"judge_mode":"none"}),
-    ("openfarm_sheep_apr", {"judge_mode":"none",
-                            "allow_uncertified_sheep_eval":True}),
-    ("openfarm_zoo_arousal_eval", {"task":"arousal","modality":"filmstrip"}),
+ACTIVE = (
+    ("openfarm_bioacustics", {"task": "catmeows_context", "modality": "vision"}),
+    ("openfarm_bioacustics", {"task": "soundwel_call_type", "modality": "audio"}),
+    ("openfarm_horse_grimace", {"task": "region_score", "judge_mode": "none"}),
+)
+RETIRED = (
+    ("openfarm_aww", {}),
+    ("openfarm_dog_pain_triage", {}),
+    ("openfarm_sheep_apr", {}),
+    ("openfarm_zoo_arousal_eval", {}),
 )
 
-# Quarantine defaults are deliberate evaluation safeguards; the diagnostic
-# opt-in below is only to test module construction, not to certify a dataset.
-from openfarm_sheep_apr import load_environment as sheep_env
-try:
-    sheep_env(judge_mode="none")
-except ValueError as exc:
-    assert "quarantined" in str(exc).lower(), str(exc)
-else:
-    raise AssertionError("Sheep APR quarantine unexpectedly disabled")
+for package, kwargs in RETIRED:
+    load = import_module(package).load_environment
+    try:
+        load(**kwargs)
+    except RuntimeError as exc:
+        if "RETIRED FROM ACTIVE" not in str(exc):
+            raise
+    else:
+        raise AssertionError(f"{package}: retired evaluator still executable")
+    print(f"OK (retired): {package}")
 
-for package, kwargs in ENVS:
-    module = import_module(package)
-    load_environment = getattr(module, "load_environment")
-    env = load_environment(**kwargs)
+bio=import_module("openfarm_bioacustics").load_environment
+for task in ("ungulate_valence","laying_hen_stress_binary","soundwel_valence","soundwel_context","soundwel_age","laying_hen_stress_context"):
+    try:bio(task=task)
+    except ValueError as exc:
+        if "retired" not in str(exc):raise
+    else:raise AssertionError(f"Retired bioacoustic task still executable: {task}")
+print("OK: all six retired bioacoustic tasks denied")
+
+horse=import_module("openfarm_horse_grimace").load_environment
+try:horse(task="binary_pain")
+except ValueError as exc:
+    if "Retired" not in str(exc):raise
+else:raise AssertionError("Horse binary pain unexpectedly available")
+
+for package, kwargs in ACTIVE:
+    env=import_module(package).load_environment(**kwargs)
     if not hasattr(env,"rubric"):
         raise AssertionError(f"{package}: no rubric on constructed environment")
-    print(f"OK (construction only): {package}: {type(env).__name__}")
+    print(f"OK (construction only): {package}: {kwargs}")

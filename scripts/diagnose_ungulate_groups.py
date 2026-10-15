@@ -73,7 +73,45 @@ def diagnose(records):
             "labels":dict(Counter(r["valence"] for r in rows))
         })
     comp_stats.sort(key=lambda x:x["rows"],reverse=True)
+    by_hash=defaultdict(list)
+    for r in records:
+        by_hash[r["audio_sha256"]].append(r)
+    duplicates=[(h,rows) for h,rows in by_hash.items() if len(rows)>1]
+    duplicate_profiles={
+        "hashes_repeated_across_different_source_filenames":0,
+        "hashes_repeated_across_different_nominal_animal_ids":0,
+        "hashes_repeated_across_different_species":0,
+        "hashes_repeated_across_different_contexts":0,
+        "hashes_repeated_across_different_valence_labels":0,
+        "hashes_repeated_across_different_source_group_ids":0,
+    }
+    examples=[]
+    cols={
+        "source_filename":"hashes_repeated_across_different_source_filenames",
+        "animal_id":"hashes_repeated_across_different_nominal_animal_ids",
+        "species":"hashes_repeated_across_different_species",
+        "context":"hashes_repeated_across_different_contexts",
+        "valence":"hashes_repeated_across_different_valence_labels",
+        "source_group_id":"hashes_repeated_across_different_source_group_ids",
+    }
+    for h,rows in duplicates:
+        differences=[col for col in cols
+                     if len({str(r.get(col)) for r in rows if r.get(col) is not None})>1]
+        for col in differences: duplicate_profiles[cols[col]]+=1
+        if len(examples)<8 and any(x in differences for x in ("animal_id","source_filename","valence")):
+            examples.append({
+                "hash_prefix":h[:12],"row_count":len(rows),
+                "fields_that_disagree":differences,
+                "source_filename_examples":sorted({str(r.get("source_filename","")) for r in rows})[:4],
+                "animal_id_examples":sorted({str(r.get("animal_id","")) for r in rows})[:4],
+                "source_group_id_examples":sorted({str(r.get("source_group_id","")) for r in rows})[:4],
+                "labels":dict(Counter(str(r.get("valence")) for r in rows)),
+                "splits":dict(Counter(r["split"] for r in rows))
+            })
+
     return {
+        "duplicate_content_provenance":duplicate_profiles,
+        "duplicate_content_examples":examples,
         "rows":len(records),
         "raw_rows":len(raw),
         "distinct_recording_hashes":len({r["audio_sha256"] for r in records}),
@@ -109,14 +147,13 @@ def main():
     for split in SPLITS:
         ds=load_dataset(DATASET,split=split,revision=revision,streaming=True)
         # Metadata-only; don't decode or download the media blobs again.
-        ds=ds.select_columns(["audio_sha256","source_group_id","valence"])
+        selected=[x for x in (
+            "audio_sha256","source_group_id","valence",
+            "source_filename","animal_id","species","context",
+        ) if x in ds.column_names]
+        ds=ds.select_columns(selected)
         for r in ds:
-            records.append({
-                "split":split,
-                "audio_sha256":r.get("audio_sha256"),
-                "source_group_id":r.get("source_group_id"),
-                "valence":r.get("valence")
-            })
+            records.append({"split":split,**r})
     out=diagnose(records);out["dataset"]=DATASET;out["revision"]=revision
     args.output.parent.mkdir(parents=True,exist_ok=True)
     args.output.write_text(json.dumps(out,indent=2,ensure_ascii=False)+"\n")

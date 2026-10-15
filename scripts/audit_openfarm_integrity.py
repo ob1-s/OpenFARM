@@ -177,6 +177,30 @@ def main():
         subset_key='__sheep_source_label_key' if args.dataset=='sheep' else None
     )
     report['dataset']=dsid; report['revision']=sha; report['sample_only']=args.max_rows is not None
+    # Every pairing of trained/raw candidate inputs and balanced/raw evaluation
+    # inputs must be checked. A clean raw/raw boundary is not proof that every
+    # supported training/evaluation combination is safe.
+    pairwise={}
+    if key:
+        for left,right in (
+            ('train','test'),('train_raw','test_raw'),
+            ('train','test_raw'),('train_raw','test')
+        ):
+            if left in splits and right in splits:
+                a={str(row.get(key)) for row in splits[left] if row.get(key)}
+                b={str(row.get(key)) for row in splits[right] if row.get(key)}
+                shared=a&b
+                pairwise[f'{left}_vs_{right}']={
+                    'overlap_count':len(shared),
+                    'hash_prefixes':sorted(v[:12] for v in shared)[:8]
+                }
+                if shared:
+                    report['findings'].append({
+                        'severity':'error','code':'cross_view_media_overlap',
+                        'detail':f'{left}/{right}: {len(shared)} exact media identities shared'
+                    })
+                    report['status']='FAIL'
+    report['cross_view_media_overlap']=pairwise
     # Verify whether published audio_sha256 claims describe the actual media bytes.
     media_checks={}
     for split,items in splits.items():

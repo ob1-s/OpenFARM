@@ -1,0 +1,25 @@
+name: OpenFARM positive social behavior key and code audit
+on:
+  push:
+    branches: [research/2026-10-data-prospecting]
+    paths:
+      - scripts/audit_pig_social_nosing_deep.py
+      - .github/workflows/openfarm-pig-nosing-deep.yml
+  workflow_dispatch:
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install 'pandas>=2.2,<3' requests openpyxl
+      - run: python scripts/audit_pig_social_nosing_deep.py --output audit-reports/pig-social-nosing.json
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pig-positive-social-evidence
+          path: audit-reports/pig-social-nosing.json
+          retention-days: 30

@@ -94,6 +94,12 @@ def load_environment(
     user_prompt_override: str | None = None,
     **kwargs,
 ) -> vf.Environment:
+    raise RuntimeError(
+        "RETIRED FROM ACTIVE OPENFARM SUITE: Dog pain target is circular with pain_type and does not establish independent sensor-based pain recognition. "
+        "See docs/system1/SUITE_DECISIONS.md; use Git history for forensic "
+        "reproduction, not current benchmark runs."
+    )
+
     """Load the Dog Pain Triage Environment."""
 
     if train_split == test_split:

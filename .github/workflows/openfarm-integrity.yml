@@ -43,3 +43,14 @@ jobs:
           python -m pip install -e environments/openfarm_aww -e environments/openfarm_bioacustics -e environments/openfarm_dog_pain_triage -e environments/openfarm_horse_grimace -e environments/openfarm_sheep_apr -e environments/openfarm_zoo_arousal_eval
       - name: Import and construct each environment (no Hub access)
         run: python scripts/smoke_env_construction.py
+
+  notebook-archaeology:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Inspect historical dataset notebook transformations
+        run: python scripts/audit_openfarm_notebooks.py

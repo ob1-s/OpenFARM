@@ -108,6 +108,8 @@ def main():
     records=[]
     for split in SPLITS:
         ds=load_dataset(DATASET,split=split,revision=revision,streaming=True)
+        # Metadata-only; don't decode or download the media blobs again.
+        ds=ds.select_columns(["audio_sha256","source_group_id","valence"])
         for r in ds:
             records.append({
                 "split":split,

@@ -1,5 +1,7 @@
 # OpenFARM evaluation readiness — checkpoint 2026-10-15
 
+> **Final policy supersedes this chronological audit.** See [repair-or-retire decisions](SUITE_DECISIONS.md): only horse ordinal region scores and CatMeows context (owner-heldout repaired) remain in the executable research suite. All other old tasks are retired; their reported results are not current benchmark claims.
+
 **Status:** This is a measured data-integrity triage, not a veterinary-competence benchmark, commercial product certification, or an exhaustive scholarly survey.
 
 ## Decision table

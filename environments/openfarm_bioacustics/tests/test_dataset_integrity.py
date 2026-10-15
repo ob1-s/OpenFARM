@@ -12,6 +12,7 @@ from unittest.mock import patch
 
 from openfarm_bioacustics.openfarm_bioacustics import (
     load_source_dataset,
+    load_environment,
     normalize_answer,
     normalized_text,
 )
@@ -69,6 +70,20 @@ class TestSplitLoading(unittest.TestCase):
 
         self.assertIs(load_source_dataset("example/text", "train", None), ds)
         self.assertEqual(ds.casts, [])
+
+
+class TestKnownContaminatedEval(unittest.TestCase):
+    def test_ungulate_quarantined_without_override(self):
+        with self.assertRaisesRegex(ValueError, "quarantined"):
+            load_environment(task="ungulate_valence")
+
+    def test_multi_task_quarantined_without_override(self):
+        with self.assertRaisesRegex(ValueError, "quarantined"):
+            load_environment(task=["catmeows_context", "ungulate_valence"])
+
+    def test_invalid_train_test_identity_rejected(self):
+        with self.assertRaisesRegex(ValueError, "Invalid evaluation setup"):
+            load_environment(task="catmeows_context", train_split="train", test_split="train")
 
 
 class TestExactAnswers(unittest.TestCase):

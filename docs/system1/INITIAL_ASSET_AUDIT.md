@@ -1,5 +1,7 @@
 # OpenFARM System-1 Reboot — Initial Asset Audit and Triage
 
+> **Final policy supersedes this chronological audit.** See [repair-or-retire decisions](SUITE_DECISIONS.md): only horse ordinal region scores and CatMeows context (owner-heldout repaired) remain in the executable research suite. All other old tasks are retired; their reported results are not current benchmark claims.
+
 **Date:** 2026-10-15  
 **Status:** **PRELIMINARY / NOT DATA-CERTIFIED**. This is a first-pass repo-code, environment README, HF-card and public-literature review. No complete dataset download, notebook execution, sample-level media inspection, source reannotation, or group-overlap proof has yet been performed. Claims in existing README/cards are **claims to verify**, not certifications.
 

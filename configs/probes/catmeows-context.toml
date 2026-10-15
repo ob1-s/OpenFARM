@@ -1,0 +1,31 @@
+# AUXILIARY ONLY — deliberate audio-context transfer probe.
+# NOT an OpenFARM animal-welfare product benchmark.
+# See docs/system1/FINAL_PRODUCT_FIT_AUDIT.md.
+endpoints_path = "../endpoints.toml"
+
+num_examples = -1
+rollouts_per_example = 3
+max_concurrent = 32
+max_retries = 5
+
+save_results = true
+
+[[ablation]]
+env_id = "openfarm-bioacustics"
+
+[ablation.env_args]
+task = "catmeows_context"
+allow_auxiliary_context_task = true
+modality = "vision"
+require_explanation = false
+max_examples_per_task = 24
+seed = 3301
+
+[ablation.sweep]
+endpoint_id = [
+    "Qwen/Qwen3.5-2B",
+    "google/gemini-3-flash-preview",
+]
+sampling_args = [
+    { extra_body = { chat_template_kwargs = { enable_thinking = false } } },
+]

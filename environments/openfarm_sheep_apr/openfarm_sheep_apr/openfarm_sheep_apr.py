@@ -94,8 +94,21 @@ def load_environment(
     user_prompt_override: str | None = None,
     cheatsheet_version: Literal["full", "short"] = "short",
     cheatsheet_override: str | None = None,
+    allow_uncertified_sheep_eval: bool = False,
     **kwargs,
 ) -> vf.Environment:
+
+    if not allow_uncertified_sheep_eval:
+        raise ValueError(
+            "Sheep APR evaluation is quarantined pending re-splitting: "
+            "balanced/raw training-test view mixing causes exact media overlap "
+            "(32 and 60 images), and balanced train/test contain highly "
+            "correlated perceptual near-duplicate photos including a "
+            "contradictory 0-versus-1 label pair. "
+            "Set allow_uncertified_sheep_eval=True for forensic-only "
+            "diagnostics; no heldout benchmark claim is justified. "
+            "See docs/system1/EVALUATION_READINESS.md."
+        )
 
     if train_split == test_split:
         raise ValueError(

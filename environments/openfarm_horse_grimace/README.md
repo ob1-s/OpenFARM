@@ -1,5 +1,9 @@
 # openfarm-horse-grimace
 
+> **ACTIVE STATUS (2026-10-15):** Only ordinal `region_score` (0/1/2) is executable, with pinned horse-heldout source revision. The old `binary_pain` task is **RETIRED** as a thresholded derivative rather than independent clinical pain supervision. Results are regional-cue research, not horse-level pain diagnosis.
+
+See [repair-or-retire decisions](../../docs/system1/SUITE_DECISIONS.md).
+
 <p>
   <a href="https://github.com/ob1-s/happy-farm/tree/main/environments/openfarm_horse_grimace">
     <img align="left" hspace="4" src="https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white" alt="GitHub">

@@ -52,4 +52,19 @@ def main():
             print(f"  [{r['cell']}:{r['line']}] {r['source']}")
         if len(lines)>30:
             print(f"  ... {len(lines)-30} further matches (not printed)")
+        if path.name in ('ungulate_valence_audio_data.ipynb','sheep_apr_data.ipynb'):
+            nb=json.loads(path.read_text(encoding="utf-8"))
+            target_cell=3 if path.name.startswith('ungulate') else 6
+            raw=nb['cells'][target_cell]['source']
+            if isinstance(raw,list):raw=''.join(raw)
+            arr=raw.splitlines()
+            if target_cell==3:
+                # Metadata grouping/join logic, not token-bearing setup code.
+                lo,hi=110,211
+            else:lo,hi=1,46
+            print(f"  === FOCUSED SOURCE cell {target_cell}, lines {lo}-{hi} ===")
+            for idx in range(lo-1,min(hi,len(arr))):
+                line=arr[idx]
+                if SENSITIVE.search(line):continue
+                print(f"  [{target_cell}:{idx+1}] {line[:210]}")
 if __name__=="__main__":main()

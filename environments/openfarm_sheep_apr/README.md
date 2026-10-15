@@ -1,5 +1,9 @@
 # openfarm-sheep-apr
 
+> **RETIRED (2026-10-15):** Source split views overlap, matched partitions have high-similarity near-duplicate image/label conflicts, and upstream commercial photo rights need verification. The old forensic override no longer enables evaluation; the loader raises a retirement error.
+
+See [repair-or-retire decisions](../../docs/system1/SUITE_DECISIONS.md).
+
 <p>
   <a href="https://github.com/ob1-s/happy-farm/tree/main/environments/openfarm_sheep_apr">
     <img align="left" hspace="4" src="https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white" alt="GitHub">

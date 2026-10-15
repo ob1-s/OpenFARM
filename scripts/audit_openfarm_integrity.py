@@ -7,6 +7,7 @@ No weights, model inference, or modification of Hub datasets.
 """
 from __future__ import annotations
 import argparse
+import hashlib
 from collections import Counter, defaultdict
 import json
 from pathlib import Path
@@ -15,7 +16,7 @@ from typing import Any
 # (Hub repository, identity field, grouping field, primary label field, splits)
 SOURCES = {
     'horse': ('oliveirabruno01/openfarm-horse-grimace-region','source_sha256','horse_id','pain_score',['train_raw','test_raw','train','test']),
-    'sheep': ('oliveirabruno01/sheep-facial-expression-benchmark','source_filename',None,'label',['train_raw','test_raw','train','test']),
+    'sheep': ('oliveirabruno01/sheep-facial-expression-benchmark','__image_bytes_sha256',None,'label',['train_raw','test_raw','train','test']),
     'dog': ('oliveirabruno01/openfarm-dog-pain','source_row_index','source_subject_id','aww_category',['train_raw','test_raw','train','test']),
     'cat': ('oliveirabruno01/openfarm-catmeows','audio_sha256','cat_id','context',['train_raw','test_raw','train','test']),
     'hen': ('oliveirabruno01/openfarm-laying-hen-stress','audio_sha256','experimental_day_group','stress_context',['train_raw','test_raw','train','test']),
@@ -50,7 +51,12 @@ def inspect_rows(splits: dict[str,list[dict]], key: str|None, group: str|None, l
             note('error','empty_split',name)
         for field in (label,key,group):
             if field and any(_token(r.get(field)) == '' for r in rows):
-                note('error','missing_value',f'{name}: required field {field} missing/empty')
+                # Extra, non-headline heldout splits may lack animal identifiers.
+                # This is an evidentiary limitation, not an automatic train/test leak.
+                level = 'incomplete' if field == group and name not in {
+                    'train','test','train_raw','test_raw'
+                } else 'error'
+                note(level,'missing_value',f'{name}: field {field} missing/empty')
         if key:
             keys=[_token(r.get(key)) for r in rows]
             if len(keys)!=len(set(keys)):
@@ -83,7 +89,19 @@ def inspect_rows(splits: dict[str,list[dict]], key: str|None, group: str|None, l
             test_keys={_token(r.get(key)) for r in present[te]}
             shared=train_keys & test_keys
             shared.discard('')
-            if shared: note('error','cross_split_identity',f'{tr}/{te}: {len(shared)} shared IDs')
+            if shared:
+                # IDs are hashed/truncated: no raw media, clinical data or source text.
+                examples = sorted(shared)[:5]
+                diag=[]
+                for sample_id in examples:
+                    train_meta=[(str(r.get(group)) if group else None,str(r.get(label)))
+                                for r in present[tr] if _token(r.get(key))==sample_id][:3]
+                    test_meta=[(str(r.get(group)) if group else None,str(r.get(label)))
+                               for r in present[te] if _token(r.get(key))==sample_id][:3]
+                    diag.append({'id_prefix':sample_id[:12],
+                                 'train_group_label':train_meta,'test_group_label':test_meta})
+                note('error','cross_split_identity',
+                     f'{tr}/{te}: {len(shared)} shared IDs; examples: {diag}')
         else: note('incomplete','identity_unverifiable','Cannot prove zero sample overlap without stable ID')
         if group:
             train_groups={_token(r.get(group)) for r in present[tr]}
@@ -99,7 +117,9 @@ def inspect_rows(splits: dict[str,list[dict]], key: str|None, group: str|None, l
     if not key: note('incomplete','missing_stable_identity','No trustworthy sample key configured')
     if not group: note('incomplete','missing_group_identity','No trustworthy subject/session group configured')
     status=('FAIL' if any(f['severity']=='error' for f in findings) else
-            'INCOMPLETE' if any(f['severity']=='incomplete' for f in findings) else 'PASS_BOUNDED')
+            'INCOMPLETE' if any(f['severity']=='incomplete' for f in findings) else
+            'PASS_WITH_WARNINGS' if any(f['severity']=='warning' for f in findings) else
+            'PASS_BOUNDED')
     return {'status':status,'stats':stats,'findings':findings,
             'notes':['A pass covers only listed exact-key/group assertions, NOT source-label semantics, near-duplicates, rights, or commercial generalization.']}
 
@@ -117,7 +137,13 @@ def hub_splits(dataset: str, revision: str, max_rows: int|None) -> dict[str,list
         for i,row in enumerate(ds):
             if max_rows and i>=max_rows:break
             # Never write medical text, raw media bytes or source metadata into report.
-            rows.append({k:v for k,v in row.items() if not isinstance(v,(dict,bytes,bytearray,list))})
+            safe_row={k:v for k,v in row.items() if not isinstance(v,(dict,bytes,bytearray,list))}
+            for media_col in ('image','audio'):
+                payload=row.get(media_col)
+                if isinstance(payload,dict) and isinstance(payload.get('bytes'),bytes):
+                    safe_row[f'__{media_col}_bytes_sha256']=hashlib.sha256(
+                        payload['bytes']).hexdigest()
+            rows.append(safe_row)
         out[split]=rows
     return out
 
@@ -136,6 +162,14 @@ def main():
     splits=hub_splits(dsid,sha,args.max_rows)
     report=inspect_rows(splits,key,group,label,expected,complete=args.max_rows is None)
     report['dataset']=dsid; report['revision']=sha; report['sample_only']=args.max_rows is not None
+    # Verify whether published audio_sha256 claims describe the actual media bytes.
+    media_checks={}
+    for split,items in splits.items():
+        both=[r for r in items if r.get('audio_sha256') and r.get('__audio_bytes_sha256')]
+        if both:
+            media_checks[split]={'checked':len(both),
+                 'matching':sum(r['audio_sha256']==r['__audio_bytes_sha256'] for r in both)}
+    if media_checks: report['audio_sha256_validation']=media_checks
     args.output.parent.mkdir(parents=True,exist_ok=True)
     args.output.write_text(json.dumps(report,indent=2,ensure_ascii=False)+'\n',encoding='utf-8')
     print(f'{dsid}@{sha}: {report["status"]}; {len(report["findings"])} findings → {args.output}')

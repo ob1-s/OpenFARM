@@ -74,11 +74,11 @@ class TestSplitLoading(unittest.TestCase):
 
 class TestKnownContaminatedEval(unittest.TestCase):
     def test_ungulate_quarantined_without_override(self):
-        with self.assertRaisesRegex(ValueError, "quarantined"):
+        with self.assertRaisesRegex(ValueError, "retired"):
             load_environment(task="ungulate_valence")
 
     def test_multi_task_quarantined_without_override(self):
-        with self.assertRaisesRegex(ValueError, "quarantined"):
+        with self.assertRaisesRegex(ValueError, "retired"):
             load_environment(task=["catmeows_context", "ungulate_valence"])
 
     def test_invalid_train_test_identity_rejected(self):
@@ -86,23 +86,40 @@ class TestKnownContaminatedEval(unittest.TestCase):
             load_environment(task="catmeows_context", train_split="train", test_split="train")
 
 
+class TestRetirementBoundaries(unittest.TestCase):
+    def test_retired_six_not_registered(self):
+        self.assertEqual(set(TASK_CONFIGS), {"catmeows_context", "soundwel_call_type"})
+
+    def test_metadata_mode_is_retired(self):
+        with self.assertRaisesRegex(ValueError, "recording/spectrogram"):
+            load_environment(task="catmeows_context", modality="text")
+
+    def test_mixed_splits_rejected(self):
+        with self.assertRaisesRegex(ValueError, "Unsupported split combination"):
+            load_environment(task="catmeows_context", train_split="train", test_split="test_raw")
+
+    def test_unreviewed_override_rejected(self):
+        with self.assertRaisesRegex(ValueError, "Unreviewed dataset_name"):
+            load_environment(task="catmeows_context", dataset_name="other/dataset")
+
+
 class TestExactAnswers(unittest.TestCase):
     def setUp(self):
-        self.config = TASK_CONFIGS["soundwel_valence"]
+        self.config = TASK_CONFIGS["soundwel_call_type"]
 
     def test_source_aliases_still_work(self):
-        self.assertEqual(normalize_answer("Neg", self.config), "Negative")
-        self.assertEqual(normalize_answer("Positive", self.config), "Positive")
-        self.assertEqual(normalize_answer("positive", self.config), "Positive")
+        self.assertEqual(normalize_answer("HF", self.config), "HF")
+        self.assertEqual(normalize_answer("LF", self.config), "LF")
+        self.assertEqual(normalize_answer("lf", self.config), "LF")
 
     def test_multiple_answers_are_not_accepted_as_one(self):
-        ambiguous = normalize_answer("Positive or Negative", self.config)
-        self.assertNotEqual(normalized_text(ambiguous), normalized_text("Positive"))
-        self.assertNotEqual(normalized_text(ambiguous), normalized_text("Negative"))
+        ambiguous = normalize_answer("HF or LF", self.config)
+        self.assertNotEqual(normalized_text(ambiguous), normalized_text("HF"))
+        self.assertNotEqual(normalized_text(ambiguous), normalized_text("LF"))
 
     def test_extra_unrequested_text_is_not_accepted(self):
-        prediction = normalize_answer("I think the answer is Negative", self.config)
-        self.assertNotEqual(normalized_text(prediction), normalized_text("Negative"))
+        prediction = normalize_answer("I think the answer is HF", self.config)
+        self.assertNotEqual(normalized_text(prediction), normalized_text("LF"))
 
 
 if __name__ == "__main__":

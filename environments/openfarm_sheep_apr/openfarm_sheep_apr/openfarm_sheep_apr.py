@@ -97,6 +97,12 @@ def load_environment(
     allow_uncertified_sheep_eval: bool = False,
     **kwargs,
 ) -> vf.Environment:
+    raise RuntimeError(
+        "RETIRED FROM ACTIVE OPENFARM SUITE: Sheep source images have near-duplicate label conflicts, unsafe split variants and unresolved commercial image rights. "
+        "See docs/system1/SUITE_DECISIONS.md; use Git history for forensic "
+        "reproduction, not current benchmark runs."
+    )
+
 
     if not allow_uncertified_sheep_eval:
         raise ValueError(

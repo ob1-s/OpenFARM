@@ -1,5 +1,9 @@
 # openfarm-aww
 
+> **RETIRED (2026-10-15):** The synthetic AWW benchmark is removed from active eval and RL. The HF dataset is inaccessible anonymously, and label-generation validity cannot be verified. The old implementation remains for Git provenance; its loader raises a retirement error.
+
+See [repair-or-retire decisions](../../docs/system1/SUITE_DECISIONS.md).
+
 <p>
   <a href="https://github.com/ob1-s/happy-farm/tree/main/environments/openfarm_aww">
     <img align="left" hspace="4" src="https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white" alt="GitHub">

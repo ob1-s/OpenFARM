@@ -1,6 +1,6 @@
 # openfarm-bioacustics
 
-> **ACTIVE STATUS (2026-10-15):** Only the **CatMeows elicitation-context** task is executable. It now filters all test owners out of training at a pinned HF revision. All SoundWel, hen and ungulate tasks are **RETIRED** from the active suite. This is audio/spectrogram source-context research, not animal welfare diagnosis. Older descriptions below document historical work only.
+> **OPTIONAL DIAGNOSTIC ONLY (final product-fit audit, 2026-10-15):** CatMeows is **not part of the welfare framework or any product scorecard**. It classifies experimental elicitation context, not emotional state or welfare. Call `load_environment(task="catmeows_context", allow_auxiliary_context_task=True)` intentionally for audio/spectrogram representation research. Owner-heldout training is repaired; SoundWel, hen and ungulate tasks are retired. Other task descriptions below are historical only.
 
 See [repair-or-retire decisions](../../docs/system1/SUITE_DECISIONS.md).
 

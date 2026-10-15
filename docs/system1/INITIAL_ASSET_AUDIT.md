@@ -74,12 +74,35 @@ At the immutable Hugging Face revision `9fd70b71c9f2bfa5058b9480f587f365bfd82851
 
 Auditable CI: https://github.com/ob1-s/OpenFARM/actions/runs/38719744768 (ungulate job). Reproducible checker: `scripts/audit_openfarm_integrity.py`.
 
+### Completed cross-view integrity and connected-component diagnostics
+
+Expanded analysis on immutable revision `9fd70b71c9f2bfa5058b9480f587f365bfd82851` established **exactly which pairings are contaminated**:
+
+| Training view | Test view | Shared byte-identical audio hashes |
+|---|---|---:|
+| `train` | `test` | **4** |
+| `train_raw` | `test_raw` | **94** |
+| `train` | `test_raw` | **15** |
+| `train_raw` | `test` | **18** |
+
+A connected-component diagnostic unions rows linked by **either** equal audio SHA-256 **or** equal `source_group_id`, across all 3,181 unique raw source rows (`train_raw`/`test_raw`/`pig_family_heldout`):
+
+- 2,825 distinct byte-level audio hashes across 3,181 source rows; 332 nonempty distinct source-group IDs, 10 rows missing group identity.
+- 291 connected components; **three components span both legacy raw train and raw test**.
+- **Largest component has 1,091 rows (46.33% of the 2,355 non-pig raw pool), 781 distinct audio hashes and 31 nominal source-group IDs**, with 841 `train_raw` and 250 `test_raw` rows. All are source-labeled `Negative`.
+- This component is far too large for conventional 80/20 subject-heldout sampling without severe distribution constraints; a clean split may require revisiting the source label/group provenance rather than a simple RNG resplit.
+- Pig-family holdout has **no matching exact audio hashes with non-pig raw views**. This establishes only byte identity, not full study/source independence.
+
+Source: `scripts/diagnose_ungulate_groups.py`; GitHub Actions run https://github.com/ob1-s/OpenFARM/actions/runs/38720784988, artifact `openfarm-ungulate-component-graph`. The graph is a diagnostic, **not a published repaired dataset**.
+
+The new environment raises a quarantine error for `ungulate_valence` by default; `allow_uncertified_ungulate_eval=True` exists **only for explicit forensic debugging**, never valid comparison claims.
+
 ## Split semantics requiring reconstruction — sheep
 
 At HF revision `4a8e9a6a6296be4ad12584be8bd0fec0c822e5fe`:
 
 - Balanced `test`: 37 label=1 out of 74; `test_raw`: **29** label=1 out of 225. Therefore balanced `test` **cannot** be a no-replacement subset of `test_raw`, regardless of sample identity policy.
-- Comparing `source_filename::label` provenance keys, 32 balanced train keys were absent from `train_raw`, and 60 balanced test keys absent from `test_raw`.
+- Comparing `source_filename::label` provenance keys, 32 balanced train keys were absent from `train_raw`, and 60 balanced test keys absent from `test_raw`. Expanded exact-byte matching confirms **32 identical images in balanced `train` versus `test_raw`, and 60 in `train_raw` versus balanced `test`**; matched `train`/`test` and `train_raw`/`test_raw` show **zero exact-image overlaps**. **Mixing balanced/raw views therefore causes proven training/evaluation contamination.**
 - Original `source_filename` **repeats across classes** and must **not** be used alone to identify a sample. An early scanner erroneously used it, reporting spurious cross-split media leakage; those assertions are withdrawn.
 - Exact published image bytes were checked in the second pass. No cross-train/test *byte-identical* images were detected. Image re-encoding, crops, and near-duplicates still require perceptual checks, and there are no trustworthy animal group IDs.
 - This is **proven incompatible split-view semantics**, but **not yet proven train/test image leakage**. Reconstruct the notebook's exact sampling and raw-split derivation and separate any benchmark using balanced and raw pools until checked.

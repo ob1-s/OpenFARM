@@ -59,6 +59,45 @@ Sources: environment READMEs and `task_registry.py` in repo; prepared dataset ca
 - Ungulate: https://huggingface.co/datasets/oliveirabruno01/openfarm-ungulate-valence
 - Zoo: https://huggingface.co/datasets/oliveirabruno01/openfarm-zoo-valence-arousal
 
+## P0 update — confirmed ungulate cross-split audio duplication (2026-10-15)
+
+**This supersedes the preliminary statement that the animal-heldout ungulate split is merely unverified. Its released raw train/test pools are demonstrably media-contaminated.**
+
+At the immutable Hugging Face revision `9fd70b71c9f2bfa5058b9480f587f365bfd82851`, full-data GitHub Actions verified:
+
+- `train_raw`: 1,859 rows, `test_raw`: 496 rows. **94 distinct `audio_sha256` values occur in both** despite disjoint claimed `source_group_id` values.
+- Independent SHA-256 hashing of stored audio bytes matches the published `audio_sha256` value in **all** scanned entries: 506/506 `train`, 136/136 `test`, 1,859/1,859 `train_raw`, 496/496 `test_raw`, 826/826 `pig_family_heldout` — **3,823/3,823 scanned rows across views**.
+- Repeated identical audio is present within several splits, including 227 extra same-hash occurrences in `train_raw` and 24 in `test_raw`; repeated hashes with contradictory labels occur in `train_raw` and `pig_family_heldout`. These could reflect duplicate recordings incorrectly assigned to different source/subject labels.
+- Example matching 12-char audio digest prefixes: `0298a0301dfa`, `02e826f9ceb3`, `0582932fa2ee`. The same content hashes map to **different** claimed group IDs across splits.
+
+**Action:** Quarantine **raw** ungulate train/test evaluation immediately and treat balanced splits as **not yet cleared** pending independent cross-view overlap checks. Do not train and benchmark on these as if clean heldout samples. Reconstruct original audio provenance / clip IDs; form connected components across identical audio bytes, recording source/session and animal, then redesign splits, preserving class support and external holdouts. Check exact and near-duplicate acoustic content, not merely filenames. Do not overwrite the published source dataset from this audit.
+
+Auditable CI: https://github.com/ob1-s/OpenFARM/actions/runs/38719744768 (ungulate job). Reproducible checker: `scripts/audit_openfarm_integrity.py`.
+
+## Split semantics requiring reconstruction — sheep
+
+At HF revision `4a8e9a6a6296be4ad12584be8bd0fec0c822e5fe`:
+
+- Balanced `test`: 37 label=1 out of 74; `test_raw`: **29** label=1 out of 225. Therefore balanced `test` **cannot** be a no-replacement subset of `test_raw`, regardless of sample identity policy.
+- Comparing `source_filename::label` provenance keys, 32 balanced train keys were absent from `train_raw`, and 60 balanced test keys absent from `test_raw`.
+- Original `source_filename` **repeats across classes** and must **not** be used alone to identify a sample. An early scanner erroneously used it, reporting spurious cross-split media leakage; those assertions are withdrawn.
+- Exact published image bytes were checked in the second pass. No cross-train/test *byte-identical* images were detected. Image re-encoding, crops, and near-duplicates still require perceptual checks, and there are no trustworthy animal group IDs.
+- This is **proven incompatible split-view semantics**, but **not yet proven train/test image leakage**. Reconstruct the notebook's exact sampling and raw-split derivation and separate any benchmark using balanced and raw pools until checked.
+
+**Action:** Do not treat the sheep balanced/raw views as subsets or mix them freely for training/eval. Reconstruct split provenance and perform perceptual near-duplicate checks.
+
+## Other full-data findings (bounded checks, not label certification)
+
+- **Horse** revision `ba5799d2c29886e238f8a069fb3501d1d91444f5`: claimed sample hash + horse ID train/test separation checks passed, but `source_sha256` repeats 1,035 times in `train_raw` and 116 times in balanced `train`. Investigate whether this intentionally denotes shared parent images across facial-region crops, not necessarily duplicated crop pixels.
+- **CatMeows** revision `57fe220b22eae46eb555af9f4169bd4677584cea`: declared cat-ID and `audio_sha256` split boundaries and view subsets passed.
+- **Dog pain** revision `fb1223f435a78ab2ea37ddf5f6d3e66e5e1e3941`: declared `source_subject_id` + `source_row_index` boundaries and subset checks passed. Clinical field/label circularity remains open.
+- **Hen** revision `89004914b245f8a594cec4a7401bf315dab9b1c8`: declared day-group and audio-hash split boundaries passed. No proof of independent chicken-level subjects or time-localized distress labels.
+- **SoundWel** revision `4164e39798c2e65bce5ef8d56159d98e1267f577`: 1,392 training, 337 test, 6,887 `raw` rows; sample identity checks found no exact cross-split fingerprint match, but **animal/session holdout unverified**.
+- **Zoo** revision `e8a7555ee800239a84e83be50f0173f7ddff0a5b`: 15 test-only cases, cannot establish independent generalization.
+- **AWW** currently returns HTTP **401** for the existing `oliveirabruno01/AWW-bench` HF ID (no unauthenticated recovery). This is an access/recovery blocker, not proof the content was deleted.
+
+**Importantly:** Labels encoded in source filenames do not constitute model-answer leakage if those filenames are excluded from all model-accessible inputs. Evaluate the actual rendered state, not a dataset filename in isolation.
+
 ## Strict re-audit protocol (before head training)
 
 For **every source**, materialize a mini-manifest (`dataset_id`, immutable revision, DOI, license statement, source size, media hashes, source_subject_id, collection_session, farm/location if available, source recording, original author annotations, preparation transforms). Preserve whether it is *observed*, *derived*, or *not provided*.

@@ -1,0 +1,29 @@
+name: HotPig reproducible train cal test export
+on:
+  push:
+    branches: [research/2026-10-data-prospecting]
+    paths:
+      - scripts/build_hotpig_feeder_v0.py
+      - .github/workflows/openfarm-hotpig-export.yml
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install 'pandas>=2.2,<3' numpy requests
+      - run: python scripts/build_hotpig_feeder_v0.py --output-dir /tmp/hotpig-feeder-v0
+      - name: Copy metadata only (no source row redistribution)
+        run: |
+          mkdir -p audit-reports
+          cp /tmp/hotpig-feeder-v0/manifest.json audit-reports/hotpig-feeder-v0.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: openfarm-hotpig-feeder-v0-manifest
+          path: audit-reports/hotpig-feeder-v0.json
+          retention-days: 30

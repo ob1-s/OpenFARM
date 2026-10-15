@@ -35,7 +35,7 @@ jobs:
           rc=$?
           echo "audit_exit_code=$rc" >> "$GITHUB_OUTPUT"
           if [ -f "audit-reports/${{ matrix.dataset }}.json" ]; then
-            python -c "import json;d=json.load(open('audit-reports/${{ matrix.dataset }}.json')); print('DATA AUDIT:',d['dataset'],d['revision'],d['status']);print('SPLITS:',d['stats']);print('FINDINGS:',d['findings'])"
+            python -c "import json;d=json.load(open('audit-reports/${{ matrix.dataset }}.json')); print('DATA AUDIT:',d['dataset'],d['revision'],d['status']);print('SPLITS:',d['stats']);print('FINDINGS:',d['findings']);print('AUDIO_SHA_VALIDATION:',d.get('audio_sha256_validation'))"
           fi
           # 0=bounded checks passed; 3=incomplete evidence (expected for some sets).
           # 2=proven integrity failure; any other nonzero is a load/runtime error.

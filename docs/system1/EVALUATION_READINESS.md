@@ -16,6 +16,23 @@
 | **Zoo Valence/Arousal** | 15 stimuli accessible; source clip/filmstrip implementation survives | Tiny eval-only corpus, 3 species, no generalization inference; expert interpretation not objective diagnosis | Qualitative probes only. |
 | **AWW Synthetic** | Source notebook survives in GitHub | HF dataset currently responds 401 unauthenticated; `ob1-s/animal-data` older reference is inaccessible/404; synthetic label rationale and generated source examples not independently recovered | Blocked from reproducible public data evaluation until recovered. |
 
+### Sheep near-duplicate assessment (real decoded images)
+
+At HF revision `4a8e9a6a6296be4ad12584be8bd0fec0c822e5fe`, the full published Sheep APR views were decoded and scanned with 64-bit image dHash and a 96×96 grayscale pixel-correlation proxy:
+
+| Split pairing | Candidate perceptual matches, Hamming ≤4 | Candidate pairs with contradictory labels |
+|---|---:|---:|
+| `train` vs `test` | **2** | **1** |
+| `train_raw` vs `test_raw` | **8** | **1** |
+| `train` vs `test_raw` | **34** | **1** |
+| `train_raw` vs `test` | **62** | **1** |
+
+Notably, balanced `train` contains **`Sheep_1 (616).jpg` label 0** and balanced `test` contains **`Sheep_1 (39).jpg` label 1**. They are *different file bytes*, but have **dHash Hamming distance 4** and **Pearson correlation 0.95** after common grayscale resizing. The actual visual previews look like the same original photograph. Treat this as **high-confidence near-duplicate/label-conflict evidence requiring source-image adjudication**, rather than asserting a source-file identity proven from hashes alone.
+
+The crossed balanced/raw pairings additionally include **32 and 60 exact identical images**, already established independently. This is not resolved by choosing different train/test proportions. The archived gallery (GitHub Actions run `38721468201`) includes examples, and the comprehensive perceptual audit is run `38721979791`, artifact `openfarm-sheep-perceptual-audit`.
+
+**Engineering mitigation applied:** The Sheep APR evaluator now raises a quarantine error by default. The forensic-only override `allow_uncertified_sheep_eval=True` permits legacy diagnostic use, not a held-out benchmark claim. The smoke check asserts quarantine behavior.
+
 **Not green for production:** No checked dataset yet demonstrates real-world alert precision, missed clinically meaningful events, calibrated probabilities, false alerts per animal-day, or site-heldout generalization.
 
 ## Evidence and how to reproduce

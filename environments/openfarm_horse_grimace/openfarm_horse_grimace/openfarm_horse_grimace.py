@@ -70,20 +70,8 @@ TASK_CONFIGS = {
             "2": {"2", "obvious", "obviously present", "marked", "severe"},
         },
     },
-    "binary_pain": {
-        "target": "binary_pain_label",
-        "options": ["0", "1"],
-        "option_text": "0 = no pain-associated cue present, 1 = pain-associated cue present",
-        "instruction": (
-            "Classify whether the visible horse facial region shows a "
-            "pain-associated grimace cue."
-        ),
-        "answer_hint": "0 or 1",
-        "answer_aliases": {
-            "0": {"0", "no", "no pain", "no_pain", "not present", "absent"},
-            "1": {"1", "yes", "pain", "pain cue", "present", "pain-associated"},
-        },
-    },
+    # Binary "pain" is retired: it is a deterministic threshold of the
+    # ordinal regional cue score, NOT an independently labeled pain diagnosis.
 }
 
 USER_PROMPT_TEMPLATE = """Recall what you know about the Horse Grimace Scale and apply it to this image.
@@ -155,8 +143,7 @@ def canonical_task_name(task: str) -> str:
         "score": "region_score",
         "hgs_score": "region_score",
         "region": "region_score",
-        "binary": "binary_pain",
-        "pain_binary": "binary_pain",
+        # No alias for retired binary-pain task.
     }
     return aliases.get(task, task)
 
@@ -172,15 +159,8 @@ def normalize_answer(value: Any, task_config: dict) -> str:
         if text in values:
             return canonical
 
-    numbers = re.findall(r"\b[0-2]\b", text)
-    if numbers and numbers[-1] in task_config["options"]:
-        return numbers[-1]
-
-    for canonical, aliases in task_config["answer_aliases"].items():
-        for alias in aliases:
-            alias_text = normalized_text(alias)
-            if alias_text and re.search(rf"\b{re.escape(alias_text)}\b", text):
-                return canonical
+    # Require exactly one admissible response. Do not extract a score from
+    # "0 or 2" or accept a class mentioned in additional free text.
     return text
 
 
@@ -232,12 +212,12 @@ def load_environment(
     dataset_id: str = "oliveirabruno01/openfarm-horse-grimace-region",
     dataset_revision: str | None = None,
     test_split: str = "test",
-    task: Literal["region_score", "binary_pain"] = "region_score",
+    task: Literal["region_score"] = "region_score",
     max_examples: int = -1,
     max_examples_per_task: int | None = None,
     seed: int = 42,
     include_region_context: bool = True,
-    require_explanation: bool = True,
+    require_explanation: bool = False,
     require_reasoning: bool | None = None,
     accuracy_reward_weight: float = 1.0,
     judge_reward_weight: float = 1.0,
@@ -269,6 +249,19 @@ def load_environment(
         )
 
     task_name = canonical_task_name(task)
+    if task_name != "region_score":
+        raise ValueError(
+            "Retired horse binary pain task is not an independent diagnosis. "
+            "Only source-defined ordinal facial-region score is retained."
+        )
+    pinned_revision = "ba5799d2c29886e238f8a069fb3501d1d91444f5"
+    if dataset_id != "oliveirabruno01/openfarm-horse-grimace-region":
+        raise ValueError("Unreviewed dataset override is not in the active suite.")
+    if dataset_revision is not None and dataset_revision != pinned_revision:
+        raise ValueError("The retained horse task requires its audited HF revision.")
+    dataset_revision = pinned_revision
+    if test_split not in ("test", "test_raw"):
+        raise ValueError("Only heldout test and test_raw horse partitions are allowed.")
     if task_name not in TASK_CONFIGS:
         raise ValueError(
             f"Unknown task {task!r}. Supported tasks: {sorted(TASK_CONFIGS)}"

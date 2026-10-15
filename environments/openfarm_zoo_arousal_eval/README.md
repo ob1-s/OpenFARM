@@ -1,5 +1,9 @@
 # openfarm-zoo-arousal-eval
 
+> **RETIRED (2026-10-15):** Fifteen subjective, test-only zoo clips cannot support a reliable generalization benchmark. Active execution is disabled; artifacts remain available for provenance and qualitative inspection.
+
+See [repair-or-retire decisions](../../docs/system1/SUITE_DECISIONS.md).
+
 <p>
   <a href="https://github.com/ob1-s/happy-farm/tree/main/environments/openfarm_zoo_arousal_eval">
     <img align="left" hspace="4" src="https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white" alt="GitHub">

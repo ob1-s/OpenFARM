@@ -1,5 +1,9 @@
 # openfarm-horse-grimace
 
+> **WELFARE-PROXIMAL SEED ONLY (final product-fit audit, 2026-10-15):** The ordinal `region_score` (0/1/2) is a reproducible limited perception probe, **not a validated welfare benchmark or monitoring system**. Its source contains just seven horses and single-observer HGS-style region labels from manually chosen video frames. The original `binary_pain` task remains retired. For any training experiment, **deduplicate** using `scripts/prepare_horse_unique.py`. See [product-fit verdict](../../docs/system1/FINAL_PRODUCT_FIT_AUDIT.md).
+
+See [repair-or-retire decisions](../../docs/system1/SUITE_DECISIONS.md).
+
 <p>
   <a href="https://github.com/ob1-s/happy-farm/tree/main/environments/openfarm_horse_grimace">
     <img align="left" hspace="4" src="https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white" alt="GitHub">

@@ -1,0 +1,27 @@
+name: SoundWel independent split media audit
+on:
+  push:
+    branches: [research/system1-reboot-2026-10]
+    paths:
+      - scripts/audit_soundwel_groups.py
+      - .github/workflows/openfarm-soundwel-audit.yml
+  workflow_dispatch:
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install 'datasets>=4.5.0' 'huggingface_hub>=1.0.0'
+      - name: Rehash actual audio and reconstruct conservative recording groups
+        run: python scripts/audit_soundwel_groups.py --output reports/soundwel.json
+      - name: Retain inspection report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: openfarm-soundwel-group-audit
+          path: reports/soundwel.json
+          retention-days: 14

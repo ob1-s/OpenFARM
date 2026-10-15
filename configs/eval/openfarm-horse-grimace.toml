@@ -14,7 +14,7 @@ env_id = "openfarm-horse-grimace"
 test_split = "test"
 include_region_context = true
 judge_mode = "none" # "self" | "external" | "none"
-require_explanation = true
+require_explanation = false
 max_examples_per_task = 24
 seed = 42
 
@@ -29,6 +29,5 @@ sampling_args = [
 
 [ablation.sweep.env_args]
 task = [
-    # "region_score",
-    "binary_pain",
+    "region_score",
 ]

@@ -99,7 +99,19 @@ def load_environment(
     user_prompt_override: str | None = None,
     **kwargs,
 ) -> vf.Environment:
+    raise RuntimeError(
+        "RETIRED FROM ACTIVE OPENFARM SUITE: AWW synthetic task is inaccessible publicly and its generated labels have not been independently verified. "
+        "See docs/system1/SUITE_DECISIONS.md; use Git history for forensic "
+        "reproduction, not current benchmark runs."
+    )
+
     """Load the Animal Welfare Assessment Benchmark."""
+
+    if train_split == test_split:
+        raise ValueError(
+            f"Invalid evaluation setup: train_split and test_split both use "
+            f"{train_split!r}. Hold out an independent evaluation split."
+        )
 
     def get_dataset_builder(split: str) -> callable:
         def build_dataset():
@@ -195,7 +207,7 @@ def load_environment(
         parsed = parser.parse_answer(completion) or ""
         pred = parsed.strip().lower() 
         ans_clean = str(info.get("target_label", "")).strip().lower()
-        is_correct = bool(pred) and ((ans_clean == pred) or (ans_clean in pred))
+        is_correct = bool(pred) and ans_clean == pred
         return 1.0 if is_correct else 0.0
 
     async def hybrid_judge_reward(

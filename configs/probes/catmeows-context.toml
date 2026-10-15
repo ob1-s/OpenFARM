@@ -1,3 +1,6 @@
+# AUXILIARY ONLY — deliberate audio-context transfer probe.
+# NOT an OpenFARM animal-welfare product benchmark.
+# See docs/system1/FINAL_PRODUCT_FIT_AUDIT.md.
 endpoints_path = "../endpoints.toml"
 
 num_examples = -1
@@ -11,8 +14,10 @@ save_results = true
 env_id = "openfarm-bioacustics"
 
 [ablation.env_args]
+task = "catmeows_context"
+allow_auxiliary_context_task = true
 modality = "vision"
-require_explanation = true
+require_explanation = false
 max_examples_per_task = 24
 seed = 3301
 
@@ -23,13 +28,4 @@ endpoint_id = [
 ]
 sampling_args = [
     { extra_body = { chat_template_kwargs = { enable_thinking = false } } },
-]
-
-[ablation.sweep.env_args]
-task = [
-    "catmeows_context",
-    "soundwel_valence",
-    # "soundwel_call_type",
-    "ungulate_valence",
-    "laying_hen_stress_context"
 ]

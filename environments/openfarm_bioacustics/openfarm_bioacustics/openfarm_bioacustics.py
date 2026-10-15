@@ -67,11 +67,8 @@ def normalize_answer(value: Any, task_config: dict) -> str:
         if text in values:
             return canonical
 
-    for canonical, values in aliases.items():
-        for alias in values:
-            if re.search(rf"\b{re.escape(alias)}\b", text):
-                return canonical
-
+    # Do not accept an answer merely because it contains a valid label.
+    # "Positive or Negative" is not an unambiguous decision.
     return str(mapped).strip()
 
 
@@ -123,13 +120,12 @@ def load_source_dataset(dataset_name: str, split: str, dataset_revision: str | N
     try:
         ds = load_dataset(dataset_name, split=split, revision=dataset_revision)
     except Exception as exc:
-        logger.warning(
-            "Failed to load split %r from %s; falling back to train. Error: %s",
-            split,
-            dataset_name,
-            exc,
-        )
-        ds = load_dataset(dataset_name, split="train", revision=dataset_revision)
+        # A missing or inaccessible test split MUST NOT silently become 'train'.
+        # Fail closed for every split, including transient network/revision errors.
+        raise RuntimeError(
+            f"Could not load requested split {split!r} from {dataset_name!r} "
+            f"(revision={dataset_revision!r}); no fallback dataset was used."
+        ) from exc
 
     if "audio" in ds.column_names:
         ds = ds.cast_column("audio", Audio(decode=False))
@@ -266,6 +262,22 @@ def build_task_env(
     def get_dataset_builder(split: str):
         def build():
             ds = load_source_dataset(dataset_name, split, dataset_revision)
+            # Repaired CatMeows split: the published cat-heldout train/test
+            # shared one owner. Remove ALL test owners from the training
+            # partition. Labels remain original, not model-inferred.
+            if task_name == "catmeows_context" and split == train_split:
+                from datasets import load_dataset
+                test_metadata = load_dataset(
+                    dataset_name, split=test_split, revision=dataset_revision
+                )
+                test_owners = set(test_metadata["owner_id"])
+                if not test_owners or None in test_owners or "" in test_owners:
+                    raise RuntimeError("CatMeows owner-heldout validation failed: missing owner IDs.")
+                if "owner_id" not in ds.column_names:
+                    raise RuntimeError("CatMeows source does not contain owner_id.")
+                ds = ds.filter(lambda row: row["owner_id"] not in test_owners)
+                if not len(ds):
+                    raise RuntimeError("CatMeows owner filtering left empty training data.")
             ds = ds.filter(lambda row: row.get(label_column) is not None)
             ds = balance_and_shuffle(
                 ds,
@@ -357,7 +369,8 @@ def build_task_env(
 
 
 def load_environment(
-    task: str | list[str] = "soundwel_valence",
+    task: str | list[str] = "catmeows_context",
+    allow_auxiliary_context_task: bool = False,
     modality: str = "audio",
     include_tabular_data: bool = False,
     use_escape_hatch: bool = False,
@@ -380,8 +393,10 @@ def load_environment(
     """Load the OpenFARM Bioacoustics environment.
 
     Args:
-        task: A task name, list of task names, or "all". Legacy SoundWel names
-            such as "valence_classification" are accepted as aliases.
+        task: Only the archived CatMeows context observation probe remains.
+            This is NOT an active animal-welfare decision benchmark.
+        allow_auxiliary_context_task: Required explicit opt-in for the
+            CatMeows dataset's experimental-context task (not welfare).
         modality: "audio", "vision", "multimodal", or "text". Vision uses an
             existing spectrogram column when available and otherwise generates a
             spectrogram from the audio at load time.
@@ -391,27 +406,79 @@ def load_environment(
             or spectrogram generation. Laying-hen tasks default to 15 seconds.
         balancing_strategy: "proportional" or "balanced" when subsampling with
             max_examples_per_task.
+        Retired tasks are no longer callable, including with historical
+            forensic override flags.
     """
+    if train_split == test_split:
+        raise ValueError(
+            f"Invalid evaluation setup: train_split and test_split both use "
+            f"{train_split!r}. Hold out an independent evaluation split."
+        )
+
     valid_modalities = {"audio", "vision", "multimodal", "text"}
     if modality not in valid_modalities:
         raise ValueError(
             f"Unknown modality {modality!r}. Valid: {sorted(valid_modalities)}"
         )
-    if modality == "text":
-        include_tabular_data = True
+    # Our *retained* tasks test observable audio, not metadata reconstruction.
+    # Metadata-only features can reveal species/condition proxies and are
+    # not interchangeable with a recording-based decision.
+    if modality == "text" or include_tabular_data:
+        raise ValueError(
+            "Only recording/spectrogram observations are supported in the "
+            "retained OpenFARM suite. Metadata-only evaluation is retired."
+        )
+    if dataset_name is not None:
+        raise ValueError(
+            "Unreviewed dataset_name override is not an active-suite dataset. "
+            "Audit and register the new source revision before using it."
+        )
+    if (train_split,test_split) not in {("train","test"),("train_raw","test_raw")}:
+        raise ValueError(
+            "Unsupported split combination: use matched published train/test "
+            "or train_raw/test_raw only."
+        )
 
     if task == "all":
-        selected_tasks = list(TASK_CONFIGS)
+        raise ValueError(
+            "No animal-welfare bioacoustic task has passed the product-fit audit. "
+            "Specify an optional research probe explicitly."
+        )
     elif isinstance(task, str):
         selected_tasks = [canonical_task_name(task)]
     else:
         selected_tasks = [canonical_task_name(name) for name in task]
+
+    # Retired data cannot be reintroduced through the old forensic override.
+    # The commit history retains the original environment for reproduction.
+    retired = [name for name in selected_tasks if name not in TASK_CONFIGS]
+    if retired:
+        from .task_registry import RETIRED_TASK_REASONS
+        details = {name: RETIRED_TASK_REASONS.get(name, "not in active suite")
+                   for name in retired}
+        raise ValueError(f"Task retired from active OpenFARM suite: {details}")
 
     unknown = [name for name in selected_tasks if name not in TASK_CONFIGS]
     if unknown:
         raise ValueError(
             f"Unknown task(s): {unknown}. Valid tasks: {list(TASK_CONFIGS)}; "
             f"aliases: {list(TASK_ALIASES)}"
+        )
+
+    pinned_revisions = {
+        "catmeows_context": "57fe220b22eae46eb555af9f4169bd4677584cea",
+    }
+    if dataset_revision is not None and any(
+        dataset_revision != pinned_revisions[name] for name in selected_tasks
+    ):
+        raise ValueError("Active suite requires the audited pinned Hugging Face revision.")
+    # Source HF revisions are immutable; each task loads its own pin.
+    if not allow_auxiliary_context_task:
+        raise ValueError(
+            "CatMeows is an AUXILIARY acoustic-context probe, not an "
+            "animal-welfare System-1 benchmark. Explicitly set "
+            "allow_auxiliary_context_task=True for research-only use. "
+            "See docs/system1/FINAL_PRODUCT_FIT_AUDIT.md."
         )
 
     envs = []
@@ -425,8 +492,8 @@ def load_environment(
                 include_tabular_data=include_tabular_data,
                 use_escape_hatch=use_escape_hatch,
                 max_examples=max_examples_per_task,
-                dataset_revision=dataset_revision,
-                dataset_name_override=dataset_name,
+                dataset_revision=pinned_revisions[task_name],
+                dataset_name_override=None,
                 train_split=train_split,
                 test_split=test_split,
                 seed=seed,

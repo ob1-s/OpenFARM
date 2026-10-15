@@ -374,6 +374,12 @@ def load_environment(
     format_reward_weight: float = 0.0,
     **kwargs,
 ) -> vf.Environment:
+    raise RuntimeError(
+        "RETIRED FROM ACTIVE OPENFARM SUITE: Zoo affect task has 15 clips, subjective interpretations and no meaningful independent generalization split. "
+        "See docs/system1/SUITE_DECISIONS.md; use Git history for forensic "
+        "reproduction, not current benchmark runs."
+    )
+
     """Load the OpenFARM Zoo Arousal environment."""
     if modality not in MODALITY_INSTRUCTIONS:
         raise ValueError(

@@ -1,5 +1,9 @@
 # openfarm-sheep-apr
 
+> **RETIRED (2026-10-15):** Source split views overlap, matched partitions have high-similarity near-duplicate image/label conflicts, and upstream commercial photo rights need verification. The old forensic override no longer enables evaluation; the loader raises a retirement error.
+
+See [repair-or-retire decisions](../../docs/system1/SUITE_DECISIONS.md).
+
 <p>
   <a href="https://github.com/ob1-s/happy-farm/tree/main/environments/openfarm_sheep_apr">
     <img align="left" hspace="4" src="https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white" alt="GitHub">
@@ -12,6 +16,8 @@
   </a>
 </p>
 <br clear="all" />
+
+> **Research integrity notice (2026-10-15):** Sheep APR evaluation is **quarantined by default**. Balanced/raw splits were created independently and are contaminated if mixed (32 and 60 identical images), and perceptual near-duplicate candidates with conflicting labels exist even across the matched balanced and raw partitions. `allow_uncertified_sheep_eval=True` is a forensic-only override, not validation. See [System-1 evaluation readiness](../../docs/system1/EVALUATION_READINESS.md).
 
 ### Overview
 - **Environment ID**: `openfarm-sheep-apr`

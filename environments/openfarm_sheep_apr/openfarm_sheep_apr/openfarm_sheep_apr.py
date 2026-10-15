@@ -94,8 +94,33 @@ def load_environment(
     user_prompt_override: str | None = None,
     cheatsheet_version: Literal["full", "short"] = "short",
     cheatsheet_override: str | None = None,
+    allow_uncertified_sheep_eval: bool = False,
     **kwargs,
 ) -> vf.Environment:
+    raise RuntimeError(
+        "RETIRED FROM ACTIVE OPENFARM SUITE: Sheep source images have near-duplicate label conflicts, unsafe split variants and unresolved commercial image rights. "
+        "See docs/system1/SUITE_DECISIONS.md; use Git history for forensic "
+        "reproduction, not current benchmark runs."
+    )
+
+
+    if not allow_uncertified_sheep_eval:
+        raise ValueError(
+            "Sheep APR evaluation is quarantined pending re-splitting: "
+            "balanced/raw training-test view mixing causes exact media overlap "
+            "(32 and 60 images), and balanced train/test contain highly "
+            "correlated perceptual near-duplicate photos including a "
+            "contradictory 0-versus-1 label pair. "
+            "Set allow_uncertified_sheep_eval=True for forensic-only "
+            "diagnostics; no heldout benchmark claim is justified. "
+            "See docs/system1/EVALUATION_READINESS.md."
+        )
+
+    if train_split == test_split:
+        raise ValueError(
+            f"Invalid evaluation setup: train_split and test_split both use "
+            f"{train_split!r}. Hold out an independent evaluation split."
+        )
 
     def get_dataset_builder(split: str) -> callable:
         def build_dataset():

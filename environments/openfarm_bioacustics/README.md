@@ -1,5 +1,9 @@
 # openfarm-bioacustics
 
+> **OPTIONAL DIAGNOSTIC ONLY (final product-fit audit, 2026-10-15):** CatMeows is **not part of the welfare framework or any product scorecard**. It classifies experimental elicitation context, not emotional state or welfare. Call `load_environment(task="catmeows_context", allow_auxiliary_context_task=True)` intentionally for audio/spectrogram representation research. Owner-heldout training is repaired; SoundWel, hen and ungulate tasks are retired. Other task descriptions below are historical only.
+
+See [repair-or-retire decisions](../../docs/system1/SUITE_DECISIONS.md).
+
 <p>
   <a href="https://github.com/ob1-s/happy-farm/tree/main/environments/openfarm_bioacustics">
     <img align="left" hspace="4" src="https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white" alt="GitHub">
@@ -26,6 +30,8 @@ metadata ablations.
 Vision mode uses a source spectrogram column when one exists. For audio-only
 datasets, the environment generates a compact spectrogram from the audio at load
 time.
+
+> **Research integrity notice (2026-10-15):** The published `ungulate_valence` task is **quarantined by default**. Both balanced and raw train/test views share byte-identical audio recordings across partitions (4 and 94 distinct hashes respectively). Pass `allow_uncertified_ungulate_eval=True` only for forensic diagnostics; these scores are not valid independent held-out results. See [System-1 evaluation readiness](../../docs/system1/EVALUATION_READINESS.md).
 
 ## Tasks
 

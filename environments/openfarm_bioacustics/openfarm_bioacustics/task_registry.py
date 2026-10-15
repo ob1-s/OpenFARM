@@ -273,3 +273,23 @@ TASK_ALIASES = {
     "ungulate_audio_valence": "ungulate_valence",
     "ungulate_valence_classification": "ungulate_valence",
 }
+
+# ------------------------------------------------------------
+# OpenFARM System-1 October 2026: ONLY repaired/narrow questions
+# in the executable suite. Older definitions above remain as
+# historical source documentation but are NOT registered tasks.
+# Archived metadata is not permission to run a retired benchmark.
+# ------------------------------------------------------------
+RETIRED_TASK_REASONS = {
+    "soundwel_valence": "Source context alone predicts valence 100% on covered test categories; not a context-independent welfare signal.",
+    "soundwel_context": "17-way experimental-context recognition is not a validated animal-welfare observable; several test classes are absent in training.",
+    "soundwel_age": "Source age/category is confounded with recording context and not verified animal-welfare supervision.",
+    "laying_hen_stress_context": "The target is experimental treatment/phase, not an independently time-localized behavioral label.",
+    "laying_hen_stress_binary": "Deterministically derived from treatment/phase; no independently annotated stress event.",
+    "ungulate_valence": "Exact audio duplicates across all train/test pairings, inconsistent animal IDs and some contradictory labels.",
+}
+RETAINED_TASKS = frozenset({"soundwel_call_type", "catmeows_context"})
+TASK_CONFIGS = {name: config for name, config in TASK_CONFIGS.items()
+                if name in RETAINED_TASKS}
+TASK_ALIASES = {alias: canonical for alias, canonical in TASK_ALIASES.items()
+                if canonical in RETAINED_TASKS}

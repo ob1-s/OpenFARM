@@ -262,6 +262,22 @@ def build_task_env(
     def get_dataset_builder(split: str):
         def build():
             ds = load_source_dataset(dataset_name, split, dataset_revision)
+            # Repaired CatMeows split: the published cat-heldout train/test
+            # shared one owner. Remove ALL test owners from the training
+            # partition. Labels remain original, not model-inferred.
+            if task_name == "catmeows_context" and split == train_split:
+                from datasets import load_dataset
+                test_metadata = load_dataset(
+                    dataset_name, split=test_split, revision=dataset_revision
+                )
+                test_owners = set(test_metadata["owner_id"])
+                if not test_owners or None in test_owners or "" in test_owners:
+                    raise RuntimeError("CatMeows owner-heldout validation failed: missing owner IDs.")
+                if "owner_id" not in ds.column_names:
+                    raise RuntimeError("CatMeows source does not contain owner_id.")
+                ds = ds.filter(lambda row: row["owner_id"] not in test_owners)
+                if not len(ds):
+                    raise RuntimeError("CatMeows owner filtering left empty training data.")
             ds = ds.filter(lambda row: row.get(label_column) is not None)
             ds = balance_and_shuffle(
                 ds,
@@ -444,7 +460,6 @@ def load_environment(
         )
 
     pinned_revisions = {
-        "soundwel_call_type": "4164e39798c2e65bce5ef8d56159d98e1267f577",
         "catmeows_context": "57fe220b22eae46eb555af9f4169bd4677584cea",
     }
     if dataset_revision is not None and any(

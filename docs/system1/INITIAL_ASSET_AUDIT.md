@@ -22,7 +22,7 @@ File: [openfarm_bioacustics.py](../../environments/openfarm_bioacustics/openfarm
 
 `load_dataset(dataset_name, split=split, revision=...)` is wrapped in `except Exception`, which logs a warning and loads `split="train"` instead. **Conditional train-as-test contamination risk**, even for transient network/decode errors. This is an observed *implementation defect/risk*, not proof any prior evaluation used the wrong split.
 
-**Fix gate:** fail closed on missing/unavailable evaluation split; explicitly permit an intentional all-train exploratory mode only via a named flag. Assert resolved split, dataset revision, source group boundaries, example count, and unique sample hashes in eval manifest. Check all prior task split names against live HF revisions.
+**Code mitigation committed (2026-10-15):** `load_source_dataset` now raises on any failed requested split rather than substituting `train`. Six mock-backed regression tests were added under `environments/openfarm_bioacustics/tests/`, including split identity and strict alias/answer parsing. **Tests are authored but not yet executed in a fully installed project runtime; no historical evals were reverified.** Remaining gate: prove group boundaries and hashes from actual source samples; pin immutable revisions and test live Hub access.
 
 ### P1: tasks currently optimize answer matching rather than probability quality
 
@@ -113,5 +113,22 @@ These studies support a real literature sweep, not a claim that synthetic data h
 - [ ] Verified all upstream rights/license chains for commercial use.
 - [ ] Completed comprehensive current data/literature sweep.
 - [ ] Trained or benchmarked any System-1 model.
+
+## October 15 follow-up: direct HF viewer observations (metadata-only)
+
+The public Hugging Face dataset viewers (not downloaded media) currently show:
+
+- **Horse grimace:** `train` has 945 rows; card also lists `test` 279, `train_raw` 3931, `test_raw` 916, all claimed animal-heldout. Displayed samples include `source_filename` strings such as `M1_C2 (1).jpg` and `M1_B0 (154).jpg`, encoding horse/region/**answer**. Existing environment does not put filenames in prompts; nonetheless, future exported task builders must maintain this isolation. No independent proof of holdout correctness.
+- **Ungulate valence:** source card reports 3181 clips (2508 Negative, 673 Positive), non-pig balanced train/test 506/136 and natural test 496; overlap risks and underlying `species_slug::animal_id` boundaries remain to verify.
+- **Laying hen:** the viewer exposes four-class experimental treatment/phase targets and derived binary target; one visible row has a 15-second assembled excerpt from **five three-second windows** drawn across a 1060-second source recording. This is not a time-localized stress event. `train` and `test` show 48/16 rows; split integrity remains to be proven from full manifests. The source dataset card itself candidly documents these limits.
+
+Direct primary pages:
+- https://huggingface.co/datasets/oliveirabruno01/openfarm-horse-grimace-region
+- https://huggingface.co/datasets/oliveirabruno01/openfarm-ungulate-valence
+- https://huggingface.co/datasets/oliveirabruno01/openfarm-laying-hen-stress
+
+This is **schema/metadata/visible-row inspection**, not media decoding. Signed HF viewer image URLs were unavailable for actual visual inspection during this pass.
+
+See [typed question and calibration contract](TYPED_QUESTION_CONTRACT.md) for the updated System-One/Jev interpretation: multiple atomic questions per shared state, Noul vs Choice vs Score, probability distribution vs derived confidence vs empirical calibration, and why continuous streams are required to estimate false-alerts/animal-day.
 
 **Reminder:** We are auditing historical work made with earlier agents, not certifying it. This note is a starting map, not the result of the exhaustive forensic review.

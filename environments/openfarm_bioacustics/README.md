@@ -1,5 +1,9 @@
 # openfarm-bioacustics
 
+> **ACTIVE STATUS (2026-10-15):** Only the **CatMeows elicitation-context** task is executable. It now filters all test owners out of training at a pinned HF revision. All SoundWel, hen and ungulate tasks are **RETIRED** from the active suite. This is audio/spectrogram source-context research, not animal welfare diagnosis. Older descriptions below document historical work only.
+
+See [repair-or-retire decisions](../../docs/system1/SUITE_DECISIONS.md).
+
 <p>
   <a href="https://github.com/ob1-s/happy-farm/tree/main/environments/openfarm_bioacustics">
     <img align="left" hspace="4" src="https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white" alt="GitHub">

@@ -16,6 +16,8 @@ OpenFARM started as a predominantly generative/System-2 animal-welfare reasoning
 
 **Assume legacy task definitions are wrong until re-audited.** Do not inherit old prompt templates, labels, splits, or dataset-card claims uncritically.
 
+**2026-10-15 legacy audit closed:** See [final product-fit verdict](FINAL_PRODUCT_FIT_AUDIT.md). Horse grimace-region scoring is an exploratory welfare-proximal seed; CatMeows is an *optional* acoustic transfer diagnostic, not welfare. **No legacy source establishes a deployable animal-welfare monitor.** The next phase is prospecting better observed behavior/welfare data, using cheap pretrained/zero-shot+ baselines before specialist training.
+
 ## State → question → decision → action contract
 
 Use TypeSafe's public System-One/Jev framing as an interface inspiration, not a claim that we have reproduced its RLCD training method or calibration. A shared state may support many independent questions, with outputs such as:

@@ -52,6 +52,21 @@ def main():
             print(f"  [{r['cell']}:{r['line']}] {r['source']}")
         if len(lines)>30:
             print(f"  ... {len(lines)-30} further matches (not printed)")
+        if path.name == 'soundwel_vocal_data.ipynb':
+            nb=json.loads(path.read_text(encoding="utf-8"))
+            for index,cell in enumerate(nb['cells']):
+                src=cell.get('source',[])
+                if isinstance(src,list):src=''.join(src)
+                lines=src.splitlines()
+                hits=[i for i,line in enumerate(lines) if 'Leakage_Group' in line]
+                if hits:
+                    indices=set()
+                    for i in hits:
+                        indices.update(range(max(0,i-8),min(len(lines),i+9)))
+                    for i in sorted(indices):
+                        line=lines[i]
+                        if not SENSITIVE.search(line):
+                            print(f"  [SOUNDWEL {index}:{i+1}] {line[:220]}")
         if path.name in ('ungulate_valence_audio_data.ipynb','sheep_apr_data.ipynb'):
             nb=json.loads(path.read_text(encoding="utf-8"))
             target_cell=3 if path.name.startswith('ungulate') else 6

@@ -99,6 +99,12 @@ def load_environment(
     user_prompt_override: str | None = None,
     **kwargs,
 ) -> vf.Environment:
+    raise RuntimeError(
+        "RETIRED FROM ACTIVE OPENFARM SUITE: AWW synthetic task is inaccessible publicly and its generated labels have not been independently verified. "
+        "See docs/system1/SUITE_DECISIONS.md; use Git history for forensic "
+        "reproduction, not current benchmark runs."
+    )
+
     """Load the Animal Welfare Assessment Benchmark."""
 
     if train_split == test_split:

@@ -35,13 +35,16 @@ def key(row):
             "composite":f"{team}|session|{context}","fallback":True}
 
 def dataset_rows():
-    from datasets import load_dataset,Audio
+    from datasets import load_dataset,Audio,Image
     from huggingface_hub import HfApi
     rev=HfApi().dataset_info(SOURCE).sha
     out={}
     for split in ("train","test"):
         ds=load_dataset(SOURCE,split=split,revision=rev,streaming=True)
         ds=ds.cast_column("audio",Audio(decode=False))
+        ds=ds.select_columns(["audio", "Audio Filename", "Recording Team",
+                               "Recording Date", "Context", "Age Category",
+                               "Sex", "Type", "Valence", "Context Category"])
         records=[]
         for r in ds:
             media=r.get("audio")

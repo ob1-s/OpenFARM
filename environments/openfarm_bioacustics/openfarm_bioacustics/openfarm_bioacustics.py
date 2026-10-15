@@ -371,7 +371,6 @@ def load_environment(
     require_explanation: bool = False,
     format_reward_weight: float = 0.0,
     balancing_strategy: str = "proportional",
-    allow_uncertified_ungulate_eval: bool = False,
     **kwargs,
 ) -> vf.Environment:
     """Load the OpenFARM Bioacoustics environment.
@@ -388,8 +387,8 @@ def load_environment(
             or spectrogram generation. Laying-hen tasks default to 15 seconds.
         balancing_strategy: "proportional" or "balanced" when subsampling with
             max_examples_per_task.
-        allow_uncertified_ungulate_eval: Forensic opt-in ONLY; published
-            ungulate splits have verified byte-identical cross-split media.
+        Retired tasks are no longer callable, including with historical
+            forensic override flags.
     """
     if train_split == test_split:
         raise ValueError(
@@ -452,11 +451,7 @@ def load_environment(
         dataset_revision != pinned_revisions[name] for name in selected_tasks
     ):
         raise ValueError("Active suite requires the audited pinned Hugging Face revision.")
-    # Source HF revisions are immutable; never silently drift to latest.
-    if len(selected_tasks)>1:
-        # The tasks have different source revisions and cannot share one
-        # dataset_revision argument without breaking provenance.
-        raise ValueError("Run the two retained task datasets separately.")
+    # Source HF revisions are immutable; each task loads its own pin.
     envs = []
     for task_name in selected_tasks:
         logger.info("Building OpenFARM Bioacoustics task: %s", task_name)

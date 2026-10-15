@@ -370,6 +370,7 @@ def build_task_env(
 
 def load_environment(
     task: str | list[str] = "catmeows_context",
+    allow_auxiliary_context_task: bool = False,
     modality: str = "audio",
     include_tabular_data: bool = False,
     use_escape_hatch: bool = False,
@@ -392,8 +393,10 @@ def load_environment(
     """Load the OpenFARM Bioacoustics environment.
 
     Args:
-        task: A task name, list of task names, or "all". Legacy SoundWel names
-            such as "valence_classification" are accepted as aliases.
+        task: Only the archived CatMeows context observation probe remains.
+            This is NOT an active animal-welfare decision benchmark.
+        allow_auxiliary_context_task: Required explicit opt-in for the
+            CatMeows dataset's experimental-context task (not welfare).
         modality: "audio", "vision", "multimodal", or "text". Vision uses an
             existing spectrogram column when available and otherwise generates a
             spectrogram from the audio at load time.
@@ -437,11 +440,22 @@ def load_environment(
         )
 
     if task == "all":
-        selected_tasks = list(TASK_CONFIGS)
+        raise ValueError(
+            "No animal-welfare bioacoustic task has passed the product-fit audit. "
+            "Specify an optional research probe explicitly."
+        )
     elif isinstance(task, str):
         selected_tasks = [canonical_task_name(task)]
     else:
         selected_tasks = [canonical_task_name(name) for name in task]
+
+    if not allow_auxiliary_context_task:
+        raise ValueError(
+            "CatMeows is an AUXILIARY acoustic-context probe, not an "
+            "animal-welfare System-1 benchmark. Explicitly set "
+            "allow_auxiliary_context_task=True for research-only use. "
+            "See docs/system1/FINAL_PRODUCT_FIT_AUDIT.md."
+        )
 
     # Retired data cannot be reintroduced through the old forensic override.
     # The commit history retains the original environment for reproduction.

@@ -1,0 +1,31 @@
+name: OpenFARM integrity (offline smoke)
+on:
+  pull_request:
+  push:
+    branches: [research/system1-reboot-2026-10]
+  workflow_dispatch:
+
+jobs:
+  fixture-integrity:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Offline split/group fixture tests
+        run: python -m unittest discover -s tests -p 'test_audit_openfarm_integrity.py' -v
+
+  bioacoustics-unit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install bioacoustics environment
+        run: python -m pip install -e environments/openfarm_bioacustics
+      - name: Verify fail-closed split and strict answers
+        run: python -m unittest discover -s environments/openfarm_bioacustics/tests -v

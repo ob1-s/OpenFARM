@@ -103,6 +103,15 @@ class TestRetirementBoundaries(unittest.TestCase):
             load_environment(task="catmeows_context", dataset_name="other/dataset")
 
 
+    def test_cat_requires_explicit_auxiliary_opt_in(self):
+        with self.assertRaisesRegex(ValueError, "AUXILIARY"):
+            load_environment(task="catmeows_context")
+
+    def test_no_global_bioacoustic_suite(self):
+        with self.assertRaisesRegex(ValueError, "No animal-welfare"):
+            load_environment(task="all")
+
+
 class TestExactAnswers(unittest.TestCase):
     def setUp(self):
         self.config = TASK_CONFIGS["catmeows_context"]

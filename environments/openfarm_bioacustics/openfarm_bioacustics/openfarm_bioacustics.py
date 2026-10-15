@@ -388,6 +388,12 @@ def load_environment(
         balancing_strategy: "proportional" or "balanced" when subsampling with
             max_examples_per_task.
     """
+    if train_split == test_split:
+        raise ValueError(
+            f"Invalid evaluation setup: train_split and test_split both use "
+            f"{train_split!r}. Hold out an independent evaluation split."
+        )
+
     valid_modalities = {"audio", "vision", "multimodal", "text"}
     if modality not in valid_modalities:
         raise ValueError(

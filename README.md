@@ -17,7 +17,7 @@ OpenFARM is an open research program investigating **small, fast, typed, calibra
 
 | Task | Exact supervised target | What it **doesn't** establish |
 |---|---|---|
-| `openfarm-horse-grimace` / `region_score` | Ordinal facial-region grimace cue score 0–2 | Clinical pain, welfare diagnosis, unseen-farm generalization |
+| `openfarm-horse-grimace` / `region_score` | Ordinal facial-region grimace cue score 0–2; source-verified dedup train views | Clinical pain, welfare diagnosis, unseen-farm generalization |
 | `openfarm-bioacoustics` / `catmeows_context` | Recording elicitation context, with **owner-heldout repaired train view** | Animal distress, welfare valence or disease |
 
 All other old environments and tasks (including SoundWel) have been removed from active evaluation. Their implementations and preparation notebooks remain for archaeological reproducibility; retired environment loaders refuse execution, and old eval/RL TOMLs were removed. The original Hugging Face repositories have **not** been deleted or edited.
@@ -33,6 +33,8 @@ python scripts/smoke_env_construction.py   # after installing legacy env package
 python scripts/audit_openfarm_integrity.py --dataset cat --output /tmp/cat-audit.json
 python scripts/triage_decision_sources.py --dataset horse --output /tmp/horse-triage.json
 ```
+
+For training preparation, **do not use the original horse train rows unmodified**: run `python scripts/prepare_horse_unique.py --manifest horse-v2.json --output-dir horse-v2`. This removes 116 exact duplicate rows from balanced train (945→829) and 1,035 from natural train (3,931→2,896) and preserves the horse-heldout test groups. For CatMeows, the environment filters all test owners from training (balanced 201→126; natural 322→212), which was independently checked against the published data.
 
 CI checks pinned published revisions; **even a clean split/hash test is not proof of biological label validity or commercial fitness**.
 

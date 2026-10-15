@@ -34,7 +34,7 @@ def audit():
     for key in KEYS:
         if key not in beh or key not in phys:raise RuntimeError(f"Missing key {key}")
     for table,df in (("behavior",beh),("physiology",phys)):
-        if df.duplicated(KEYS+([] if table=="behavior" else ["sample"])).any():
+        if df.duplicated(list(KEYS)+([] if table=="behavior" else ["sample"])).any():
             raise RuntimeError(f"{table} unexpectedly duplicates source animal/context/sample")
     if set(beh["context"].dropna())!={"positive","negative"}:
         raise RuntimeError("Source context schema shifted")

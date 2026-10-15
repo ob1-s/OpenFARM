@@ -51,7 +51,7 @@ def metrics(y,pred):
             "tp":tp,"fp":fp,"tn":tn,"fn":fn,
             "precision":round(tp/max(1,tp+fp),4),
             "recall":round(tp/max(1,tp+fn),4),
-            "false_detector_events_per_pig_day":round(fp/(len(y)/1440),2)}
+            "false_positive_minutes_per_pig_day":round(fp/(len(y)/1440),2)}
 
 def main():
     p=argparse.ArgumentParser()

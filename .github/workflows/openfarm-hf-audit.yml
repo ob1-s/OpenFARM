@@ -5,6 +5,7 @@ on:
     paths:
       - ".github/workflows/openfarm-hf-audit.yml"
       - "scripts/audit_openfarm_integrity.py"
+      - "scripts/diagnose_ungulate_groups.py"
   workflow_dispatch:
 
 jobs:

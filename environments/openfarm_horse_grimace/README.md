@@ -1,6 +1,6 @@
 # openfarm-horse-grimace
 
-> **ACTIVE STATUS (2026-10-15):** Only ordinal `region_score` (0/1/2) is executable, with pinned horse-heldout source revision. The old `binary_pain` task is **RETIRED** as a thresholded derivative rather than independent clinical pain supervision. Results are regional-cue research, not horse-level pain diagnosis.
+> **WELFARE-PROXIMAL SEED ONLY (final product-fit audit, 2026-10-15):** The ordinal `region_score` (0/1/2) is a reproducible limited perception probe, **not a validated welfare benchmark or monitoring system**. Its source contains just seven horses and single-observer HGS-style region labels from manually chosen video frames. The original `binary_pain` task remains retired. For any training experiment, **deduplicate** using `scripts/prepare_horse_unique.py`. See [product-fit verdict](../../docs/system1/FINAL_PRODUCT_FIT_AUDIT.md).
 
 See [repair-or-retire decisions](../../docs/system1/SUITE_DECISIONS.md).
 

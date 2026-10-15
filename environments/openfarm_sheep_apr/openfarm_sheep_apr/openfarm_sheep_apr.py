@@ -97,6 +97,12 @@ def load_environment(
     **kwargs,
 ) -> vf.Environment:
 
+    if train_split == test_split:
+        raise ValueError(
+            f"Invalid evaluation setup: train_split and test_split both use "
+            f"{train_split!r}. Hold out an independent evaluation split."
+        )
+
     def get_dataset_builder(split: str) -> callable:
         def build_dataset():
             ds = load_dataset(dataset_id, split=split, revision=dataset_revision)

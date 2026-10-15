@@ -5,7 +5,7 @@ Usage: python scripts/validate_first_sources.py --output reports/deep-schema.jso
 """
 from __future__ import annotations
 from collections import Counter
-import argparse,io,json,hashlib,zipfile
+import argparse,io,json,hashlib,zipfile,time
 from pathlib import Path
 import requests
 import pandas as pd
@@ -14,13 +14,27 @@ S=requests.Session()
 S.headers["User-Agent"]="OpenFARM-research-audit/0.2 (source-data schema only)"
 
 def fetch(url,cap=6_000_000):
-    r=S.get(url,timeout=(20,75),stream=True)
-    r.raise_for_status()
-    buf=bytearray()
-    for chunk in r.iter_content(65536):
-        buf+=chunk
-        if len(buf)>cap: raise RuntimeError("Source file exceeds cap")
-    return bytes(buf)
+    # Some Zenodo frontends terminate otherwise valid 2.6 MB downloads.
+    # Bounded retries with an alternate API file route; never promote
+    # success if source media were not actually downloaded.
+    urls=[url]
+    if url.startswith("https://zenodo.org/records/17090997/files/series.zip"):
+        urls.append("https://zenodo.org/api/records/17090997/files/series.zip/content")
+    last=None
+    for attempt in range(4):
+        target=urls[attempt%len(urls)]
+        try:
+            with S.get(target,timeout=(20,65),stream=True) as r:
+                r.raise_for_status()
+                buf=bytearray()
+                for chunk in r.iter_content(65536):
+                    buf+=chunk
+                    if len(buf)>cap:raise RuntimeError("Source file exceeds cap")
+                return bytes(buf)
+        except (requests.exceptions.RequestException, ConnectionResetError) as e:
+            last=e
+            if attempt<3:time.sleep([2,5,8][attempt])
+    raise RuntimeError(f"4 source download attempts exhausted: {type(last).__name__}")
 
 def hotpig():
     z=fetch("https://zenodo.org/records/17090997/files/series.zip?download=1")
@@ -91,9 +105,11 @@ def equifacs():
 def main():
     p=argparse.ArgumentParser()
     p.add_argument("--output",type=Path,required=True)
+    p.add_argument("--only-hotpig",action="store_true",help="Avoid re-downloading EquiFACS during HotPig retry")
     a=p.parse_args()
     out={}
-    for name,fn in (("HotPig",hotpig),("EquiFACS",equifacs)):
+    tasks=(("HotPig",hotpig),) if a.only_hotpig else (("HotPig",hotpig),("EquiFACS",equifacs))
+    for name,fn in tasks:
         try:out[name]=fn()
         except Exception as e:out[name]={"error":f"{type(e).__name__}: {e}"}
     a.output.parent.mkdir(parents=True,exist_ok=True)

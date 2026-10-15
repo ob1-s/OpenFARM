@@ -88,7 +88,7 @@ class TestKnownContaminatedEval(unittest.TestCase):
 
 class TestRetirementBoundaries(unittest.TestCase):
     def test_retired_six_not_registered(self):
-        self.assertEqual(set(TASK_CONFIGS), {"catmeows_context", "soundwel_call_type"})
+        self.assertEqual(set(TASK_CONFIGS), {"catmeows_context"})
 
     def test_metadata_mode_is_retired(self):
         with self.assertRaisesRegex(ValueError, "recording/spectrogram"):
@@ -105,21 +105,21 @@ class TestRetirementBoundaries(unittest.TestCase):
 
 class TestExactAnswers(unittest.TestCase):
     def setUp(self):
-        self.config = TASK_CONFIGS["soundwel_call_type"]
+        self.config = TASK_CONFIGS["catmeows_context"]
 
     def test_source_aliases_still_work(self):
-        self.assertEqual(normalize_answer("HF", self.config), "HF")
-        self.assertEqual(normalize_answer("LF", self.config), "LF")
-        self.assertEqual(normalize_answer("lf", self.config), "LF")
+        self.assertEqual(normalize_answer("waiting", self.config), "waiting_for_food")
+        self.assertEqual(normalize_answer("brushing", self.config), "brushing")
+        self.assertEqual(normalize_answer("isolation", self.config), "isolation_unfamiliar_environment")
 
     def test_multiple_answers_are_not_accepted_as_one(self):
-        ambiguous = normalize_answer("HF or LF", self.config)
-        self.assertNotEqual(normalized_text(ambiguous), normalized_text("HF"))
-        self.assertNotEqual(normalized_text(ambiguous), normalized_text("LF"))
+        ambiguous = normalize_answer("brushing or waiting", self.config)
+        self.assertNotEqual(normalized_text(ambiguous), normalized_text("brushing"))
+        self.assertNotEqual(normalized_text(ambiguous), normalized_text("waiting_for_food"))
 
     def test_extra_unrequested_text_is_not_accepted(self):
-        prediction = normalize_answer("I think the answer is HF", self.config)
-        self.assertNotEqual(normalized_text(prediction), normalized_text("LF"))
+        prediction = normalize_answer("I think the answer is brushing", self.config)
+        self.assertNotEqual(normalized_text(prediction), normalized_text("brushing"))
 
 
 if __name__ == "__main__":

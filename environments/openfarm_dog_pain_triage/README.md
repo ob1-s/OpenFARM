@@ -1,5 +1,9 @@
 # openfarm-dog-pain-triage
 
+> **RETIRED (2026-10-15):** The old target is circularly predictable from clinical `pain_type` for most test records. No independent pain inference is established. Active evaluations are disabled; source notebooks remain as historical research.
+
+See [repair-or-retire decisions](../../docs/system1/SUITE_DECISIONS.md).
+
 <p>
   <a href="https://github.com/ob1-s/happy-farm/tree/main/environments/openfarm_dog_pain_triage">
     <img align="left" hspace="4" src="https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white" alt="GitHub">

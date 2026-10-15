@@ -22,7 +22,7 @@ HORSE="oliveirabruno01/openfarm-horse-grimace-region"
 SHEEP="oliveirabruno01/sheep-facial-expression-benchmark"
 UNGULATE="oliveirabruno01/openfarm-ungulate-valence"
 
-def open_rows(dataset,split,columns,max_items=None):
+def open_rows(dataset,split,max_items=None):
     from datasets import load_dataset,Image as HFImage, Audio
     from huggingface_hub import HfApi
     rev=HfApi().dataset_info(dataset).sha

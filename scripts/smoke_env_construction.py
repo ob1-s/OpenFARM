@@ -5,7 +5,8 @@ This is an offline import/construction test, not a model or data-quality check.
 from importlib import import_module
 
 ACTIVE = (
-    ("openfarm_bioacustics", {"task": "catmeows_context", "modality": "vision"}),
+    ("openfarm_bioacustics", {"task": "catmeows_context", "modality": "vision",
+                            "allow_auxiliary_context_task": True}),
     ("openfarm_horse_grimace", {"task": "region_score", "judge_mode": "none"}),
 )
 RETIRED = (
@@ -32,7 +33,13 @@ for task in ("ungulate_valence","laying_hen_stress_binary","soundwel_call_type",
     except ValueError as exc:
         if "retired" not in str(exc):raise
     else:raise AssertionError(f"Retired bioacoustic task still executable: {task}")
-print("OK: all six retired bioacoustic tasks denied")
+print("OK: all seven retired bioacoustic tasks denied")
+
+try:
+    bio(task="catmeows_context")
+except ValueError as exc:
+    if "AUXILIARY" not in str(exc):raise
+else:raise AssertionError("Optional CatMeows used without explicit opt-in")
 
 horse=import_module("openfarm_horse_grimace").load_environment
 try:horse(task="binary_pain")

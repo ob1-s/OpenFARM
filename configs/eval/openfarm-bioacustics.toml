@@ -27,6 +27,5 @@ sampling_args = [
 
 [ablation.sweep.env_args]
 task = [
-    "catmeows_context",
-    "soundwel_call_type"
+    "catmeows_context"
 ]

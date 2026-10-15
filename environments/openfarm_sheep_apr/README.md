@@ -13,6 +13,8 @@
 </p>
 <br clear="all" />
 
+> **Research integrity notice (2026-10-15):** Sheep APR evaluation is **quarantined by default**. Balanced/raw splits were created independently and are contaminated if mixed (32 and 60 identical images), and perceptual near-duplicate candidates with conflicting labels exist even across the matched balanced and raw partitions. `allow_uncertified_sheep_eval=True` is a forensic-only override, not validation. See [System-1 evaluation readiness](../../docs/system1/EVALUATION_READINESS.md).
+
 ### Overview
 - **Environment ID**: `openfarm-sheep-apr`
 - **Short description**: Sheep facial pain-expression benchmark using SPFES-style proxy labels.

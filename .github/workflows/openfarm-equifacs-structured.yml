@@ -1,0 +1,23 @@
+name: EquiFACS FACS to independent vet rating taskability
+on:
+  push:
+    branches: [research/2026-10-data-prospecting]
+    paths: [scripts/prepare_equifacs_structured.py, .github/workflows/openfarm-equifacs-structured.yml]
+  workflow_dispatch:
+jobs:
+  align:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install 'pandas>=2.2,<3' requests openpyxl
+      - run: python scripts/prepare_equifacs_structured.py --report audit-reports/equifacs-facs-vet-join.json
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: equifacs-vet-rater-join
+          path: audit-reports/equifacs-facs-vet-join.json
+          retention-days: 30

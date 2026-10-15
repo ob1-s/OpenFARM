@@ -33,6 +33,18 @@ class IntegrityTests(unittest.TestCase):
         self.assertIn('view_not_subset',[x['code'] for x in check(train=[C])['findings']])
     def test_conflicting_labels(self):
         self.assertIn('contradictory_labels',[x['code'] for x in check(raw_train=[A,dict(A,label='no')])['findings']])
+    def test_distinguish_image_bytes_from_source_membership(self):
+        # Two different image encodings of the same source item can be
+        # correctly related by provenance, but not by raw byte hash.
+        source_train=[{'id':'hash-A','source':'filename::yes','animal':'A','label':'yes'}]
+        cleaned=[{'id':'hash-B','source':'filename::yes','animal':'A','label':'yes'}]
+        test=[{'id':'hash-C','source':'other::no','animal':'C','label':'no'}]
+        r=m.inspect_rows(
+            {'train_raw':source_train,'test_raw':test,'train':cleaned,'test':test},
+            'id','animal','label',['train_raw','test_raw','train','test'],
+            subset_key='source')
+        self.assertNotIn('view_not_subset',[f['code'] for f in r['findings']])
+
     def test_missing_subject_id(self):
         r=m.inspect_rows({'train':[A],'test':[C]},'id',None,'label',['train','test'])
         self.assertEqual(r['status'],'INCOMPLETE')

@@ -64,6 +64,24 @@ Candidate questions **only after synchronization**: `Noul(AU active in this inte
 
 Prior results: [actual-file report](2026-10-initial-source-approval-results.md).
 
+### EquiFACS actual structured task build (not a certified clinical benchmark)
+
+Follow-up data build **passed clean GitHub CI** [run 38825087764](https://github.com/ob1-s/OpenFARM/actions/runs/38825087764). `scripts/prepare_equifacs_structured.py` parsed **1,346 valid expert AU intervals** across **21 clinical media IDs**, and joined them to all **167 veterinary rating intervals** by media/time. Of the original ratings, 77 were **non-codeable**; only 90 had a stated clinical category.
+
+Strict independent-annotator filter: **exclude Alina's 50 pain annotations**, since Alina also did the FACS annotation. Johan and Camilla together leave **64 codeable rating intervals (47 no-pain, 12 mild, 5 severe)** across 21 media; *none are moderate*, so this does **not** support reliable Score(0–3) supervision. Excluding **10** of these intervals with overlapping facial-action `Uncodable` or `Non-scoreable` quality flags yields **54 binary reference intervals across 18 media IDs**.
+
+`scripts/build_equifacs_clinical_v0.py` produces three **video/media-disjoint local partitions** and stores original labels/rater/media timestamps as separate provenance, never as model features. Data build output (research pilot only):
+
+| Partition | Independent media groups | Rating intervals | Pain-positive intervals | No-pain intervals |
+|---|---:|---:|---:|---:|
+| Training | 10 | 32 | 5 | 27 |
+| Calibration | 3 | 10 | 3 | 7 |
+| Test | 5 | 12 | 7 | 5 |
+
+**Admission decision:** `TASK_VALIDATED/PILOT CONSTRUCTED`, **NOT** admitted as a reliable independent veterinary benchmark or general-purpose calibrated welfare model scorecard. The **test has only five clinical media** and twelve rated intervals; its positive prevalence is different from train, and the original manuscript's 21 clinically affected horses must be cross-verified against source `Media` identities before claiming animal holdout. Validation/threshold tuning on just three media is especially fragile. This is a legitimate *System-1 structured perception-to-expert-judgment testbed* for exploratory low-budget comparison, not an answer to false alerts per horse-day, clinical diagnosis, or raw-video recognition. The source videos and independent site samples would be needed to graduate.
+
+**Meaningful scientific win:** the question is now based on **separate human observations**, not a binary threshold of our old HGS source scores. It is subject to genuine censoring, rater independence, media grouping and quality-gating rather than invented labels.
+
 ## Additional positive/subjective evidence prospects (do not equate positive experimental situations with positive emotion)
 
 - [2024 horse affiliative indicators review](https://www.sciencedirect.com/science/article/pii/S0168159124000844): adult horse **voluntary social proximity** with context is better supported than assuming all play or social grooming indicates welfare. Physical affordance matters (cannot approach if confined).

@@ -1,0 +1,25 @@
+name: OpenFARM PigWeb multi-site affect indicators audit
+on:
+  push:
+    branches: [research/2026-10-data-prospecting]
+    paths:
+      - scripts/audit_pigweb_cross_site.py
+      - .github/workflows/openfarm-pigweb-audit.yml
+  workflow_dispatch:
+jobs:
+  source-join:
+    runs-on: ubuntu-latest
+    timeout-minutes: 14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install 'pandas>=2.2,<3' requests
+      - run: python scripts/audit_pigweb_cross_site.py --output audit-reports/pigweb-cross-site.json
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pigweb-source-integrity
+          path: audit-reports/pigweb-cross-site.json
+          retention-days: 30

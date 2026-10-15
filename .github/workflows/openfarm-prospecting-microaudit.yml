@@ -1,0 +1,28 @@
+name: OpenFARM source prospecting microaudit
+on:
+  push:
+    branches: [research/2026-10-data-prospecting]
+    paths:
+      - scripts/prospecting_microaudit.py
+      - .github/workflows/openfarm-prospecting-microaudit.yml
+  workflow_dispatch:
+jobs:
+  source-files:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install schema-only dependencies
+        run: python -m pip install 'pandas>=2.2,<3' requests openpyxl
+      - name: Inspect real small Zenodo data and EquiFACS annotations
+        run: python scripts/prospecting_microaudit.py --output audit-reports/source-microaudit.json
+      - name: Retain nonredistributive forensic findings
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: openfarm-source-microaudit
+          path: audit-reports/source-microaudit.json
+          retention-days: 30

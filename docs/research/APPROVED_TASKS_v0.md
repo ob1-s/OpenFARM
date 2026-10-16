@@ -46,6 +46,19 @@ Compare source prior and always-negative, this published `eating>0` rule, regula
 | Cross-farm / clinical well-being outcome validation | **Not approved / not provided** |
 | Commercial training or product deployment | **Not cleared by this audit** (though record-level CC BY is favorable; no product validation) |
 
+## Cattle wearable MI → expert video-observed behavior (v0)
+
+**Admission:** **APPROVED_RESEARCH_TRAIN + APPROVED_RESEARCH_EVAL (bounded, 24 cows / two locations)**. A genuine low-cost multimodal *observation* supervision task; **not** independently certified clinical welfare, affect or caregiver escalation.
+
+- **Task:** `Choice(GR grazing, WA walking, RE resting, RU ruminating)` from scalar wearable motion index `MI` alone, *video-reviewed human behavior* as reference.
+- **Source:** [Figshare 28801181 version 2](https://doi.org/10.6084/m9.figshare.28801181.v2), **CC BY 4.0**, timestamped `cattle_behavior_data_time_V2.csv`, SHA256 `b4d6e14d6ff029dbf497287a774aaa27ec471e7ed1ef5884e9cf0207c784fe37`. Download and actual-file source SHA validated.
+- **Observations:** 9,222 source rows from **24 distinct cows**, with six animals in each breed and twelve at each of two ranch sites. Breed and site are confounded.
+- **Research splits:** 16 train/4 calibration/4 test cows, one test cow per breed; and separate directional all-animal **site-heldout** protocols (9 train/3 calibration/12 test cows). Use only `MI` as model input; keep `Breed`, `ID`, `Time.MTD`, `site`, source `State` and label in separate provenance.
+- **Verified CPU models:** On 4 cow-heldout test animals, prior accuracy **41.18%**, logistic **81.57%**, tiny tree **82.83%** (macro-F1 **0.643**); site-transfer trees **81.44% / 82.10%**. **Log-loss is severe (~4.03 tree, ~8.99 logistic); do not claim calibrated decision confidence or deployability.**
+- **Data integrity caution:** `Time.MTD` isn't uniquely identified per cow: 258 repeated cow/time keys carry differing values, and 34 full-row duplicates exist. We preserved records rather than deleting plausible different-session observations. **Not an approved temporal event/longitudinal label**. All research evaluation split by cow.
+- **Scripts:** `scripts/audit_open_cattle_behavior.py` and `scripts/build_public_cattle_behavior_v0.py`; [actual downloadable files audit](https://github.com/ob1-s/OpenFARM/actions/runs/38830460260), [CPU baselines green](https://github.com/ob1-s/OpenFARM/actions/runs/38830879270), [local research train/eval artifacts verified](https://github.com/ob1-s/OpenFARM/actions/runs/38831042355).
+- **Full evidence:** [Cattle source and decision admission](2026-10-public-cattle-choice-admission.md).
+
 ## EquiFACS: constructed scientific pilot, NOT approved benchmark
 
 **Status:** **TASK_VALIDATED / PILOT CONSTRUCTED**, **not** approved for a reliable held-out veterinary benchmark, calibrated pain screening, or deployment. `scripts/prepare_equifacs_structured.py` aligned source facial-action intervals to independent clinical ratings. Strictly excluding Alina's pain ratings because Alina also coded the facial actions leaves **64 codeable intervals from Johan/Camilla**. Excluding 10 overlapping unscorable-AU intervals leaves **54 binary clinical judgments across 18 media**, with source-group-disjoint 10 train / 3 calibration / 5 test media. Only **12 held-out rating intervals** and 5 held-out clinical videos; `Score(0–3)` is not supported because no independently retained moderate ratings. [Real-source build passed](https://github.com/ob1-s/OpenFARM/actions/runs/38825087764). See [Track B dossier](2026-10-track-b-affective-supervision-audit.md) for the crucial rater, missingness, and animal-group caveats.  

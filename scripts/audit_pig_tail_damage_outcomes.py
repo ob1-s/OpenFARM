@@ -80,8 +80,8 @@ def main():
                         "type_conflict":bool(frame.PenType.nunique()>1),
                         "date_conflict":bool(frame["TBSTART_"].nunique()>1)})
         info["pen_groups"]=len(out)
-        info["pens_by_farm_type"]=dict(collections.Counter(
-            (str(x["farm"]),x["type"]) for x in out).items())
+        info["pens_by_farm_type"]={f"{site}|{pen_type}":int(n) for (site,pen_type),n in
+            collections.Counter((str(x["farm"]),x["type"]) for x in out).items()}
         info["pen_type_or_onset_conflicts"]=[x for x in out if x["type_conflict"] or x["date_conflict"]][:15]
         info["example_group_summaries"]=out[:12]
         info["first_treatment_events"]=sum(str(x["type"]).upper()=="TB" for x in out)

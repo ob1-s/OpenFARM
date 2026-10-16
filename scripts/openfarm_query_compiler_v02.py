@@ -14,7 +14,7 @@ from dataclasses import dataclass,field
 from datetime import datetime
 from pathlib import Path
 from typing import Any
-import json,math
+import hashlib,json,math
 
 KINDS={"Noul","Choice","Score","Value"}
 SPLITS={"train","calibration","test"}
@@ -183,14 +183,20 @@ class Compiler:
         # and one static catalog of questions (labels never appear in prompt).
         d=self.local_dir/obs.source/obs.split
         d.mkdir(parents=True,exist_ok=True)
-        row_id=obs.state_id
+        # Opaque stable key: source state IDs often encode pig/site/condition,
+        # and temporal cutoffs can reveal fixed experiment schedules. Neither
+        # is safe for learner input. Put full identifiers/time in provenance.
+        row_id=hashlib.sha256((obs.source+"|"+obs.state_id).encode()).hexdigest()[:24]
         records={
          "states":safe_json({"state_id":row_id,"modalities":list(obs.modalities),
-                             "features":obs.features,"cutoff":obs.cutoff,"cutoff_index":obs.cutoff_index,
+                             "features":obs.features,
                              "question_ids":[q.question_id for q in obs.questions]}),
          "references":{"state_id":row_id,"answers":[q.private() for q in obs.questions]},
-         "provenance":{"state_id":row_id,"source":obs.source,"group_scope":obs.group_scope,
-                       "group_id":obs.group_id,"split":obs.split,"audit":obs.audit}
+         "provenance":{"state_id":row_id,"original_source_key":obs.state_id,
+                       "source":obs.source,"group_scope":obs.group_scope,
+                       "group_id":obs.group_id,"split":obs.split,
+                       "cutoff":obs.cutoff,"cutoff_index":obs.cutoff_index,
+                       "audit":obs.audit}
         }
         for name,record in records.items():
             fp=d/(name+".jsonl")

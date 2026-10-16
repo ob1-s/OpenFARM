@@ -59,7 +59,7 @@ def build():
         if sample not in ("pre","post") or sample in physical[k]:
             raise RuntimeError("Invalid/duplicate physiological sample key")
         physical[k][sample]=r
-    if len(physical)!=248 or set(behavior)-set(physical)!=set(behavior)-set(physical):
+    if len(physical)!=248 or len(set(behavior)-set(physical))!=8 or set(physical)-set(behavior):
         raise RuntimeError("Unexpected physiology grouping")
     examples=[]
     for k,readings in sorted(physical.items()):
@@ -133,6 +133,13 @@ def build():
         out["usable_outcomes"][a]={"n":len(v),"increase":sum(v),"not_increase":len(v)-sum(v)}
     out["post_delay_min"]=min(e["provenance"]["delta_minutes"] for e in examples)
     out["post_delay_max"]=max(e["provenance"]["delta_minutes"] for e in examples)
+    # Pinned-source cohort controls: fail closed on differing labels, dates,
+    # missingness or site/group membership, rather than silently admitting data.
+    if out["unique_subjects"]!=124 or out["distinct_sites"]!=4:
+        raise RuntimeError("PigWeb independent animal/site cohort changed")
+    if (out["usable_outcomes"]["cortisol"]!={"n":234,"increase":143,"not_increase":91}
+        or out["usable_outcomes"]["oxytocin"]!={"n":210,"increase":102,"not_increase":108}):
+        raise RuntimeError("Independently assayed outcome membership changed")
     return out,examples
 
 def main():

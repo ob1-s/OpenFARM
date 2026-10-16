@@ -1,0 +1,31 @@
+name: Welfare sprint two independent clinical labels per cow state
+on:
+  push:
+    branches: [research/2026-10-data-prospecting]
+    paths:
+      - scripts/build_brazil_cow_welfare_queries.py
+      - .github/workflows/openfarm-brazil-cow-two-questions.yml
+  workflow_dispatch:
+jobs:
+  reference-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install 'pandas>=2.2,<3' 'scikit-learn>=1.4,<1.8' numpy requests
+      - name: Build two independent human reference labels under frozen v0.2 compiler
+        run: python scripts/build_brazil_cow_welfare_queries.py --out reports/brazil-cow-2q.json --local-dir /tmp/brazil-clinical-source
+      - name: Ensure source inputs/labels/provenance have separate actual local files
+        run: |
+          test -s /tmp/brazil-clinical-source/brazil_cow_2016_clinical/train/states.jsonl
+          test -s /tmp/brazil-clinical-source/brazil_cow_2016_clinical/test/references.jsonl
+          test -s /tmp/brazil-clinical-source/brazil_cow_2016_clinical/calibration/provenance.jsonl
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: brazil-cow-independent-clinical-questions
+          path: reports/brazil-cow-2q.json
+          retention-days: 30

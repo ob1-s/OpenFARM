@@ -5,6 +5,8 @@
 
 > **Learn what deserves attention, from observable behavior and defensible evidence.**
 
+> **16-farm robustness update (same day):** The 5,529-cow retrospective risk pilot has now been tested in **all 16 leave-one-entire-farm-out folds**, not merely a three-farm split. Using **only breed, lactation and days in milk**, L2 logistic beat the train-farm prevalence baseline on **16/16 farms for gait ≥3**, **15/16 for gait ≥4** and **12/16 for BCS <3** (farm-average Brier gains **+0.04494, +0.02236, +0.00804** respectively). Adding milk production offered no meaningful improvement. **Research train/eval admission is limited to cross-sectional welfare risk in this already explored original study, not direct welfare sensing, prospective care, or a blind leaderboard.** [Full evidence and caveats](WELFARE_DECISION_EVIDENCE_SPRINT_LOFO_2026_10_16.md); [passing real-source CI](https://github.com/ob1-s/OpenFARM/actions/runs/38868420045).
+
 ## Executive findings
 
 | New original evidence | Actual access and scientific reference | Train/eval test | Admission |

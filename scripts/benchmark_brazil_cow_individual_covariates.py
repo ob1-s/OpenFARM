@@ -63,12 +63,22 @@ def main():
         m=Pipeline([("prepare",prep),("logistic",LogisticRegression(C=.5,max_iter=400,random_state=20261016))])
         m.fit(tr[CAT+NUM],tr.target)
         baseline=float(tr.target.mean())
+        ptest=m.predict_proba(te[CAT+NUM])[:,1]
+        by_farm=[]
+        for fid in sorted(te.farm_ID.unique()):
+            mask=(te.farm_ID.to_numpy()==fid)
+            by_farm.append({
+                "source_farm_id":int(fid),
+                "baseline":sampled_stats(te.target.to_numpy()[mask],np.full(int(mask.sum()),baseline)),
+                "model":sampled_stats(te.target.to_numpy()[mask],ptest[mask])
+            })
         result["tasks"][name]={
           "train":{"rows":len(tr),"positive":int(tr.target.sum())},
           "calibration":{"rows":len(cal),"positive":int(cal.target.sum())},
           "test":{"rows":len(te),"positive":int(te.target.sum())},
           "baseline":sampled_stats(te.target,np.full(len(te),baseline)),
-          "logistic":sampled_stats(te.target,m.predict_proba(te[CAT+NUM])[:,1])
+          "logistic":sampled_stats(te.target,ptest),
+          "by_test_farm":by_farm
         }
     a.out.parent.mkdir(parents=True,exist_ok=True)
     a.out.write_text(json.dumps(result,indent=2)+"\n")

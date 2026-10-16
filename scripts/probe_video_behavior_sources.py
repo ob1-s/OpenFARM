@@ -23,7 +23,12 @@ try:
         if item["bytes"]<=50000 and (item["name"].lower().endswith((".json",".txt",".csv"))):
             x=z.read(item["name"])
             tiny.append({"file":item["name"],"start":x[:700].decode("utf-8","replace")})
-    out["meerkat"]={"source":M,"zip_bytes":len(blob),"sha256":hashlib.sha256(blob).hexdigest(),"file_count":len(listing),"files":listing[:100],"tiny_samples":tiny}
+    samples=[]
+    for item in listing[:2]+listing[-3:-1]:
+        if not item["name"].endswith(".csv"):continue
+        with z.open(item["name"]) as fp:
+            samples.append({"file":item["name"],"first_5_lines":[fp.readline().decode("utf-8","replace").strip() for _ in range(5)]})
+    out["meerkat"]={"source":M,"zip_bytes":len(blob),"sha256":hashlib.sha256(blob).hexdigest(),"file_count":len(listing),"files":listing[:100],"tiny_samples":tiny,"csv_samples":samples}
 except Exception as e:out["meerkat"]={"error":f"{type(e).__name__}: {e}"}
 try:
     with requests.get(B,headers={"Range":"bytes=0-1023"},timeout=(16,40),stream=True) as r:

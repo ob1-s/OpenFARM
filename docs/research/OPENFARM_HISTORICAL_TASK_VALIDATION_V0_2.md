@@ -48,6 +48,27 @@ Actual 2026 source: [AnjaEggert/PigWeb_cross-institutes](https://github.com/Anja
 
 **Verdict:** verified legitimate *future biomarker outcomes with PRE-only input*, but **not admitted as a robust welfare-interpretation benchmark**. Retain in **research hypotheses / reproducibility suite**, demand more independent sites or a different deployable observation state before promotion. Numerical results from [CI 38850336437](https://github.com/ob1-s/OpenFARM/actions/runs/38850336437), `scripts/benchmark_pigweb_future_biomarkers_v02.py`.
 
+### C. EquiFACS: genuine Level-2 expert-vs-independent-vet task **fails the current small-model test**
+
+Separate from source label integrity, we tested whether a tiny logistic model using **expert-observed facial-action-unit counts and temporal occupancy** predicts **separate veterinary clinical pain ratings**. The pain labels from the FACS coder herself were excluded upstream; non-codeable intervals and overlapping non-rateable FACS units are removed, and **entire clinical media** were held out. Fixed L2 regularization `C=0.04`, no test-time tuning; original source `s003` SHA pinned.
+
+| Outcome | Training | Calibration | Held-out test |
+|---|---:|---:|---:|
+| Codeable independent-vet interval rows | 32 | 10 | **12** |
+| Distinct source media | 10 | 3 | **5** |
+| Any clinician-rated pain | **5 / 32** | 3 / 10 | **7 / 12** |
+
+| Metric on frozen **12 intervals / 5 media** | Training prevalence-only predictor | Expert FACS → L2 logistic |
+|---|---:|---:|
+| Brier loss, lower is better | **0.40859** | 0.48116 (**worse**) |
+| Log loss, lower is better | **1.09275** | 1.42322 (**worse**) |
+| AUROC | **0.5000** | **0.2286** |
+| Recall at 0.5 threshold | 0 | 0 |
+
+Real-source [green execution CI 38851016761](https://github.com/ob1-s/OpenFARM/actions/runs/38851016761), `scripts/benchmark_equifacs_vet_binary_v02.py`. **A passing build is not a passing scientific task.** The positive-rate shift (train 15.6%, test 58.3%), only five held-out media, very sparse ordinal categories and pre-annotated facial signals preclude robust welfare generalization. The result does **not** show that facial actions are uninformative; it shows that **this prepared, underpowered evaluation and this low-capacity model do not justify promotion**.
+
+**Verdict: FAIL clinical-model promotion; KEEP small nonranking annotation/rater-integrity pilot only.** No independently validated Level-2 welfare prediction benchmark has passed our current test.
+
 ## 3. Source/task/level admission (as of this checkpoint)
 
 | Task | Level | Source label quality | Historical validity | Predictive / eval merit | Admission |
@@ -57,7 +78,7 @@ Actual 2026 source: [AnjaEggert/PigWeb_cross-institutes](https://github.com/Anja
 | PigWeb **later cortisol change** | bio-interpretation proxy (not welfare label) | Lab assay (independent physiological measurement) | **Pass after leak correction** | Tiny pooled Brier gain, INRAE significantly worse | **RESEARCH-ONLY CANDIDATE** |
 | PigWeb **later oxytocin change** | bio-interpretation proxy (not welfare label) | Separate lab assay | **Pass after leak correction** | Tiny pooled Brier gain, INRAE significantly worse | **RESEARCH-ONLY CANDIDATE** |
 | PigWeb **eye temperature change** | physiology | Instrumented but only 40 source sessions from one site | limited | No cross-site eval | **SITE-LIMITED DIAGNOSTIC ONLY** |
-| EquiFACS **vet pain vs expert FACS** | 2 welfare interpretation | Independent vet labels after coder exclusion; 54 intervals, five test media | not a long-horizon forecast | tiny nonranking clinical cohort | **PILOT ONLY** |
+| EquiFACS **vet pain vs expert FACS** | 2 welfare interpretation | Independent vet labels after coder exclusion; 54 intervals, five test media | not a long-horizon forecast | tiny nonranking cohort; heldout FACS→vet logistic AUROC **0.229**, Brier worsens vs prior | **FAILED PROMOTION; pilot only** |
 | Cattle **4-way activity** | 1 observed behavior | Human-video ethogram | temporal forecast **not** supported by ambiguous source time keys | approved within-source Choice | **APPROVED_RESEARCH_TRAIN/EVAL** |
 | Meerkat **15-way activity** | 1 observed behavior | Human-video ethogram | video-heldout; prediction from expert bbox features | limited observable classes pass independent video test | **APPROVED_NONCOMMERCIAL_RESEARCH_TRAIN/EVAL** |
 | **Caretaker escalation now** | 3 care action | **No independent intervention/review outcome** | n/a | cannot measure causal utility | **NO TASK APPROVED** |

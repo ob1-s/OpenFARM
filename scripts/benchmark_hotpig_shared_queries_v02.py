@@ -45,6 +45,22 @@ def stack(rows):
     if not X:raise ValueError("No witnessed labels")
     return np.stack(X).astype(np.float64),np.array(y,dtype=int),np.array(qids,dtype=int)
 
+def with_question_residuals(X):
+    """Shared sensor coefficients plus separate slopes for future-onset task.
+
+    Exactly one classifier/optimization; the interaction block permits the
+    second question to depend differently on the same observed features.
+    It isn't a claim of an independently measured second reference source.
+    """
+    X=np.asarray(X,dtype=float)
+    if X.ndim!=2 or X.shape[1]!=len(FEATURES)+1:
+        raise ValueError("Question-conditioned feature shape mismatch")
+    sensor=X[:,:-1]
+    question=X[:,-1:]
+    if not np.isin(question,[0.,1.]).all():
+        raise ValueError("Unknown question indicator")
+    return np.concatenate((sensor,question,sensor*question),axis=1)
+
 def score(y,p):
     y=np.asarray(y,dtype=int);p=np.clip(np.asarray(p,dtype=float),1e-7,1-1e-7)
     out=metric(y,p)
@@ -77,6 +93,13 @@ def run():
     joint.fit(Xtrain,ytrain)
     scored={name:joint.predict_proba(X)[:,1]
             for name,X in (("calibration",Xcal),("test",Xtest))}
+    # Second *single model* has shared weights and question-specific residual
+    # sensor slopes; contrast with the too-restrictive common-slope baseline.
+    residual=make_pipeline(StandardScaler(),LogisticRegression(
+        C=.25,max_iter=450,random_state=17))
+    residual.fit(with_question_residuals(Xtrain),ytrain)
+    residual_scored={name:residual.predict_proba(with_question_residuals(X))[:,1]
+                     for name,X in (("calibration",Xcal),("test",Xtest))}
     report={
       "source":"https://zenodo.org/records/17090997",
       "source_sha256":hashlib.sha256(raw).hexdigest(),
@@ -98,6 +121,8 @@ def run():
        "This compares one shared-head mapping with per-question heads, NOT a neural joint world model."]}
     outputs={("joint", "calibration"):scored["calibration"],
              ("joint","test"):scored["test"]}
+    report["additional_model"]="One joint L2 logistic with shared sensor weights plus question-specific interaction coefficients. No new source modality.";
+
     for name in QUESTIONS:
         k=QUESTIONS.index(name)
         a,b=table(allrows["train"],name)[:2]
@@ -117,6 +142,7 @@ def run():
             direct_y=yy[mask]
             probs={
              "shared_one_head":scored[split][mask],
+             "shared_with_question_residuals":residual_scored[split][mask],
              "per_question_logistic":outputs[(question+"_independent_logistic",split)],
              "per_question_train_prior":outputs[(question+"_train_prior",split)]
             }

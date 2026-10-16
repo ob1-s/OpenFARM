@@ -14,6 +14,8 @@
 
 For PigWeb, a separate **post-exposure association** task (observed behavior vs later/presumed-contemporaneous physiology) remains scientifically promising but cannot yet be called prospective without authentic observation-end timestamps. Do not train on the earlier leaked compound `features` export.
 
+**Second availability caveat (operational, not sample collection order):** the *PRE* cortisol and oxytocin values are salivary assays analyzed later in a laboratory. Their **biological sample time precedes POST**, but the source does **not establish when the numeric lab result became available to a monitor**. The pre-only baseline therefore measures an *offline, retrospective prediction from earlier-collected biospecimens*; it **must not be marketed as real-time prospective forecasting**. Operational-as-of-time validity remains **UNVERIFIED** until independent sample processing/result availability times or a corresponding real-time sensor are documented.
+
 ## 2. Quantitative validation on genuine grouped heldouts
 
 ### A. HotPig: two questions from the *same* physical feeder

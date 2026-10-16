@@ -7,7 +7,7 @@ condition, timestamps, or pig identity in model inputs.
 
 Only report aggregate metrics and group manifests; no raw author data committed.
 """
-import argparse,hashlib,io,json,time,zipfile
+import argparse,hashlib,io,json,os,time,zipfile
 from collections import Counter
 from pathlib import Path
 import numpy as np
@@ -20,12 +20,28 @@ FEATURES=["unknown","standing","seating","lying","eating","drinking","cuddling",
           "curious","idle","drink","eat","mate"]
 
 def source_bytes():
+    # The Zenodo endpoint has repeatedly returned intermittent TCP resets on
+    # GitHub CI. Support a checksum-verified local source cache; never cache or
+    # load a different revision, and never upload third-party source rows.
+    cache_path=os.environ.get("OPENFARM_HOTPIG_SOURCE_PATH")
+    if cache_path:
+        from pathlib import Path
+        p=Path(cache_path)
+        if p.is_file():
+            b=p.read_bytes()
+            if not hashlib.sha256(b).hexdigest().startswith(FROZEN_HASH):
+                raise RuntimeError("Local HotPig source checksum mismatch.")
+            return b
     session=requests.Session()
-    urls=[SRC,"https://zenodo.org/api/records/17090997/files/series.zip/content"]
+    urls=[
+      SRC,
+      "https://zenodo.org/api/records/17090997/files/series.zip/content",
+      "https://zenodo.org/records/17090997/files/series.zip",
+    ]
     last=None
-    for i in range(4):
+    for i in range(9):
         try:
-            with session.get(urls[i%2],timeout=(20,65),stream=True) as response:
+            with session.get(urls[i%len(urls)],timeout=(25,85),stream=True) as response:
                 response.raise_for_status()
                 blob=bytearray()
                 for chunk in response.iter_content(65536):
@@ -33,12 +49,16 @@ def source_bytes():
                     if len(blob)>6_000_000:raise ValueError("Source too large")
                 b=bytes(blob)
                 if not hashlib.sha256(b).hexdigest().startswith(FROZEN_HASH):
-                    raise RuntimeError("Unexpected updated HotPig version/bytes; do not silently drift")
+                    raise RuntimeError("Unexpected updated HotPig source bytes.")
+                if cache_path:
+                    p=Path(cache_path)
+                    p.parent.mkdir(parents=True,exist_ok=True)
+                    p.write_bytes(b)
                 return b
         except requests.exceptions.RequestException as e:
             last=e
-            if i<3:time.sleep([1,3,7][i])
-    raise RuntimeError(f"Cannot access published source after retries: {last}")
+            if i<8:time.sleep([2,3,5,8,13,21,21,21][i])
+    raise RuntimeError(f"Cannot access pinned HotPig ZIP after 9 attempts: {last}")
 
 def metrics(y,pred):
     y=np.asarray(y,dtype=bool)

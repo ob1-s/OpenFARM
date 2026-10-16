@@ -1,5 +1,8 @@
 # OpenFARM v0.2 — historical and multi-question scientific validation
 
+> **Compiler label-audit update (2026-10-16):** Deterministic labels are now executable checked transformations, not merely documented `derived_from` strings. A derived `Noul` must match its parent measured `Choice`, `Score`, or signed assay `Value`, with the same valid/masked evidence and source family. For PigWeb the continuous biomarker delta is the measured primary reference; the binary increase is a derived diagnostic. Five complete real-source rebuild jobs and tests passed in [CI run 38852020797](https://github.com/ob1-s/OpenFARM/actions/runs/38852020797). Historical and clinical status decisions below remain unchanged.
+
+
 **Source-audited checkpoint:** 2026-10-16. Source revision and grouping as in [v0.2 query compiler](OPENFARM_QUERY_COMPILER_V0_2.md). Verified direct public original source data and green GitHub Actions. **No clinical or caretaker-action decision has been invented or approved.**
 
 ## 1. Hard temporal correction: PigWeb experimental behavior was not pre-existing at PRE

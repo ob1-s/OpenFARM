@@ -27,7 +27,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        source: [pigweb, cattle, hotpig, equifacs]
+        source: [pigweb, cattle, hotpig, equifacs, meerkat]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -43,8 +43,15 @@ jobs:
         env:
           OPENFARM_HOTPIG_SOURCE_PATH: .cache/hotpig/series.zip
         run: |
-          python scripts/build_openfarm_decision_queries_v02.py --source "${{ matrix.source }}" --report "reports/openfarm-v02-${{ matrix.source }}.json" --local-dir /tmp/openfarm-v02-local
+          if [ "${{ matrix.source }}" = meerkat ]; then
+            # >80k annotation rows. Count and validate complete original set;
+            # don't materialize 5x redundant binary label files in CI.
+            python scripts/build_openfarm_decision_queries_v02.py --source meerkat --report reports/openfarm-v02-meerkat.json
+          else
+            python scripts/build_openfarm_decision_queries_v02.py --source "${{ matrix.source }}" --report "reports/openfarm-v02-${{ matrix.source }}.json" --local-dir /tmp/openfarm-v02-local
+          fi
       - name: Assert summaries and blinded split artifacts exist
+        if: matrix.source != 'meerkat'
         run: |
           test -s "reports/openfarm-v02-${{ matrix.source }}.json"
           test -s "/tmp/openfarm-v02-local/${{ matrix.source }}/test/states.jsonl"

@@ -35,7 +35,18 @@ def pigweb(c:Compiler,test_site="WUR"):
         site=p["institute"]
         split=("test" if site==test_site else "calibration"
                if site==calibration_site else "train")
-        feat={k:(float(v) if v is not None else None) for k,v in e["features"].items()}
+        # CRITICAL temporal audit 2026-10-16:
+        # Human-coded behavior was recorded during the stimulus exposure;
+        # source metadata supplies a PRE saliva collection time, NOT an
+        # independently timestamped behavioral-observation completion time.
+        # Behavior therefore cannot be assumed to exist at the PRE cutoff.
+        # The future hormone decision must use PRE-only measured inputs.
+        # Behavior/physiology association remains a different nonforecast
+        # scientific analysis; do not silently pass it as a future state.
+        feat={k:(float(v) if v is not None else None)
+              for k,v in e["features"].items() if k.startswith("pre_")}
+        if not feat or any(k.startswith("observed_") for k in feat):
+            raise RuntimeError("Observed post-stimulus behavior leaked into pre-exposure state")
         missing=[k for k,v in feat.items() if v is None]
         qs=[]
         for assay,unit in (("cortisol","ng/mL"),("oxytocin","pg/mL"),("eye_IRT","temperature unit")):
@@ -60,15 +71,18 @@ def pigweb(c:Compiler,test_site="WUR"):
         obs=Observation(source="pigweb",state_id=":".join(("pigweb",p["institute"],p["pig_id"],p["context"])),
           split=split,group_scope="pig_within_institute",
           group_id=f"{p['institute']}:{p['pig_id']}",
-          modalities=("human_observed_behavior_counts","pre_session_biomarker_values"),
+          modalities=("pre_session_biomarker_values",),
           features=feat,cutoff=p["pre"],questions=qs,
           audit={"source_revision":manifest["source"],"license":"CC BY 4.0",
                  "recording_context_hidden":p["context"],
                  "missing_model_input_fields":missing,
                  "post_interval_minutes":p["delta_minutes"],
-                 "eligibility":"research_causal_candidate_NOT_approved_affective_GT"})
+                 "excluded_temporally_unavailable_features":[k for k in e["features"]
+                    if k.startswith("observed_")],
+                 "eligibility":"PRE_ONLY_future_biomarker_forecast; observed_behavior_is_not_available_at_pre"})
         c.add(obs)
-    return {"frozen_source_sha256":manifest["source_sha256"],"site_test":test_site,
+    return {"temporal_audit":"pre_biomarker_only__behavior_during_stimulus_excluded",
+            "frozen_source_sha256":manifest["source_sha256"],"site_test":test_site,
             "site_calibration":calibration_site,"source_sessions":manifest["matched_pre_to_post_sessions"]}
 
 def cattle(c:Compiler):

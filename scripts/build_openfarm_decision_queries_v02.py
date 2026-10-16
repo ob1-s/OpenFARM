@@ -212,7 +212,7 @@ def meerkat(c:Compiler):
             c.add(Observation(source="meerkat",
                 state_id=f"video:{video}:postfilter_row:{i}",
                 split=lookup[video],group_scope="original_source_video",
-                group_id=video,modalities=("human_bbox_geometry","causal_bbox_displacement"),
+                group_id=video,modalities=("source_human_bbox_with_past_motion",),
                 features={name:float(x[col]) for col,name in enumerate(MEERKAT_FEATS)},
                 questions=qs,audit={"source_sha256":sha,"source_video_file":video,
                     "license":"CC BY-NC-SA 4.0; strictly noncommercial use",

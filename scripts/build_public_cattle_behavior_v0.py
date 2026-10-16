@@ -47,12 +47,15 @@ def prepare(df):
     if df["Breed"].nunique()!=4 or df["ID"].nunique()!=24:raise RuntimeError("Animal group mismatch")
     if len(df)!=9222:raise RuntimeError("Original row count changed")
     if df.groupby("ID")["Breed"].nunique().max()!=1:raise RuntimeError("Cow breed ID drift")
-    # Rows are 1-minute observations; identical same-cow/time records can be
-    # source accidents. Do NOT drop before confirming no conflicting labels.
-    dups=df.duplicated(["Breed","ID","Time.MTD"],keep=False)
-    conflicts=(df[dups].groupby(["Breed","ID","Time.MTD"])[["Behavior","MI","State"]].nunique()>1).any(axis=1)
-    if conflicts.any():raise RuntimeError(f"Conflicting same-cow same-time observations: {int(conflicts.sum())}")
-    clean=df.drop_duplicates(["Breed","ID","Time.MTD"]).copy()
+    # Source 'Time.MTD' is *not* proven a unique date-time and may repeat
+    # within one cow across days or trials. Do NOT force a 1-row-per-ID-time
+    # index, collapse disagreeing annotations, or pretend unique episodes.
+    # Preserve complete original source rows; cow-level grouping is sound.
+    keys=["Breed","ID","Time.MTD"]
+    dups=df.duplicated(keys,keep=False)
+    collisions=df[dups].groupby(keys)[["Behavior","MI","State"]].nunique()
+    conflicts=(collisions>1).any(axis=1)
+    clean=df.copy()
     clean["site"]=clean["Breed"].map(SITES)
     if clean["site"].isna().any():raise RuntimeError("Unmapped site")
     if any(clean.groupby("Breed")["ID"].nunique()!=6):
@@ -60,8 +63,11 @@ def prepare(df):
     # The paper says State=AC for GR/WA; ST for RE/RU. Verify source integrity.
     exp=clean["Behavior"].map({"GR":"AC","WA":"AC","RE":"ST","RU":"ST"})
     if (exp!=clean["State"]).any():raise RuntimeError("Behavior/State contradictory")
-    return clean,{"raw_rows":len(df),"timestamp_duplicated_rows":int(dups.sum()),
-                  "same_key_conflicting_groups":int(conflicts.sum()),"clean_rows":len(clean),
+    return clean,{"raw_rows":len(df),"full_row_exact_repeats":int(df.duplicated().sum()),
+                  "source_cow_time_repeated_rows":int(dups.sum()),
+                  "source_cow_time_conflicting_groups":int(conflicts.sum()),
+                  "time_key_validity":"NOT VERIFIED. Do not use to construct event durations or temporal splits.",
+                  "rows_retained":len(clean),
                   "site_counts":clean.groupby("site")["ID"].nunique().to_dict(),
                   "class_counts":clean["Behavior"].value_counts().to_dict(),
                   "animal_counts":{str(k):int(v) for k,v in clean["ID"].value_counts().items()}}

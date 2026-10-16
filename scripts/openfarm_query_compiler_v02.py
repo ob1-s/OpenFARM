@@ -49,6 +49,10 @@ class Question:
     # A derived proposition can be useful for analysis but must not create
     # a new independent reference family or be counted as new measured truth.
     derived_from: str|None=None
+    # Explicit, mechanically checked transformation; one extra query label
+    # is never an additional independent source of reference truth.
+    derivation: str|None=None
+    derivation_arg: str|None=None
     relation: str="contemporaneous"
     reference_time: str|None=None
     reference_index: int|None=None
@@ -59,6 +63,14 @@ class Question:
             raise ValueError("Question id, wording and reference family mandatory")
         if self.primitive not in KINDS:raise ValueError("Unknown primitive")
         if self.relation not in RELATIONS:raise ValueError("Unknown temporal relation")
+        if bool(self.derived_from)!=bool(self.derivation):
+            raise ValueError("Derived question requires both parent ID and derivation operation")
+        if self.derivation not in (None,"choice_equals","score_positive","delta_positive"):
+            raise ValueError("Unrecognized derived-label operation")
+        if self.derivation=="choice_equals" and not self.derivation_arg:
+            raise ValueError("choice_equals requires named option")
+        if self.derivation!="choice_equals" and self.derivation_arg is not None:
+            raise ValueError("Unexpected derived-label argument")
         if self.valid and self.mask_reason:raise ValueError("valid label carries missingness")
         if not self.valid and (self.value is not None or not self.mask_reason):
             raise ValueError("Masked labels MUST carry a reason but no value")
@@ -83,11 +95,13 @@ class Question:
         return safe_json({"id":self.question_id,"question":self.text,"primitive":self.primitive,
           "options":list(self.options),"reference_family":self.reference_family,
           "evidence_origin":self.evidence_origin,"derived_from":self.derived_from,
+          "derivation":self.derivation,"derivation_arg":self.derivation_arg,
           "relation":self.relation,"readiness":self.readiness})
     def private(self):
         return {"id":self.question_id,"valid":self.valid,"value":safe_json(self.value),
                 "mask_reason":self.mask_reason,"reference_family":self.reference_family,
                 "derived_from":self.derived_from,
+                "derivation":self.derivation,"derivation_arg":self.derivation_arg,
                 "reference_time":self.reference_time,"reference_index":self.reference_index}
 
 @dataclass
@@ -118,7 +132,32 @@ class Observation:
             safe_json(v)
         if len({q.question_id for q in self.questions})!=len(self.questions):
             raise ValueError("Duplicate question in same state")
-        for q in self.questions:q.validate(self.cutoff,self.cutoff_index)
+        questions={q.question_id:q for q in self.questions}
+        for q in self.questions:
+            q.validate(self.cutoff,self.cutoff_index)
+            if not q.derived_from:continue
+            parent=questions.get(q.derived_from)
+            if parent is None or parent.derived_from:
+                raise ValueError("Derived reference must name a primary question in same state")
+            if (q.reference_family!=parent.reference_family or
+                q.relation!=parent.relation or
+                q.reference_time!=parent.reference_time or
+                q.reference_index!=parent.reference_index):
+                raise ValueError("Derived and primary reference provenance mismatch")
+            if q.valid!=parent.valid or (not q.valid and q.mask_reason!=parent.mask_reason):
+                raise ValueError("Derived question cannot invent evidence from masked parent")
+            if q.derivation=="choice_equals":
+                if parent.primitive!="Choice" or q.primitive!="Noul" or q.derivation_arg not in parent.options:
+                    raise ValueError("Invalid choice_equals types or option")
+                expected=int(parent.value==q.derivation_arg) if parent.valid else None
+            elif q.derivation in ("score_positive","delta_positive"):
+                if parent.primitive not in ("Score","Value") or q.primitive!="Noul":
+                    raise ValueError("Numeric derived question requires primary Score/Value")
+                expected=int(parent.value>0) if parent.valid else None
+            else:
+                raise ValueError("Unsupported derived-label relation")
+            if q.valid and q.value!=expected:
+                raise ValueError("Derived label contradicts measured primary reference")
 
 class Compiler:
     def __init__(self,local_dir:Path|None=None):

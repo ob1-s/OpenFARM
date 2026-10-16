@@ -3,7 +3,7 @@ import sys,unittest
 from pathlib import Path
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/"scripts"))
 import numpy as np
-from benchmark_hotpig_shared_queries_v02 import stack
+from benchmark_hotpig_shared_queries_v02 import stack,with_question_residuals
 from evaluate_hotpig_feeder_candidate import FEATURES
 
 class SharedStateTests(unittest.TestCase):
@@ -14,6 +14,13 @@ class SharedStateTests(unittest.TestCase):
         self.assertEqual(y.tolist(),[1,0])
         self.assertEqual(q.tolist(),[0,1])
         np.testing.assert_array_equal(X[0,:-1],X[1,:-1])
+    def test_one_model_can_condition_feature_effects_on_question(self):
+        X,_,q=stack([(50,np.ones(len(FEATURES)),1,0)])
+        shaped=with_question_residuals(X)
+        self.assertEqual(shaped.shape,(2,2*len(FEATURES)+1))
+        self.assertTrue(np.all(shaped[0,-len(FEATURES):]==0))
+        self.assertTrue(np.all(shaped[1,-len(FEATURES):]==1))
+        self.assertEqual(q.tolist(),[0,1])
     def test_masked_future_is_not_no_label(self):
         X,y,q=stack([(50,np.ones(len(FEATURES)),0,None)])
         self.assertEqual(X.shape,(1,len(FEATURES)+1))

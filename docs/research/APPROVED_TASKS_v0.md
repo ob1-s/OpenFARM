@@ -72,3 +72,22 @@ Pig feeder source **CC BY-NC 4.0**, access open in metadata but raw 4MB file tim
 ## Reminder
 
 One **bounded nonclinical instrumental behavior task** is now approved for research train+eval. **No new validated affective or welfare-intervention benchmark** has yet been approved. This is a valid first step in the larger System-1 empathy suite—not evidence the full product anchor is solved.
+
+
+## Meerkat video ethogram geometry/motion (v0) — APPROVED for bounded noncommercial research training/evaluation
+
+**Admission:** `APPROVED_RESEARCH_TRAIN` + `APPROVED_RESEARCH_EVAL` for **Meerkat manual bounding-box geometry + causal motion → 15 human-coded observable behaviors**, with **whole-video source separation**. **Not** approved for raw-pixel/video perception, animal-level independent validation, positive/negative affect, clinical welfare, commercial use, or deployment.
+
+**Full task-specific scientific audit and results:** [video-heldout acceptance sprint](2026-10-video-heldout-sprint.md).
+
+- **Source**: [official University of Auckland Meerkat Behaviour Recognition Dataset](https://meerkat-dataset.github.io/), 20 original video-named manual-ethogram CSV files and original behavior-index JSON; archive SHA-256 `7ad7b369d5a9fc90a29c28dabfc0503c7c67af10d304d97ba1b5413260890463`. Source is **CC BY-NC-SA 4.0**; OpenFARM publishes source pointers and aggregate metrics, **not the original data**.
+- **Task**: `Choice(15 ethogram behaviors)` for visible meerkats from a twelve-number state: bounding-box dimensions/center, previous-observation movement and scale change. Never use behavior code, source video/camera/date, individual track identifier or frame index as input. The bounding boxes themselves are *human-authored*; this does not test an autonomous vision detector.
+- **Split**: **12 whole training videos / four calibration videos / four held-out test videos**, camera-balanced and deterministically assigned **without looking at test scores**; each source video is wholly in one partition. Per-track identities reset each video. **Video independence is not evidence of animal independence**, since all were recorded at one zoo.
+- **Data volume**: after fixed every-50-frame sampling and quality gating, **52,440 training, 14,775 calibration and 16,548 test** manually labeled track-frames. These are highly temporally correlated, not independent animals/episodes.
+- **Actual cheap baseline test**: prior macro-F1 `0.028`, L2-logistic static `0.186`, L2-logistic with prior motion `0.244`, **tiny 55-estimator ExtraTrees `0.266`**. Model selected on separate calibration videos; test accuracy **63.7%**. Rare-class failures remain; macro-F1 is not impressive.
+- **Promotion to next perception research**: **raised guarding** (F1 0.830), **foraging** (0.780), **high sitting/standing** (0.684), **moving** (0.652), under a prespecified support/video/F1/precision/recall gate. This is **model-observation recoverability**, not independently certified human inter-rater or welfare indicator reliability. **Playfighting, grooming, allogrooming, pup interactions and other complex behaviors fail the current geometry-only method**.
+- **Code and verification**: `scripts/benchmark_meerkat_video_heldout.py`, `tests/test_meerkat_video_benchmark.py`; [source-backed GitHub Actions run 38838173826](https://github.com/ob1-s/OpenFARM/actions/runs/38838173826) passed **offline leakage/split fixtures, full benchmark, and aggregate evidence artifact**.
+
+**Research-only source comparison:** [Big Broiler multi-human agreement](2026-10-video-heldout-sprint.md) successfully demonstrates **independent** annotator agreement for preening (0.896), eating (0.941), drinking (0.896), feather pecking (0.824), foraging (0.822), etc. This is **separate source, species, and task evidence**, not a retrospective validation of Meerkat human annotations. It makes these action targets stronger **prospecting priorities**, but Big Broiler does not yet have our own learned train/eval benchmark.
+
+**Product caution:** No reliable veterinary distress, emotional-valence, or caretaker-alert task is promoted by this admission. Keep the evidence ladder: observable behavioral labels first, independently validated welfare indicators second, prospective attention decisions third.

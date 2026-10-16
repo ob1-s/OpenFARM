@@ -1,0 +1,17 @@
+name: Source probe human video behavior labels
+on:
+  push:
+    branches: [research/2026-10-data-prospecting]
+    paths: [scripts/probe_video_behavior_sources.py, .github/workflows/openfarm-video-source-probe.yml]
+  workflow_dispatch:
+jobs:
+  source-probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install requests
+      - run: python scripts/probe_video_behavior_sources.py

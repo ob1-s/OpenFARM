@@ -46,6 +46,26 @@ In historical tasks, source-time order is mandatory: `state at or before t -> in
 | “Does clinical pain appear from observable equine facial actions?” | Existing EquiFACS independent-vet **tiny pilot**. | No safe clinical triage/analgesia intervention label or cross-site calibration. |
 | “Is a cow walking abnormally / should a hoof trimmer inspect her?” | Human-coded cattle behaviors and unlabeled-rights cow gait source separately exist. | **No** validated trim/referral label; don't invent via score threshold. |
 
+## First concrete historical candidate — implementation verified
+
+**PigWeb source-pinned v0.2 builder has now passed independent clean CI:** [GitHub Actions run 38842843569](https://github.com/ob1-s/OpenFARM/actions/runs/38842843569), `scripts/build_pigweb_historical_v02.py`. It validates all original 256 behavior observations, 496 physiology rows, 248 behavior/physiology paired sessions, exactly **124 unique animals** in four institutes, synchrony of behavior and `pre` timestamps and strictly later `post` readings (21–127 minutes).
+
+The script prepares **four leave-one-institute-out site protocols**, with only pre-session observations and pre-session physiological measurements in the model features and independent post-session change as each task label; subject and site/date/context keys are stored *only* in provenance and split metadata. It provides Noul classification and continuous deltas from **two distinct independent assays**. The same cortisol `increase` versus `delta` is *one* measured endpoint rendered in different output types; do **not** call them separate ground-truth sources.
+
+| Heldout site | Independent pigs | Paired sessions | Cortisol increases / valid pairs | Oxytocin increases / valid pairs |
+|---|---:|---:|---:|---:|
+| AU | 20 | 40 | 13 / 36 | 15 / 35 |
+| INRAE | 35 | 70 | 43 / 65 | 23 / 43 |
+| IRTA | 23 | 46 | 22 / 46 | 21 / 44 |
+| WUR | 46 | 92 | 65 / 87 | 43 / 88 |
+| **Total** | **124** | **248** | **143 / 234** | **102 / 210** |
+
+**Note strong cross-site shifts:** cortisol increases in 36% of AU valid sessions but 75% of WUR sessions. This means a pooled random-record split could be seriously misleading; whole-site heldout is the right first scientific stress test. Eye infrared rise has **25/40** positive paired outcomes but **all 40 are AU only**, so no site-heldout evaluation of that variable is possible.
+
+**Gate:** `ACTUAL_DATA_AND_GROUP_AUDIT_PASSED; MODEL_TASK_VALIDATION_PENDING`. No trained PigWeb model/baselines yet; no proof of independent affect or care outcomes. Physiology alone is not an empathy rating or human-attention label. Timestamps are known for source validation, but `post` time was not made a model input.
+
+**Primitive note:** v0.1 implements `Noul`, `Choice`, `Score`; proposed `Value` / `Count` regressions require a new typed output and matching verifiers. They must not be represented as already running in v0.1.
+
 ## Build-order recommendation
 
 1. **PigWeb historical response task family**: source *pre* behavior/hormones -> later independent hormone changes. First explicitly freeze a leave-one-institute-out split, censored source timestamps, group IDs, label missingness, proper regression and classification references. Crucially decide in advance whether the task is **predicting measured physiology** (valid) or emotion (not supported).

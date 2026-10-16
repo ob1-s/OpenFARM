@@ -144,10 +144,14 @@ def main():
             "narrow_claim":"Within-source sensor-to-independent human-observed behavior generalization under cow and 2-site holdouts; exact group numbers tiny."}
     for name,part in groups(df).items():
         result["results"][name]=experiment(df,part)
-    a.out.parent.mkdir(parents=True,exist_ok=True);a.out.write_text(json.dumps(result,indent=2)+"\n")
+    def json_primitive(obj):
+        if isinstance(obj,np.generic):return obj.item()
+        if isinstance(obj,np.ndarray):return obj.tolist()
+        raise TypeError(f"Not serializable: {type(obj).__name__}")
+    a.out.parent.mkdir(parents=True,exist_ok=True);a.out.write_text(json.dumps(result,indent=2,default=json_primitive)+"\n")
     print("CATTLE_SYSTEM1_REAL_LABEL_BENCH:"+json.dumps({
         "integrity":integrity,"source":manifest,"outcomes":{
             key:{m:{x:v for x,v in metrics.items() if x not in ("test_by_cow","confusion_gt_rows_pred_cols")}
                  for m,metrics in run["model_scores"].items()}
-            for key,run in result["results"].items()}}))
+            for key,run in result["results"].items()}},default=json_primitive))
 if __name__=="__main__":main()

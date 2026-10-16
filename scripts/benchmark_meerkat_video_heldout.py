@@ -163,14 +163,9 @@ def main():
     split=groups(names)
     obs={};audit={}
     for n in names:
-        obs[n]=extract_one(z,n)[:2]
-        audit[n]=extract_one(z,n)[2] if False else None
-    # Process each video exactly once below; avoid rereading 20 large CSVs.
-    # First-pass source is already computed in obs; audit summary from sampled rows.
-    for n in names:
-        X,y=obs[n]
-        audit[n]={"sampled_visible_labeled_rows":len(y),
-                  "sampled_behavior_counts":dict(collections.Counter(str(int(c)) for c in y))}
+        X,y,quality=extract_one(z,n)
+        obs[n]=(X,y)
+        audit[n]=quality
     # Collate independent whole-video partitions; no within-video shuffling.
     data={}
     for fold,vids in split.items():
@@ -236,12 +231,16 @@ def main():
             "welfare_affect_ground_truth":"NOT AVAILABLE",
             "annotation_interrater_reliability":"NOT MEASURED"})
     a.report.parent.mkdir(parents=True,exist_ok=True)
-    a.report.write_text(json.dumps(output,indent=2)+"\n")
+    def json_safe(v):
+        if isinstance(v,np.generic):return v.item()
+        if isinstance(v,np.ndarray):return v.tolist()
+        raise TypeError(f"Unexpected output type: {type(v).__name__}")
+    a.report.write_text(json.dumps(output,indent=2,default=json_safe)+"\n")
     print("MEERKAT_WHOLE_VIDEO_BENCH:"+json.dumps({
         "source_sha256":sha,"videos":output["fold_n"],"samples":output["fold_samples"],
         "selected":chosen,"models":{k:{"cal_mf1":v["calibration"]["macro_f1_all_15"],
                                       "test_mf1":v["test"]["macro_f1_all_15"],
                                       "test_acc":v["test"]["accuracy"]}
                                  for k,v in output["models"].items()},
-        "behavior_decisions":output["candidate_promotions"]}))
+        "behavior_decisions":output["candidate_promotions"]},default=json_safe))
 if __name__=="__main__":main()

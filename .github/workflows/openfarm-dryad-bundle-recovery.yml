@@ -1,0 +1,24 @@
+name: Dryad official whole-dataset archive access audit
+on:
+  push:
+    branches: [research/2026-10-data-prospecting]
+    paths: [scripts/recover_dryad_bundle.py, .github/workflows/openfarm-dryad-bundle-recovery.yml]
+  workflow_dispatch:
+jobs:
+  legitimate-download:
+    runs-on: ubuntu-latest
+    timeout-minutes: 16
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install 'pandas>=2.2,<3' requests openpyxl
+      - name: Inspect documented official Dryad dataset-wide download
+        run: python scripts/recover_dryad_bundle.py --out reports/dryad-bundle-access.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: dryad-bundle-access-summary
+          path: reports/dryad-bundle-access.json
+          retention-days: 30

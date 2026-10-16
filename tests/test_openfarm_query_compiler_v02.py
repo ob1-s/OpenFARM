@@ -32,13 +32,70 @@ class ContractTests(unittest.TestCase):
              value="resting",reference_family="original_human_ethogram",
              evidence_origin="human_coder")
         slices=[q(f"is_{x}","original_human_ethogram",int(x=="resting"),
-                  derived_from="behavior") for x in ("grazing","resting","walking")]
+                  derived_from="behavior",derivation="choice_equals",derivation_arg=x)
+                for x in ("grazing","resting","walking")]
         c.add(o(questions=[choice,*slices]))
         report=c.report()
         self.assertEqual(report["observed_valid_question_labels"],4)
         self.assertEqual(report["mean_non_derived_question_labels_per_state"],1)
         self.assertEqual(report["mean_independently_measured_reference_families_per_state"],1)
         self.assertEqual(len(report["derived_question_ids"]),3)
+    def test_choice_derivative_must_match_original_ethogram(self):
+        primary=Question(question_id="ethogram",text="Behavior?",primitive="Choice",
+              options=("feeding","resting"),value="resting",reference_family="observer",
+              evidence_origin="original_human_coder")
+        bad=q("is_feeding","observer",1,derived_from="ethogram",
+              derivation="choice_equals",derivation_arg="feeding")
+        with self.assertRaisesRegex(ValueError,"contradicts"):
+            o(questions=[primary,bad]).validate()
+        good=q("is_feeding","observer",0,derived_from="ethogram",
+              derivation="choice_equals",derivation_arg="feeding")
+        o(questions=[primary,good]).validate()
+    def test_missing_primary_reference_cannot_be_synthesized(self):
+        derived=q("is_resting","observer",1,derived_from="nonexistent",
+                  derivation="choice_equals",derivation_arg="resting")
+        with self.assertRaisesRegex(ValueError,"primary question"):
+            o(questions=[derived]).validate()
+    def test_masked_primary_must_mask_secondary(self):
+        base=Question(question_id="delta",text="Delta?",primitive="Value",
+             value=None,valid=False,mask_reason="no_post_assay",
+             reference_family="hormone",evidence_origin="laboratory",relation="future",
+             reference_index=30)
+        downstream=q("increased","hormone",value=0,derived_from="delta",
+                     derivation="delta_positive",relation="future",reference_index=30)
+        with self.assertRaisesRegex(ValueError,"cannot invent evidence"):
+            o(cutoff_index=0,questions=[base,downstream]).validate()
+        ok=q("increased","hormone",value=None,valid=False,
+             mask_reason="no_post_assay",derived_from="delta",
+             derivation="delta_positive",relation="future",reference_index=30)
+        o(cutoff_index=0,questions=[base,ok]).validate()
+    def test_reject_derived_reference_family_and_clock_mismatch(self):
+        parent=Question(question_id="delta",text="Delta?",primitive="Value",
+             value=2.,reference_family="assay",evidence_origin="lab",
+             relation="future",reference_index=15)
+        for child in (
+            q("increased","another_assay",1,derived_from="delta",derivation="delta_positive",
+              relation="future",reference_index=15),
+            q("increased","assay",1,derived_from="delta",derivation="delta_positive",
+              relation="future",reference_index=17)
+        ):
+            with self.assertRaisesRegex(ValueError,"provenance mismatch"):
+                o(cutoff_index=0,questions=[parent,child]).validate()
+    def test_score_to_pain_binary_is_validated_not_independent(self):
+        score=Question(question_id="score",text="Vet score?",primitive="Score",
+           value=0,reference_family="vet",evidence_origin="clinician")
+        binary=q("pain","vet",1,derived_from="score",derivation="score_positive")
+        with self.assertRaisesRegex(ValueError,"contradicts"):
+            o(questions=[score,binary]).validate()
+        correct=q("pain","vet",0,derived_from="score",derivation="score_positive")
+        c=Compiler();c.add(o(questions=[score,correct]))
+        self.assertEqual(c.report()["mean_independently_measured_reference_families_per_state"],1)
+    def test_derived_unsupported_or_missing_operation_rejected(self):
+        with self.assertRaisesRegex(ValueError,"requires both"):
+            o(questions=[q("d","fam",0,derived_from="p")]).validate()
+        with self.assertRaisesRegex(ValueError,"Unrecognized"):
+            o(questions=[q("d","fam",0,derived_from="p",derivation="invent_GT")]).validate()
+
     def test_same_sensor_horizons_do_not_fabricate_new_gt(self):
         c=Compiler()
         now=q("now","one_feeder")

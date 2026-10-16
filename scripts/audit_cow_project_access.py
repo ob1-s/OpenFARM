@@ -11,6 +11,7 @@ import requests
 from bs4 import BeautifulSoup
 
 SITES=("https://animalwelfarehub.org/cows-project/",
+       "https://animalwelfarehub.org/sows-project/",
        "https://animalwelfarehub.org/new-data-repository/")
 KEYWORDS=("cows-project","dairy","lameness","locomotion","video",
           "mp4","xlsx","csv","drive.google","docs.google","sharepoint","mega.nz",

@@ -64,7 +64,29 @@ For a behavior to pass the exploratory *model-recoverability* gate we declared b
 
 A separate source is [Cardoen et al., Big Broiler (CV4Animals 2025)](https://github.com/decide-ugent/big-broiler-dataset), published as **AGPL-3.0** code/data. The official archive is ~33 GB, but HTTP **range reads succeeded** and the remote ZIP index has **102 individual annotation CSVs and 102 paired videos**. Real CSVs were inspected at video IDs `000` and `101`; the later heldout record contains `actions_annotator_1/2/3` and `actions_ground`, including preening and inactivity. **Do not use the official canonical _track_ splits as if they ensure heldout videos.**
 
-This is an unusually good **human annotator reliability** benchmark: ten source video IDs **092–101** were coded by *three* annotators concurrently, and the reference `actions_ground` can be compared without treating it as an independent fourth annotator. The source-level video data live on the authors' server; OpenFARM scripts do not republish them. Reproducible script: `scripts/audit_broiler_human_reliability.py`, storing only per-behavior pairwise statistics. **This scientific reliability check is distinct from the successful Meerkat prediction benchmark.** Its independent outcome is to be recorded in this document when verified.
+This is an unusually good **human annotator reliability** benchmark: ten source video IDs **092–101** were coded by *three* annotators concurrently. Our F1 compares the original three human annotators **pairwise**, never treating `actions_ground` as a fourth independent adjudicator.
+
+**Actual human-agreement audit verified:** [GitHub Actions run 38837878581](https://github.com/ob1-s/OpenFARM/actions/runs/38837878581) via `scripts/audit_broiler_human_reliability.py`. Retrieved **ten separate original CSVs** from within the remote 33 GB ZIP through HTTP byte-range requests (no bulk video download). The audit used **5,984 frame/track samples** at an a priori fixed stride of 25 frames. All raw source video and annotations remain at the provider; our CI artifact exports counts and metrics only.
+
+| Human-observed action | Mean pairwise F1 between 3 annotators | Reference-positive rows / video count | Label reliability gate |
+|---|---:|---:|---|
+| Eat | **0.941** | 729 / 8 | **Human-consensus candidate** |
+| Drink | **0.896** | 228 / 6 | **Human-consensus candidate** |
+| Preening | **0.896** | 321 / 10 | **Human-consensus candidate** |
+| Inactive | **0.891** | 3,104 / 10 | **Human-consensus candidate** |
+| Sleeping | **0.828** | 644 / 9 | **Human-consensus candidate** |
+| Feather_Pecking | **0.824** | 45 / 6 | **Human-consensus candidate; rare** |
+| Explor_Forag | **0.822** | 192 / 9 | **Human-consensus candidate** |
+| Out_Of_Sight (uncertainty gate, not affect) | 0.791 | 236 / 5 | **Quality/abstention candidate** |
+| Stretching | 0.723 | 46 / 6 | **Human-consensus candidate; moderate** |
+| Locomotion | 0.707 | 163 / 9 | **Human-consensus candidate; moderate** |
+| Disturbance | 0.360 | 47 / 9 | **Low reliability — do not promote unreviewed** |
+| Panting | 0.187 | 45 / 1 | **Rare and inconsistent in this holdout** |
+| Sneezing | 0.083 | 9 / 6 | **Too rare / inconsistent** |
+
+**Predetermined reliability screen** (source observations only): ≥35 positive frame/track samples in ≥2 videos; mean of three annotator-pair F1 ≥0.65; worst pair F1 ≥0.50. This gate does **not** show model ability, welfare/valence validity, independent farms, or independence of adjacent frames. Human F1 on frame samples also does **not** directly quantify precise event boundary annotation; use the original source authors' segment-IoU method for that later.
+
+**What genuinely advances OpenFARM:** This supplies *independent* evidence that welfare-relevant **observable** behaviors such as **preening**, **feather pecking**, **exploration/foraging**, eating, drinking and resting can be **consistently recognized by humans**, whereas making up labels for feeling happy/sad would be scientifically indefensible. Combine these source-backed actions with separate outcomes and positive-welfare evidence before inferring valence or generating caretaker alerts. The source's **AGPL-3.0** licensing and original media rights must be respected.
 
 ## Acceptance and next scientific implications
 

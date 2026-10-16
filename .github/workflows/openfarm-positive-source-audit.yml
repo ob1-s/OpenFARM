@@ -1,0 +1,27 @@
+name: OpenFARM positive welfare data source audit
+on:
+  push:
+    branches: [research/2026-10-data-prospecting]
+    paths:
+      - scripts/audit_positive_welfare_sources.py
+      - .github/workflows/openfarm-positive-source-audit.yml
+  workflow_dispatch:
+jobs:
+  read-source-files:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install 'pandas>=2.2,<3' requests openpyxl xlrd
+      - name: Inspect actual Figshare and Dryad source files
+        run: python scripts/audit_positive_welfare_sources.py --output audit-reports/positive-source-evidence.json
+      - name: Retain summary only
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: positive-welfare-source-evidence
+          path: audit-reports/positive-source-evidence.json
+          retention-days: 30

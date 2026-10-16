@@ -1,0 +1,25 @@
+name: Welfare sprint individual cow covariates ablation
+on:
+  push:
+    branches: [research/2026-10-data-prospecting]
+    paths:
+      - scripts/benchmark_brazil_cow_individual_covariates.py
+      - .github/workflows/openfarm-brazil-cow-individual-ablation.yml
+  workflow_dispatch:
+jobs:
+  independent-farm-eval:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install 'pandas>=2.2,<3' 'scikit-learn>=1.4,<1.8' numpy requests
+      - run: python scripts/benchmark_brazil_cow_individual_covariates.py --out reports/cow-covariate-ablation.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: cow-individual-covariate-ablation
+          path: reports/cow-covariate-ablation.json
+          retention-days: 30

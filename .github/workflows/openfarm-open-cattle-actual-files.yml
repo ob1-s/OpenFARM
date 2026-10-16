@@ -1,0 +1,23 @@
+name: Public cattle observed behavior source file audit
+on:
+  push:
+    branches: [research/2026-10-data-prospecting]
+    paths: [scripts/audit_open_cattle_behavior.py, .github/workflows/openfarm-open-cattle-actual-files.yml]
+  workflow_dispatch:
+jobs:
+  independent-observation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install 'pandas>=2.2,<3' requests openpyxl xlrd
+      - run: python scripts/audit_open_cattle_behavior.py --output audit-reports/public-cattle-source.json
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cattle-real-observation-audit
+          path: audit-reports/public-cattle-source.json
+          retention-days: 30

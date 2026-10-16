@@ -1,0 +1,23 @@
+name: EquiFACS veterinary and facial action annotation alignment
+on:
+  push:
+    branches: [research/2026-10-data-prospecting]
+    paths: [scripts/audit_equifacs_alignment.py, .github/workflows/openfarm-equifacs-alignment.yml]
+  workflow_dispatch:
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install 'pandas>=2.2,<3' requests openpyxl
+      - run: python scripts/audit_equifacs_alignment.py --output audit-reports/equifacs-annotation-alignment.json
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: equifacs-rater-alignment-schema
+          path: audit-reports/equifacs-annotation-alignment.json
+          retention-days: 30

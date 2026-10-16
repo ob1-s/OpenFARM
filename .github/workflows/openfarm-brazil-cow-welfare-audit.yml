@@ -1,0 +1,26 @@
+name: Welfare sprint Brazilian cow independent clinical labels
+on:
+  push:
+    branches: [research/2026-10-data-prospecting]
+    paths:
+      - scripts/audit_brazil_cow_welfare.py
+      - .github/workflows/openfarm-brazil-cow-welfare-audit.yml
+  workflow_dispatch:
+jobs:
+  source-clinical-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install 'pandas>=2.2,<3' requests
+      - name: Read actual four public Zenodo source CSVs
+        run: python scripts/audit_brazil_cow_welfare.py --out reports/brazil-cows-clinical-source.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: brazil-cows-clinical-audit
+          path: reports/brazil-cows-clinical-source.json
+          retention-days: 30

@@ -1,0 +1,25 @@
+name: Welfare sprint restore real pig tail-damage event cohorts
+on:
+  push:
+    branches: [research/2026-10-data-prospecting]
+    paths:
+      - scripts/reconstruct_pig_treatment_cohorts.py
+      - .github/workflows/openfarm-tail-damage-cohort-reconstruction.yml
+  workflow_dispatch:
+jobs:
+  true-treatment-events:
+    runs-on: ubuntu-latest
+    timeout-minutes: 24
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install 'pandas>=2.2,<3' requests
+      - run: python scripts/reconstruct_pig_treatment_cohorts.py --out reports/pig-treatment-cohort-recon.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pig-65-source-cohort-and-27-real-first-treatment-reconstruction
+          path: reports/pig-treatment-cohort-recon.json
+          retention-days: 30

@@ -8,6 +8,12 @@
 
 > Can we build a small, fast, calibrated system that continuously interprets animal observations, makes scientifically defensible decisions, and reliably identifies when human attention is warranted?
 
+**Operational north star for the fresh data sweep (2026-10-15):**
+
+> OpenFARM doesn't necessarily need to infer how an animal feels from arbitrary images. It can learn **what deserves attention, based on observable behavior and defensible evidence**.
+
+This is **System-1 empathy as decision intelligence** across supported modalities—not emotion classification by conjecture. Keep three separately supervised levels: (1) direct observations of behavior and physiology; (2) independently validated welfare indicators, including graded and subjective expert disagreement; (3) escalation decisions supported by real consequences, uncertainty, lead time and false alerts per animal-day. Accept multi-label, Noul, Choice, ordinal Score, continuous change and abstention only when *independently supported by evidence*. Default product anchor: **cheap, good-enough zero-shot+ monitoring**, possibly using specialized low-cost modality adapters and compact temporal state.
+
 This is both a **scientific** and **product** hypothesis. A win requires more than beating an autoregressive model on a benchmark. We seek decisions that are trainable with constrained compute, generalize outside the source experiment, retain useful calibration, and support a commercially viable workflow.
 
 ## New orientation

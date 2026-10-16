@@ -1,0 +1,25 @@
+name: Big Broiler three-annotator video reliability audit
+on:
+  push:
+    branches: [research/2026-10-data-prospecting]
+    paths:
+      - scripts/audit_broiler_human_reliability.py
+      - .github/workflows/openfarm-broiler-human-reliability.yml
+  workflow_dispatch:
+jobs:
+  human-reliability:
+    runs-on: ubuntu-latest
+    timeout-minutes: 27
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install 'remotezip>=0.12' 'pandas>=2.2,<3' 'numpy<3' 'scikit-learn>=1.5,<2'
+      - run: python scripts/audit_broiler_human_reliability.py --report reports/broiler-human-agreement.json
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: broiler-three-human-video-reliability
+          path: reports/broiler-human-agreement.json
+          retention-days: 30

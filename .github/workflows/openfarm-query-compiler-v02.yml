@@ -1,0 +1,85 @@
+name: OpenFARM v0.2 multi-question decision compiler
+on:
+  push:
+    branches: [research/2026-10-data-prospecting]
+    paths:
+      - scripts/openfarm_query_compiler_v02.py
+      - scripts/build_openfarm_decision_queries_v02.py
+      - scripts/aggregate_openfarm_queries_v02.py
+      - tests/test_openfarm_query_compiler_v02.py
+      - .github/workflows/openfarm-query-compiler-v02.yml
+  workflow_dispatch:
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Check syntax
+        run: python -m py_compile scripts/openfarm_query_compiler_v02.py scripts/build_openfarm_decision_queries_v02.py scripts/aggregate_openfarm_queries_v02.py tests/test_openfarm_query_compiler_v02.py
+      - name: Adversarial offline compiler contract
+        run: python -m unittest discover -s tests -p 'test_openfarm_query_compiler_v02.py' -v
+  real-sources:
+    needs: contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        source: [pigweb, cattle, hotpig, equifacs, meerkat]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install 'pandas>=2.2,<3' numpy requests scikit-learn openpyxl
+      - uses: actions/cache@v4
+        if: matrix.source == 'hotpig'
+        with:
+          path: .cache/hotpig/series.zip
+          key: hotpig-17090997-series-1ba5125167224b96-v1
+      - name: Compile actual source-bound query states and separate reference labels
+        env:
+          OPENFARM_HOTPIG_SOURCE_PATH: .cache/hotpig/series.zip
+        run: |
+          if [ "${{ matrix.source }}" = meerkat ]; then
+            # >80k annotation rows. Count and validate complete original set;
+            # don't materialize 5x redundant binary label files in CI.
+            python scripts/build_openfarm_decision_queries_v02.py --source meerkat --report reports/openfarm-v02-meerkat.json
+          else
+            python scripts/build_openfarm_decision_queries_v02.py --source "${{ matrix.source }}" --report "reports/openfarm-v02-${{ matrix.source }}.json" --local-dir /tmp/openfarm-v02-local
+          fi
+      - name: Assert summaries and blinded split artifacts exist
+        if: matrix.source != 'meerkat'
+        run: |
+          test -s "reports/openfarm-v02-${{ matrix.source }}.json"
+          test -s "/tmp/openfarm-v02-local/${{ matrix.source }}/test/states.jsonl"
+          test -s "/tmp/openfarm-v02-local/${{ matrix.source }}/test/references.jsonl"
+          test -s "/tmp/openfarm-v02-local/${{ matrix.source }}/test/provenance.jsonl"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: openfarm-v02-multiquery-${{ matrix.source }}-manifest
+          path: reports/openfarm-v02-${{ matrix.source }}.json
+          retention-days: 30
+
+  suite-summary:
+    needs: real-sources
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: openfarm-v02-multiquery-*-manifest
+          path: reports/source-reports
+          merge-multiple: true
+      - name: Aggregate without duplicate-source inflation
+        run: |
+          python scripts/aggregate_openfarm_queries_v02.py --reports 'reports/source-reports/openfarm-v02-*.json' --output reports/openfarm-v02-aggregated.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: openfarm-v02-aggregated-suite
+          path: reports/openfarm-v02-aggregated.json
+          retention-days: 30

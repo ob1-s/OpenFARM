@@ -1,0 +1,25 @@
+name: OpenFARM source deep schema audit
+on:
+  push:
+    branches: [research/2026-10-data-prospecting]
+    paths:
+      - scripts/validate_first_sources.py
+      - .github/workflows/openfarm-source-deep-schema.yml
+  workflow_dispatch:
+jobs:
+  schema:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install 'pandas>=2.2,<3' requests openpyxl
+      - run: python scripts/validate_first_sources.py --output reports/deep-schema.json --only-hotpig
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: openfarm-source-deep-schema
+          path: reports/deep-schema.json
+          retention-days: 30

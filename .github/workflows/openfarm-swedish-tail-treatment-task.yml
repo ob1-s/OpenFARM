@@ -1,0 +1,31 @@
+name: Welfare sprint limited historical caretaker-treatment candidate
+on:
+  push:
+    branches: [research/2026-10-data-prospecting]
+    paths:
+      - scripts/build_swedish_tail_damage_historical.py
+      - .github/workflows/openfarm-swedish-tail-treatment-task.yml
+  workflow_dispatch:
+jobs:
+  source-temporal-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 24
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install 'pandas>=2.2,<3' numpy requests
+      - name: Compile source-reconstructed Swedish 14d-state to next-7d real treatment labels
+        run: python scripts/build_swedish_tail_damage_historical.py --out reports/swedish-limited-treatment-task.json --local-dir /tmp/swedish-source-private
+      - name: Confirm separated state reference and provenance files
+        run: |
+          test -s /tmp/swedish-source-private/swedish_tail_treatment_case_control/train/states.jsonl
+          test -s /tmp/swedish-source-private/swedish_tail_treatment_case_control/test/references.jsonl
+          test -s /tmp/swedish-source-private/swedish_tail_treatment_case_control/calibration/provenance.jsonl
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: swedish-injury-treatment-temporal-evidence
+          path: reports/swedish-limited-treatment-task.json
+          retention-days: 30

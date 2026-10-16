@@ -1,0 +1,28 @@
+name: Cow gait 272 trajectories and animal group audit
+on:
+  push:
+    branches: [research/2026-10-data-prospecting]
+    paths: [scripts/audit_cow_lameness_pose.py, .github/workflows/openfarm-cow-gait-audit.yml]
+  workflow_dispatch:
+jobs:
+  source-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 16
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Clone independent source read only
+        run: |
+          git clone --quiet --depth=1 https://github.com/hrussel/lstm-lameness-detection.git /tmp/cow-source
+          git -C /tmp/cow-source rev-parse HEAD > /tmp/cow-source-sha
+          echo "Pinned source clone $(cat /tmp/cow-source-sha)"
+      - run: python -m pip install 'pandas>=2.2,<3' numpy
+      - run: python scripts/audit_cow_lameness_pose.py --root /tmp/cow-source --out reports/cow-gait-pose-source.json
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cow-gait-pose-source-audit
+          path: reports/cow-gait-pose-source.json
+          retention-days: 30

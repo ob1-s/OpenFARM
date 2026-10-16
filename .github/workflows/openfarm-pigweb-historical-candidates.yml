@@ -1,0 +1,31 @@
+name: PigWeb historical independent biomarker outcomes
+on:
+  push:
+    branches: [research/2026-10-data-prospecting]
+    paths:
+      - scripts/build_pigweb_historical_v02.py
+      - .github/workflows/openfarm-pigweb-historical-candidates.yml
+  workflow_dispatch:
+jobs:
+  independent-source-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify time ordering, hormonal outcomes, animal and site grouping
+        run: python scripts/build_pigweb_historical_v02.py --manifest reports/pigweb-historical-v02.json --local-dir /tmp/pigweb-pinned
+      - name: Validate materialized folds without redistributing original rows
+        run: |
+          test -s /tmp/pigweb-pinned/AU/train.jsonl
+          test -s /tmp/pigweb-pinned/AU/test.jsonl
+          test -s /tmp/pigweb-pinned/INRAE/test.jsonl
+          test -s /tmp/pigweb-pinned/IRTA/test.jsonl
+          test -s /tmp/pigweb-pinned/WUR/test.jsonl
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pigweb-historical-research-candidate-manifest
+          path: reports/pigweb-historical-v02.json
+          retention-days: 30

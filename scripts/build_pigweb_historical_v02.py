@@ -73,6 +73,11 @@ def build():
         features={
           "pre_cortisol_ng_ml":num(pre["cort_ngmL"]),
           "pre_oxytocin_pg_ml":num(pre["oxyt_pgmL"]),
+        }
+        # Behavioral responses to the stimulus were NOT available at the
+        # earlier pre-saliva sample. Keep separately for retrospective
+        # association, never in causal future-outcome model input.
+        during_stimulus_observations={
           "observed_locomotor_play":num(brow["locomotor_play"]),
           "observed_escape_events":num(brow["escape_events"]),
           "observed_inactive_fraction":ratio(brow["scans_inactive"],brow["scans_activity_coded"]),
@@ -86,7 +91,9 @@ def build():
             a,c=num(pre[column]),num(post[column])
             targets[prefix+"_delta"]=None if a is None or c is None else c-a
             targets[prefix+"_increase"]=None if a is None or c is None else int(c>a)
-        examples.append({"features":features,"targets":targets,
+        examples.append({"features":features,
+                         "during_stimulus_observations":during_stimulus_observations,
+                         "targets":targets,
           "provenance":{"institute":k[0],"pig_id":k[1],"context":k[2],
               "pre":clock(pre).isoformat(),"post":clock(post).isoformat(),
               "delta_minutes":diff}})
@@ -100,14 +107,17 @@ def build():
          "unique_subjects":len(set((e["provenance"]["institute"],e["provenance"]["pig_id"]) for e in examples)),
          "distinct_sites":len(set(e["provenance"]["institute"] for e in examples)),
          "model_input_columns":list(examples[0]["features"]),
-         "explicitly_excluded_model_inputs":["pig_id","institute","context",
+         "retrospective_observation_columns":list(examples[0]["during_stimulus_observations"]),
+         "temporal_policy":"PRE-only model input; experimental behavior retained separately; behavior-completion time not verified",
+         "explicitly_excluded_model_inputs":["during_stimulus_behavior","pig_id","institute","context",
              "post hormone/temperature readings","future timestamps",
              "treatment/code-derived valence","followup elapsed minutes"],
          "question_family":["Noul(post cortisol > pre cortisol)",
             "Noul(post oxytocin > pre oxytocin)",
             "Value(post - pre cortisol)","Value(post - pre oxytocin)"],
          "split_protocol":"4 leave-one-institute-out heldout folds. Never mix sessions of one pig across train/test. Training / tuning must use remaining institutes; no test-based model selection.",
-         "warnings":["Biomarker change is independently measured, not scientifically validated emotion or care action.",
+         "warnings":["BEHAVIOR DURING STIMULUS cannot be asserted available at pre-sample: excluded from forecast state.",
+           "Biomarker change is independently measured, not scientifically validated emotion or care action.",
            "4 institutes and treatment/site confounding; leave-one-institute-out metrics may vary substantially.",
            "124 pigs have 2 conditions; 248 pairs are not 248 independent pigs.",
            "Date/time schedule varies 21–127 min. Never claim fixed 30-min forecasting or reveal actual post-sample time to model.",

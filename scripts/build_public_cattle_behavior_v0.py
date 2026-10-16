@@ -132,6 +132,8 @@ def experiment(df,parts):
     return results
 def main():
     ap=argparse.ArgumentParser();ap.add_argument("--out",type=Path,required=True)
+    ap.add_argument("--local-dir",type=Path,default=None,
+                    help="Materialize local-only split inputs, targets and provenance for research")
     a=ap.parse_args()
     raw,manifest=source();df,integrity=prepare(raw)
     result={"source":manifest,"integrity":integrity,
@@ -144,6 +146,21 @@ def main():
             "narrow_claim":"Within-source sensor-to-independent human-observed behavior generalization under cow and 2-site holdouts; exact group numbers tiny."}
     for name,part in groups(df).items():
         result["results"][name]=experiment(df,part)
+        if a.local_dir is not None:
+            out=a.local_dir/name
+            out.mkdir(parents=True,exist_ok=True)
+            for split,ids in part.items():
+                rows=df[df.ID.isin(ids)].copy()
+                # Model-visible sensor-only state, independent human annotation
+                # and source/group keys are ALWAYS separated on disk.
+                rows[["MI"]].to_csv(out/f"{split}.features.csv.gz",
+                                     index=False,compression="gzip")
+                rows[["Behavior"]].to_csv(out/f"{split}.labels.csv.gz",
+                                           index=False,compression="gzip")
+                rows[["Breed","ID","site","Time.MTD","State"]].to_csv(
+                    out/f"{split}.provenance.csv.gz",index=False,compression="gzip")
+                if rows["ID"].nunique()!=len(ids):
+                    raise RuntimeError("Source grouping invalid during export")
     def json_primitive(obj):
         if isinstance(obj,np.generic):return obj.item()
         if isinstance(obj,np.ndarray):return obj.tolist()

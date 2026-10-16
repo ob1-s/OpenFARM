@@ -1,0 +1,26 @@
+name: Meerkat 20-video human ethogram heldout cheap benchmark
+on:
+  push:
+    branches: [research/2026-10-data-prospecting]
+    paths:
+      - scripts/benchmark_meerkat_video_heldout.py
+      - .github/workflows/openfarm-meerkat-heldout-eval.yml
+  workflow_dispatch:
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install 'numpy<3' 'pandas>=2.2,<3' 'scikit-learn>=1.5,<2' requests
+      - name: Run fixed whole-video source audit and small models
+        run: python scripts/benchmark_meerkat_video_heldout.py --report reports/meerkat-video-ethogram.json
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: meerkat-video-level-heldout-metrics
+          path: reports/meerkat-video-ethogram.json
+          retention-days: 30

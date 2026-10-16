@@ -161,6 +161,70 @@ def hotpig(c:Compiler,stride=15,horizon=15):
             "lookahead_minutes":horizon,"n_source_pigs":24,
             "source_grouping":"whole pig, 16/4/4; one experimental site"}
 
+def meerkat(c:Compiler):
+    # Human visual ethogram is the reference; model receives only human
+    # bounding-box geometry and past-only movement from the original existing
+    # 20-video-heldout benchmark. The source video is the evaluation group.
+    from benchmark_meerkat_video_heldout import (archive,groups,extract_one,
+                                                 FEATS as MEERKAT_FEATS)
+    z,sha=archive()
+    names=sorted(n for n in z.namelist() if n.endswith(".csv"))
+    if len(names)!=20:raise RuntimeError("Expected exactly 20 source videos")
+    label_codes=json.loads(z.read("behaviours.json"))
+    names_by_id={int(v):str(k) for k,v in label_codes.items()}
+    valid_ids=tuple(sorted(i for i in names_by_id if i in range(1,16)))
+    if len(valid_ids)!=15:raise RuntimeError("Unexpected human behavior class ontology")
+    label_options=tuple(names_by_id[i] for i in valid_ids)
+    # Data analysis slices of a SINGLE human ethogram reference, never
+    # four independently annotated extra tasks.
+    probe_codes={
+        name:code for name,code in label_codes.items()
+        if any(t in name.casefold().replace(" ","") for t in
+               ("forag","guard","groom","playfight"))
+        and int(code) in valid_ids
+    }
+    if len(probe_codes)<3:raise RuntimeError("Expected human ethogram probes missing")
+    folds=groups(names)
+    lookup={video:part for part,vids in folds.items() for video in vids}
+    for video in names:
+        X,y,quality=extract_one(z,video)
+        if len(y)==0:raise RuntimeError(f"No valid observations in {video}")
+        for i,(x,source_code) in enumerate(zip(X,y)):
+            source_code=int(source_code)
+            if source_code not in names_by_id or source_code==16:
+                raise RuntimeError("Unknown/occluded class cannot become false negative")
+            chosen=names_by_id[source_code]
+            family="meerkat.human_video_ethogram"
+            primary_id="meerkat.behavior.choice"
+            qs=[Question(question_id=primary_id,primitive="Choice",
+                text="Which human-observed behavior is shown by this visible tracked meerkat?",
+                options=label_options,value=chosen,
+                reference_family=family,evidence_origin="human_labeled_bbox_video_ethogram",
+                readiness="bounded_noncommercial_research")]
+            for code_name,code in sorted(probe_codes.items()):
+                slug="".join(c if c.isalnum() else "_" for c in code_name.lower())
+                qs.append(Question(question_id=f"meerkat.is_{slug}",primitive="Noul",
+                    text=f"Is the human behavior label {code_name}?",
+                    value=int(source_code==int(code)),
+                    reference_family=family,derived_from=primary_id,
+                    evidence_origin="one_vs_rest_of_same_human_ethogram",
+                    readiness="diagnostic_slice_only"))
+            c.add(Observation(source="meerkat",
+                state_id=f"video:{video}:postfilter_row:{i}",
+                split=lookup[video],group_scope="original_source_video",
+                group_id=video,modalities=("human_bbox_geometry","causal_bbox_displacement"),
+                features={name:float(x[col]) for col,name in enumerate(MEERKAT_FEATS)},
+                questions=qs,audit={"source_sha256":sha,"source_video_file":video,
+                    "license":"CC BY-NC-SA 4.0; strictly noncommercial use",
+                    "source_screen":"adult_meerkat_non_occluded_valid_human_behavior",
+                    "sampling":"every 50th original frame",
+                    "not_raw_video_frame_inference":True,
+                    "no_animal_heldout_claim":True}))
+    return {"sha256":sha,"whole_video_groups":{k:len(v) for k,v in folds.items()},
+            "codebook":names_by_id,
+            "derived_probe_code_names":list(sorted(probe_codes)),
+            "noncommercial_only":True}
+
 def equifacs(c:Compiler):
     manifest,source=equifacs_source()
     for split,(entries,provenance) in source.items():
@@ -194,7 +258,7 @@ def equifacs(c:Compiler):
     return {"report":{k:v for k,v in manifest.items() if k in
                       ("source_media_count","accepted_intervals","splits","quality_excluded_intervals")}}
 
-BUILDERS={"pigweb":pigweb,"cattle":cattle,"hotpig":hotpig,"equifacs":equifacs}
+BUILDERS={"pigweb":pigweb,"cattle":cattle,"hotpig":hotpig,"equifacs":equifacs,"meerkat":meerkat}
 def main():
     p=argparse.ArgumentParser()
     p.add_argument("--source",required=True,choices=sorted(BUILDERS))

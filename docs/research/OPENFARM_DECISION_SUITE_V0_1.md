@@ -60,3 +60,7 @@ An output is a full probability distribution over the task's source-defined choi
 - **EquiFACS:** `scripts/prepare_equifacs_structured.py`, `scripts/build_equifacs_clinical_v0.py` · [Track B dossier](2026-10-track-b-affective-supervision-audit.md).
 
 **Next research step:** establish additional clinically/behaviorally defensible positive welfare supervision from *public* sources, and independent caretaker-outcome annotations when available. But v0.1 is already useful **without waiting for outreach**.
+
+## Successor candidate design (no change to v0.1 admissions)
+
+[**Multi-decision and historical expansion proposal**](OPENFARM_MULTI_DECISION_TEMPORAL_EXPANSION.md) maps existing sources to *different* observation, behavior-event, temporal-forecast and independently referenced physiological outcome questions. Includes a CI-tested **PigWeb 124-animal / 4-site pre→post biomarker task builder**. None of those proposed v0.2 tasks silently becomes a v0.1 approved welfare benchmark.

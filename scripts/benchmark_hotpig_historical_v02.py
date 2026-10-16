@@ -104,7 +104,12 @@ def run():
         Xtest,ytest,trows=per["test"]
         Xcal,ycal,_=per["calibration"]
         if len(np.unique(ytrain))!=2:raise RuntimeError(f"Class missing train: {task}")
-        prior=(sum(ytrain)+1)/(len(ytrain)+2)
+        # NumPy int8 scalar addition overflows with Python's built-in sum().
+        # Explicit wide reduction: prior is a probability, never a wrapped
+        # 8-bit integer. This previously corrupted the naive prior log loss.
+        prior=(int(ytrain.astype(np.int64).sum())+1)/(len(ytrain)+2)
+        if not 0<prior<1 or abs(prior-float(ytrain.mean()))>.001:
+            raise RuntimeError("Training-only prevalence baseline corrupt")
         models={
             "fixed_train_prior":np.full(len(ytest),prior),
             "L2_logistic":make_pipeline(SimpleImputer(strategy="median"),StandardScaler(),
@@ -114,7 +119,9 @@ def run():
                   learning_rate=.07,l2_regularization=1.,early_stopping=False,random_state=17)
         }
         scores={"counts_by_split":{name:{"n":len(y),"positive":int(y.sum())}
-                  for name,(_,y,_) in per.items()},"models":{}}
+                  for name,(_,y,_) in per.items()},
+                "train_only_smoothed_prior":round(float(prior),6),
+                "models":{}}
         for name,model in models.items():
             if name=="fixed_train_prior":
                 p=np.full(len(ytest),prior);pc=np.full(len(ycal),prior)

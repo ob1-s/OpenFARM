@@ -51,9 +51,10 @@ class Question:
     derived_from: str|None=None
     relation: str="contemporaneous"
     reference_time: str|None=None
+    reference_index: int|None=None
     readiness: str="candidate"
     options: tuple[str,...]=()
-    def validate(self,cutoff:str|None)->None:
+    def validate(self,cutoff:str|None,cutoff_index:int|None)->None:
         if not self.question_id or not self.reference_family or not self.text:
             raise ValueError("Question id, wording and reference family mandatory")
         if self.primitive not in KINDS:raise ValueError("Unknown primitive")
@@ -71,10 +72,13 @@ class Question:
             if isinstance(self.value,bool) or not isinstance(self.value,(int,float)) or not math.isfinite(self.value):
                 raise ValueError("Score/Value must be numeric finite")
         if self.relation=="future":
-            if not cutoff or not self.reference_time:
-                raise ValueError("Future target requires cutoff and target timestamp")
-            if datetime.fromisoformat(self.reference_time)<=datetime.fromisoformat(cutoff):
-                raise ValueError("Noncausal future target")
+            has_clock=bool(cutoff and self.reference_time)
+            has_index=cutoff_index is not None and self.reference_index is not None
+            if has_clock==has_index:raise ValueError("Future target requires exactly one true temporal basis")
+            if has_clock and datetime.fromisoformat(self.reference_time)<=datetime.fromisoformat(cutoff):
+                raise ValueError("Noncausal future time label")
+            if has_index and self.reference_index<=cutoff_index:
+                raise ValueError("Noncausal future ordinal index")
     def public(self):
         return safe_json({"id":self.question_id,"question":self.text,"primitive":self.primitive,
           "options":list(self.options),"reference_family":self.reference_family,
@@ -84,7 +88,7 @@ class Question:
         return {"id":self.question_id,"valid":self.valid,"value":safe_json(self.value),
                 "mask_reason":self.mask_reason,"reference_family":self.reference_family,
                 "derived_from":self.derived_from,
-                "reference_time":self.reference_time}
+                "reference_time":self.reference_time,"reference_index":self.reference_index}
 
 @dataclass
 class Observation:
@@ -97,6 +101,7 @@ class Observation:
     features: dict[str,Any]
     questions: list[Question]
     cutoff: str|None=None
+    cutoff_index: int|None=None
     audit: dict[str,Any]=field(default_factory=dict)
     def validate(self):
         if not self.source or not self.state_id or self.split not in SPLITS:
@@ -113,7 +118,7 @@ class Observation:
             safe_json(v)
         if len({q.question_id for q in self.questions})!=len(self.questions):
             raise ValueError("Duplicate question in same state")
-        for q in self.questions:q.validate(self.cutoff)
+        for q in self.questions:q.validate(self.cutoff,self.cutoff_index)
 
 class Compiler:
     def __init__(self,local_dir:Path|None=None):
@@ -181,7 +186,7 @@ class Compiler:
         row_id=obs.state_id
         records={
          "states":safe_json({"state_id":row_id,"modalities":list(obs.modalities),
-                             "features":obs.features,"cutoff":obs.cutoff,
+                             "features":obs.features,"cutoff":obs.cutoff,"cutoff_index":obs.cutoff_index,
                              "question_ids":[q.question_id for q in obs.questions]}),
          "references":{"state_id":row_id,"answers":[q.private() for q in obs.questions]},
          "provenance":{"state_id":row_id,"source":obs.source,"group_scope":obs.group_scope,

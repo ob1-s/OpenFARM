@@ -64,17 +64,19 @@ Thank you very much for making this valuable research available.
 
 ## Priority 4 — USP-linked sow locomotion (13 trained scorers, two farms)
 
-**Recipient:** `contact@animalwelfarehub.org`.  
-**Primary source:** https://animalwelfarehub.org/sows-project/  
-**Status:** Research page says 2D side/dorsal recordings from USP Pirassununga and commercial TOPGEN farm in Jaguariaíva, with **13 specialist locomotion ratings**; actual file list, independent animal counts and data rights unknown.
+**Recipients:** `tauanamariapaula@gmail.com` and/or `adroaldo.zanella@usp.br` (corresponding authors as printed in the original Scientific Reports paper); `contact@animalwelfarehub.org` if project routing is preferable.  
+**Primary sources:** https://animalwelfarehub.org/sows-project/ ; https://doi.org/10.1038/s41598-024-62151-7  
+**Status:** The project landing page mentions **two recording locations**, but the peer-reviewed paper describes this analyzed dataset as collected at **one commercial farm (TOPGEN)**. The paper reports **500 source sows; 364 lateral MP4s assessed by 13 experts; 11 dropped as unscorable; three raters excluded as outliers**. Dorsal labels were **inherited from the corresponding lateral video**, not independently scored. It states **data available from the corresponding author upon reasonable request**. The page's 2D dataset download is not accessible. Do **not** describe this as a proven cross-farm eval source until more independent material is supplied.
 
 **Subject:** Dados do projeto de locomoção de matrizes suínas — vídeos, 13 avaliadores e identificação por granja
 
 Olá,
 
-Vi o projeto *Deep Learning Pose Detection Model for Sow Locomotion* no Animal Welfare Science HUB, descrevendo registros de locomoção de matrizes suínas em duas granjas e notas atribuídas por treze avaliadores.
+Li o artigo de 2024 *Deep learning pose detection model for sow locomotion* e encontrei o repositório descrito no Animal Welfare Science HUB. Estou pesquisando modelos pequenos e calibrados para interpretar movimentos como indicadores de bem-estar animal (OpenFARM).
 
-Estou fazendo uma pesquisa aberta (OpenFARM) sobre modelos pequenos e calibrados para interpretar sinais observáveis de bem-estar animal. Gostaria de saber se os vídeos 2D (lateral/dorsal) e as avaliações individuais podem ser acessados para pesquisa e avaliação, idealmente com identificadores anonimizados de porca, granja, sessão e data. Esses agrupamentos são importantes para medir generalização entre animais e granjas sem vazamento entre treino e teste.
+O artigo menciona 500 porcas inicialmente filmadas, 364 vídeos laterais avaliados por 13 especialistas, 11 gravações descartadas por dificuldades de pontuação, três avaliadores posteriormente excluídos e transferência da nota lateral para a vista dorsal correspondente. Seria possível acessar os MP4 pareados e **as notas originais de todos os avaliadores, incluindo discordâncias e exclusões**? Também seriam úteis IDs anonimizados de porca e sessão, bem como a regra exata de correspondência entre as duas vistas.
+
+A página do projeto menciona registros na USP e na TOPGEN, mas o artigo descreve a amostra analisada na TOPGEN. **Existem amostras adicionais da USP, independentes do conjunto publicado, que poderiam permitir avaliação entre granjas?** Caso não existam, consideraremos a avaliação limitada a uma única granja.
 
 Também poderiam informar a licença e condições para pesquisa aberta, eventual redistribuição apenas de métricas/partições, e eventual uso comercial de modelos treinados com esses dados? Podemos respeitar restrições distintas para cada uso.
 

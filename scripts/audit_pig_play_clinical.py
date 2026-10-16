@@ -53,13 +53,22 @@ def analysis():
     for f in fs:
         name=f.get("path") or ""
         if not any(s in name for s in NEEDS):continue
-        rec={"name":name,"file_id":f.get("id"),"size":f.get("size"),
-             "links":list(f.get("_links",{}))}
-        fid=f.get("id")
-        candidates=[
-            f"https://datadryad.org/api/v2/files/{fid}/download",
-            f"https://datadryad.org/downloads/file_stream/{fid}"
-        ]
+        links=f.get("_links",{})
+        raw=links.get("stash:download",{})
+        official=raw.get("href") if isinstance(raw,dict) else raw
+        if not official:
+            raise RuntimeError("Dryad API file metadata missing official stash:download link")
+        if official.startswith("/"):
+            official="https://datadryad.org"+official
+        if not official.startswith("https://datadryad.org/"):
+            raise RuntimeError("Dryad file download URL is not an expected official HTTPS host")
+        rec={"name":name,"size":f.get("size"),
+             "official_download_url":official,
+             "links":list(links)}
+        # IMPORTANT: this endpoint is furnished by the dataset's public REST
+        # API. Older audit guessed a file ID f.get('id') but the API's file
+        # objects omit 'id', producing /None/download => false 403.
+        candidates=[official]
         err=[]
         for url in candidates:
             try:

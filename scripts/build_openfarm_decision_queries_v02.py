@@ -59,7 +59,7 @@ def pigweb(c:Compiler,test_site="WUR"):
             qid=f"{fid}.increased"
             kwargs={"relation":"future","reference_time":p["post"],
                     "reference_family":fid,"evidence_origin":"measured physiological assay",
-                    "readiness":"site_limited_candidate" if assay=="eye_IRT" else "audited_candidate"}
+                    "readiness":"site_limited_candidate" if assay=="eye_IRT" else "retrospective_lab_assay_candidate"}
             qs.append(Question(question_id=qid,text=f"Did measured {assay} increase after this observation?",
                  primitive="Noul",value=(int(inc) if inc is not None else None),
                  valid=inc is not None,mask_reason=None if inc is not None else "missing_paired_assay",
@@ -79,7 +79,8 @@ def pigweb(c:Compiler,test_site="WUR"):
                  "missing_model_input_fields":missing,
                  "post_interval_minutes":p["delta_minutes"],
                  "excluded_temporally_unavailable_features":list(e["during_stimulus_observations"]),
-                 "eligibility":"PRE_ONLY_future_biomarker_forecast; observed_behavior_is_not_available_at_pre"})
+                 "pre_lab_result_availability":"UNKNOWN: original PRE sample was collected before POST but assayed later in the laboratory",
+                 "eligibility":"OFFLINE_RETROSPECTIVE_PREDICTION_ONLY; cannot claim live PRE-time monitoring without lab result availability"})
         c.add(obs)
     return {"temporal_audit":"pre_biomarker_only__behavior_during_stimulus_excluded",
             "frozen_source_sha256":manifest["source_sha256"],"site_test":test_site,

@@ -1,4 +1,6 @@
 # OpenFARM v0.2 — real multi-decision query compilation
+> **Temporal science correction (2026-10-16):** [Historical validation report](OPENFARM_HISTORICAL_TASK_VALIDATION_V0_2.md) supersedes older PigWeb behavioral state/forecast claims below. Source `pre` timestamps do **not** show that stimulus-response behavior was available then. The executable builder now exposes **pre biomarkers only** in PigWeb forecast input; human behavior is separately retained for *retrospective association*. The current compiled suite therefore has **ZERO validated multichannel model-input states**, not 248. All **130,005 states, 623,174 valid reference labels and 546 evidence masks remain unchanged**. First heldout forecasts are weak; do not call them approved welfare outcomes.
+
 
 **Checkpoint:** 16 October 2026 · **Research branch:** `research/2026-10-data-prospecting`. This implements the priority described in [multiple decisions and historical task audit](OPENFARM_MULTI_DECISION_TEMPORAL_EXPANSION.md). The frozen [canonical v0.1 decision inventory](OPENFARM_DECISION_SUITE_V0_1.json) remains unmodified.
 
@@ -21,18 +23,19 @@ There are **623,720 attempted question slots and 546 valid masks**: 520 PigWeb a
 
 Of those valid labels, **456,241 are dependent rewrites** of existing reference information: 418,815 Meerkat binary diagnostic slices, 36,888 cattle binary diagnostic slices, 484 PigWeb continuous deltas sharing the corresponding binary biomarker assay, and 54 EquiFACS binary derivatives. The remaining 166,933 are **non-derived atomic labeled propositions**, *still sharing original sensors* in historical HotPig. The actual count of **independently measured reference families across states** is only **130,241**; a subset of these are repeated minutes/intervals/animal contexts. This is a strict, intentionally conservative *reference-family* measure, not a claim of statistically independent observations.
 
-One source actually supplies **paired modalities in the same state**: PigWeb's *human-observed behavioral event counts* alongside *pre-session physiological measurements* (248 source states). The other sources here use a single input evidence channel; HotPig's target feeder is not passed to the model as a second input modality. The compiler does **not** claim raw image, full audio or video understanding.
+**Corrected:** The original PigWeb *source* includes human-observed stimulus behavior and physiological samples, but their causal availability is not simultaneous at the **PRE** forecast cutoff. The corrected compiler retains PRE saliva assays only, so **0 states** have scientifically certified multiple input modalities *at prediction time*. Retrospective multimodal analysis may be possible as a separate protocol, but must not be described as a prospective forecast. HotPig's target feeder remains a reference, not an input. The compiler does **not** claim raw image, full audio or video understanding.
 
 ## Concrete questions from one real observation
 
-### PigWeb — cross-modal source state and independently measured future outcomes
+### PigWeb — pre-only historical state with independently measured future outcomes
 
 ```text
 Observation state (at PRE sample, all truly available then):
   pre-session cortisol; pre-session oxytocin
-  human-observed locomotor-play and escape-event counts
-  observed inactivity, tail posture and ear-forward fractions
-  missing sensor channels marked as null
+  missing pre-sample assay channels marked as null
+  [IMPORTANT: exclude play, escape, inactivity, tail and ear actions:
+   those were observed DURING experimental exposure, later than PRE.
+   They can be studied separately as retrospective associations.]
   [never pass facility, animal ID, treatment/positive-negative context,
    future post sample, sample date or post elapsed minutes as model input]
 
@@ -112,7 +115,7 @@ This is **real, functioning data infrastructure**, with empirical question count
 - **Observation:** HotPig current feeding, cattle 4-class ethogram and Meerkat 15-class video-heldout ethogram remain narrowly approved for *research* under original respective terms; behavioral binary slices are diagnostic views, not more independent tasks.
 - **Interpretation:** EquiFACS is **tiny nonranking pilot**; PigWeb future hormonal outcomes are **source-joined, scientifically interesting candidate forecasts**, but they are *not* independently validated positive/negative emotional labels.
 - **Action:** **ZERO** tasks currently carry independently verified caretaker attention, treatment choice or measured welfare-intervention outcome. Never derive an “alert now” answer from a cortisol threshold, pose score or behavior anomaly by fiat.
-- **Multimodality:** PigWeb is genuinely paired observation-level behavior+pre-biomarker data, although it isn't simultaneously recorded raw image/audio. Next sought-after sources: video+feeder/accelerometer and synchronized vocalization+physiology with independent veterinary outcomes.
+- **Multimodality:** The PigWeb study combines behavioral and physiological observations **retrospectively**, but source evidence does not establish that stimulus behavior was available at PRE. Therefore **0 v0.2 causal forecast input states are certified multimodal**. Next sought-after sources: truly synchronized video+feeder/accelerometer and vocalization+physiology with independent veterinary outcomes.
 - **Positive welfare:** source expert observed grooming, social behavior, foraging and play actions can define observation-level tasks, but **positive emotional valence still requires independently validated contextual/outcome evidence**.
 - **Jev connection:** a query-based decision workload with shared observation state, typed outputs and reproducible evidence masks is model-family-agnostic. No assumptions about compatibility of raw videos/Box with a particular hosted model API. Confirm runtime-specific input/output types when implementing an inference adapter.
 

@@ -78,8 +78,7 @@ def pigweb(c:Compiler,test_site="WUR"):
                  "recording_context_hidden":p["context"],
                  "missing_model_input_fields":missing,
                  "post_interval_minutes":p["delta_minutes"],
-                 "excluded_temporally_unavailable_features":[k for k in e["features"]
-                    if k.startswith("observed_")],
+                 "excluded_temporally_unavailable_features":list(e["during_stimulus_observations"]),
                  "eligibility":"PRE_ONLY_future_biomarker_forecast; observed_behavior_is_not_available_at_pre"})
         c.add(obs)
     return {"temporal_audit":"pre_biomarker_only__behavior_during_stimulus_excluded",

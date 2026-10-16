@@ -15,7 +15,16 @@ jobs:
           python-version: '3.12'
       - run: python -m pip install 'pandas>=2.2,<3' numpy scikit-learn requests
       - name: Verify exact source and heldout cows and independent site testing
-        run: python scripts/build_public_cattle_behavior_v0.py --out audit-reports/cattle-choice-baseline.json
+        run: python scripts/build_public_cattle_behavior_v0.py --out audit-reports/cattle-choice-baseline.json --local-dir /tmp/cattle-human-labels
+      - name: Verify usable data in each research split without republishing author source
+        run: |
+          for protocol in breed_balanced_group_holdout jornada_to_chihuahuan chihuahuan_to_jornada; do
+            for split in train calibration test; do
+              test -s "/tmp/cattle-human-labels/$protocol/$split.features.csv.gz"
+              test -s "/tmp/cattle-human-labels/$protocol/$split.labels.csv.gz"
+              test -s "/tmp/cattle-human-labels/$protocol/$split.provenance.csv.gz"
+            done
+          done
       - if: always()
         uses: actions/upload-artifact@v4
         with:

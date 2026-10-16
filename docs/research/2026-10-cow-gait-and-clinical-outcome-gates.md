@@ -30,6 +30,20 @@
 - [Dryad site](https://datadryad.org/dataset/doi:10.5061/dryad.76hdr7t55) exposes the source workbook links, but direct download currently yields HTTP **403 Forbidden** for at least the behavior and clinical links. Our read-only source attempt [CI 38824216943](https://github.com/ob1-s/OpenFARM/actions/runs/38824216943) confirmed small XLSX file metadata but was not able to download the bytes. The file-level clinical outcome join is **not verified**; no new task approved. Seek legitimate author-supported access rather than treating the landing page as full download.
 - **Status:** `METADATA_AND_DATA_DICTIONARY_VERIFIED / FILE_BYTES_ACCESS_PENDING`.
 
+## D. Related sow locomotion (2024) — paper-level audit corrected the apparent two-farm claim
+
+- [Animal Welfare Science HUB sow project](https://animalwelfarehub.org/sows-project/) refers to USP Pirassununga and TOPGEN locations, but the **[original Scientific Reports paper](https://doi.org/10.1038/s41598-024-62151-7)**, *Deep learning pose detection model for sow locomotion* (2024), explicitly describes the **analyzed 2022 recordings from the single TOPGEN commercial farm in Jaguariaíva, PR**. **Do not claim cross-farm evaluation or two-farm supervision** from this paper.
+- Paper: 500 sows initially filmed; 1,207 video captures (565 lateral, 642 dorsal); after quality filtering, 364 usable lateral + 336 usable dorsal MP4. Thirteen experts scored **lateral** videos (0–3 Zinpro locomotion rubric), 11 were excluded as unscorable, and **three expert responses were later excluded as outliers**. Dorsal-view labels were **copied from their paired lateral video**, not independently scored. Only a balanced set of 106 video pairs was used for SLEAP model training and pose annotation.
+- The original paper's **Data availability** is explicitly "**available from the corresponding author upon reasonable request**." Authors' public contacts in manuscript: `tauanamariapaula@gmail.com`, `adroaldo.zanella@usp.br`. The site exposes the paper PDF but not the underlying video or evaluator spreadsheets; [actual website link audit CI](https://github.com/ob1-s/OpenFARM/actions/runs/38829303732) confirms a PDF link, not media downloads.
+- **Potential:** model-calibration dataset with genuinely independent initial judgments (if all original vote rows are released). But **10 retained experts after filtering != 13 independent human consensus targets**; ask for original unfiltered 13 votes and exclusion rationale.
+- **Status:** `PAPER_GROUNDED / SOURCE_MEDIA_REQUEST_ONLY / RATING_DISTRIBUTION_REQUEST_ONLY`. Distinct from 2026 cow gait and ten-rater cow project. Only approve after actual media, horse/sow identities, sessions, and source rights are verified.
+
+## C access correction — original URL bug fixed, but data still unavailable
+
+The first `scripts/audit_pig_play_clinical.py` used `f.get("id")` for Dryad file objects that do not expose `id`, yielding erroneous `/None/download` endpoints. This was **our tooling error**, not evidence of a private dataset. We corrected it to use the source API's official `stash:download` links (e.g. `https://datadryad.org/api/v2/files/3480216/download`). The [corrected per-file CI run](https://github.com/ob1-s/OpenFARM/actions/runs/38828993948) still received HTTP errors. The [documented full-dataset API download](https://datadryad.org/api/v2/datasets/doi%3A10.5061%2Fdryad.76hdr7t55/download) returned explicit **HTTP 401** in [CI run 38829231806](https://github.com/ob1-s/OpenFARM/actions/runs/38829231806). Public Dryad metadata still lists CC0 original XLSX data. Access not certified; do not attempt unauthorized bypass. A targeted author/Dryad access request is now appropriate.
+
+See [four verified-recipient outreach drafts](2026-10-researcher-outreach-ready.md) and [internal tracking issue #3](https://github.com/ob1-s/OpenFARM/issues/3). **No messages sent**.
+
 ## Specific access/permissions questions to send
 
 ### Brazilian ten-rater cow dataset (Portuguese draft)

@@ -14,7 +14,15 @@ OpenFARM is an open research program investigating **small, fast, typed, calibra
 - [System-1 research charter](docs/system1/RESEARCH_CHARTER.md) — mission, modality ladder, commercial metrics and research gates.
 - [Typed question and calibration contract](docs/system1/TYPED_QUESTION_CONTRACT.md) — observation vs inference vs action, distributions and proper scoring rules.
 
-### Initial framework: one seed, zero validated product benchmarks
+### Canonical decision suite v0.1 — 3 bounded evaluations + 2 exploratory welfare probes
+
+[**Read the v0.1 scientific and task specification**](docs/research/OPENFARM_DECISION_SUITE_V0_1.md) · [Machine-readable task manifest](docs/research/OPENFARM_DECISION_SUITE_V0_1.json)
+
+The research-branch decision suite includes **three already runnable, separately evaluated Level-1 observation tasks** (**HotPig**, **24-cow wearable behavior**, and **20-video Meerkat geometry/ethogram**) plus **two deliberately nonranking Level-2 welfare-adjacent probes** (**Horse Grimace** and **EquiFACS independent veterinarian judgments**). The suite supports an omni-modal / interleaved **input-state → typed-decision** design, but these five sources do **not** establish every proposed modality; model inputs and actual label origins are always reported separately.
+
+**No Level-3 caretaker escalation benchmark or certified welfare product result exists yet.** Never collapse the five items into a single welfare score. Meerkat's source is noncommercial; horse/EquiFACS are extremely small. The historical integrity decisions remain authoritative for retired source tasks.
+
+### Legacy task disposition — one welfare seed retained, no validated product benchmark
 
 **No existing dataset qualifies as a validated real-world animal-welfare monitoring task.** Passing data integrity is not equivalent to observing affect, welfare state or deployment utility.
 

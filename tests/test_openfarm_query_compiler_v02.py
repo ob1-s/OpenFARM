@@ -111,6 +111,22 @@ class ContractTests(unittest.TestCase):
             self.assertIn('"value": 1',refs)
             self.assertIn('PRIVATE-RATER-XYZ',prov)
             self.assertIn('"question_ids"',visible)
+    def test_opaque_row_ids_and_cutoff_hidden_from_model(self):
+        with tempfile.TemporaryDirectory() as d:
+            c=Compiler(local_dir=Path(d))
+            state=o(state="animal_A:POSITIVE_EXPERIMENT",group="ANIMAL-PRIVATE",
+                    cutoff="2026-02-10T11:59:00",questions=[
+                    q("hormone_future","serum",relation="future",
+                      reference_time="2026-02-10T12:45:00")])
+            c.add(state)
+            c.finish(Path(d)/"summary.json")
+            base=Path(d)/"fixture"/"train"
+            visible=(base/"states.jsonl").read_text()
+            hidden=(base/"provenance.jsonl").read_text()
+            for secret in ("POSITIVE_EXPERIMENT","ANIMAL-PRIVATE","2026-02-10T11:59:00"):
+                self.assertNotIn(secret,visible)
+                self.assertIn(secret,hidden)
+
     def test_distinct_modalities_are_not_new_label_families(self):
         c=Compiler()
         item=o(questions=[q("welfare_proxy","vet")])

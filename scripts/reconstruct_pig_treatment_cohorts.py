@@ -93,11 +93,16 @@ def build():
         "cohort_summaries":groups,
         "warning":"First treatment is an actual documented welfare-related human action, NOT adjudicated optimal caretaker-alert label; controls have source synthetic anchors and are curated case-control units; time-window event rates are not population prevalences."
     }
+    report["source_claim_comparison"]={
+       "publication_pen_count":65,
+       "publication_outbreak_count":27,
+       "publication_site_outbreaks":{"Swedish":21,"Swiss":6},
+       "source_original_pen_count":report["cohorts"],
+       "source_original_outbreak_count":report["real_documented_first_treatment_events"],
+       "unreconciled_label_disagreement":report["real_documented_first_treatment_events"]!=27
+    }
     if report["cohorts"]!=65 or report["real_documented_first_treatment_events"]!=27:
-        report["NOT_APPROVED"]="Source cohort reconstruction still fails published event and pen count."
-        raise RuntimeError("Published independent pen cohorts (65/27) not recovered: "+json.dumps({
-            "cohorts":report["cohorts"],"events":report["real_documented_first_treatment_events"],
-            "groups":report["by_site_type"]}))
+        report["NOT_APPROVED"]="Published study says 27 outbreak pens (21 Swedish, 6 Swiss), but source composite pen/date/type groups show 28 (21 Swedish, 7 Swiss); preserve disputed record and investigate original metadata; do not silently drop a positive."
     return report
 
 if __name__=="__main__":

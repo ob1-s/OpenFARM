@@ -1,0 +1,26 @@
+name: Welfare sprint 16-farm leave-one-farm-out robustness
+on:
+  push:
+    branches: [research/2026-10-data-prospecting]
+    paths:
+      - scripts/stress_test_cow_welfare_leave_one_farm_out.py
+      - .github/workflows/openfarm-cow-welfare-lofo.yml
+  workflow_dispatch:
+jobs:
+  clinical-shift:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install 'pandas>=2.2,<3' 'scikit-learn>=1.4,<1.8' numpy requests
+      - name: Test 3 clinical screens with and without milk production across every heldout farm
+        run: python scripts/stress_test_cow_welfare_leave_one_farm_out.py --out reports/16-farm-lofo-welfare.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: cow-clinical-welfare-16farm-lofo
+          path: reports/16-farm-lofo-welfare.json
+          retention-days: 30

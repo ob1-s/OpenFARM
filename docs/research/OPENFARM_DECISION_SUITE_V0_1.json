@@ -1,0 +1,225 @@
+{
+  "suite_id": "openfarm-decision-suite-v0.1",
+  "suite_status": "candidate-canonical-on-draft-research-branch",
+  "evidence_policy": "research-only; labels and state are source-defined; no clinical, affective or caretaker-outcome certification",
+  "mission": "Learn what deserves attention, based on observable behavior and defensible evidence.",
+  "scientific_levels": {
+    "observation": "independently observed events/behavior",
+    "interpretation": "source-rubric welfare indicators",
+    "action": "no approved caretaker attention task in v0.1"
+  },
+  "input_contract": {
+    "format": "modality-tagged bounded observations; multiple/interleaved channels permitted only when truly paired",
+    "supported_as_architecture": [
+      "image",
+      "video_frames",
+      "audio",
+      "spectrogram",
+      "pose_geometry",
+      "sensor_numeric_timeseries",
+      "expert_annotation_timeline",
+      "physiological_tabular"
+    ],
+    "empirically_represented": [
+      "image",
+      "human_annotated_bbox_plus_motion",
+      "preprocessed_visual_detector_counts",
+      "preprocessed_wearable_index",
+      "expert_annotated_facial_action_timeline"
+    ],
+    "warning": "architectural modality support does not mean a v0.1 dataset evaluates every modality"
+  },
+  "output_contract": {
+    "types": [
+      "Noul",
+      "Choice",
+      "Score"
+    ],
+    "probabilities_required": true,
+    "abstention": "evidence-gated, not a fabricated target"
+  },
+  "tasks": [
+    {
+      "id": "OF-OBS-001",
+      "name": "HotPig independent electronic feeder intake",
+      "level": 1,
+      "status": "approved_bounded_research_train_eval",
+      "source": "https://zenodo.org/records/17090997",
+      "license": "CC BY 4.0",
+      "modality": [
+        "precomputed_visual_behavior_counts"
+      ],
+      "label_origin": "instrumented feeder intake > 0 per minute",
+      "primitive": "Noul",
+      "question": "Did the independent feeder register intake this minute?",
+      "model_features": "12 video-detector behavior/posture counts only",
+      "groups": {
+        "type": "pig",
+        "train": 16,
+        "calibration": 4,
+        "test": 4
+      },
+      "row_counts": {
+        "train": 368508,
+        "calibration": 90150,
+        "test": 92160
+      },
+      "reproduction": "scripts/build_hotpig_feeder_v0.py",
+      "baseline": "scripts/benchmark_hotpig_system1.py",
+      "evidence": "docs/research/2026-10-track-A-learned-baselines.md",
+      "limits": [
+        "one trial/site",
+        "already-processed visual features",
+        "instrument agreement is not animal welfare",
+        "no human-attention alerts"
+      ]
+    },
+    {
+      "id": "OF-OBS-002",
+      "name": "Cattle wearable motion index to human-observed behavior",
+      "level": 1,
+      "status": "approved_bounded_research_train_eval",
+      "source": "https://doi.org/10.6084/m9.figshare.28801181.v2",
+      "license": "CC BY 4.0",
+      "modality": [
+        "precomputed_wearable_motion_index"
+      ],
+      "label_origin": "human video-reviewed behavior",
+      "primitive": "Choice",
+      "options": [
+        "grazing",
+        "walking",
+        "resting",
+        "ruminating"
+      ],
+      "model_features": "motion-index scalar only",
+      "groups": {
+        "type": "cow",
+        "train": 16,
+        "calibration": 4,
+        "test": 4,
+        "alternative": "two directional 12-cow site-heldout protocols"
+      },
+      "source_total_rows": 9222,
+      "reproduction": "scripts/build_public_cattle_behavior_v0.py",
+      "evidence": "docs/research/2026-10-public-cattle-choice-admission.md",
+      "limits": [
+        "breed and site confounded",
+        "time keys not validated for chronology",
+        "probabilities severely uncalibrated",
+        "no welfare outcome"
+      ]
+    },
+    {
+      "id": "OF-OBS-003",
+      "name": "Meerkat video-heldout human ethogram from geometry",
+      "level": 1,
+      "status": "approved_bounded_noncommercial_research_train_eval",
+      "source": "https://meerkat-dataset.github.io/",
+      "license": "CC BY-NC-SA 4.0",
+      "modality": [
+        "human_annotated_bbox_plus_causal_motion"
+      ],
+      "label_origin": "human ethogram categories by tracked visible animal in video",
+      "primitive": "Choice",
+      "n_classes": 15,
+      "groups": {
+        "type": "whole_source_video",
+        "train": 12,
+        "calibration": 4,
+        "test": 4
+      },
+      "row_counts": {
+        "train": 52440,
+        "calibration": 14775,
+        "test": 16548
+      },
+      "reproduction": "scripts/benchmark_meerkat_video_heldout.py",
+      "evidence": "docs/research/2026-10-video-heldout-sprint.md",
+      "limits": [
+        "one zoo",
+        "animals might recur across source videos",
+        "human bounding boxes—not pixel perception",
+        "rare social behaviors fail current geometry-only baseline",
+        "noncommercial only"
+      ]
+    },
+    {
+      "id": "OF-WLF-001",
+      "name": "Horse Grimace ordinal facial-region cues",
+      "level": 2,
+      "status": "exploratory_nonranking_seed",
+      "source": "https://data.mendeley.com/datasets/t8rtzcgwxm/3",
+      "license": "verify per source/image rights before broader use",
+      "modality": [
+        "cropped_horse_face_region_image"
+      ],
+      "label_origin": "one expert's source-defined HGS-style region scoring",
+      "primitive": "Score",
+      "levels": [
+        0,
+        1,
+        2
+      ],
+      "groups": {
+        "type": "horse",
+        "train": 5,
+        "test": 2
+      },
+      "row_counts": {
+        "dedup_balanced_train": 829,
+        "test": 279
+      },
+      "reproduction": "scripts/prepare_horse_unique.py",
+      "evidence": "docs/system1/FINAL_PRODUCT_FIT_AUDIT.md",
+      "limits": [
+        "just seven source horses",
+        "one observer",
+        "hand-selected video frames",
+        "not clinical diagnosis",
+        "not model ranking"
+      ]
+    },
+    {
+      "id": "OF-WLF-002",
+      "name": "EquiFACS independent veterinary ratings from expert action timeline",
+      "level": 2,
+      "status": "exploratory_nonranking_pilot",
+      "source": "https://doi.org/10.1371/journal.pone.0231608",
+      "license": "original PLOS supplements; verify underlying media use separately",
+      "modality": [
+        "expert_timecoded_facial_action_units"
+      ],
+      "label_origin": "Johan/Camilla veterinary interval pain ratings, excluding FACS coder's own ratings and unscorable AU intervals",
+      "primitive": "Noul",
+      "question": "Was pain present in the independent veterinary interval rating?",
+      "groups": {
+        "type": "media_id_not_yet_independently_verified_as_unique_animal",
+        "train": 10,
+        "calibration": 3,
+        "test": 5
+      },
+      "row_counts": {
+        "train": 32,
+        "calibration": 10,
+        "test": 12
+      },
+      "reproduction": "scripts/build_equifacs_clinical_v0.py",
+      "evidence": "docs/research/2026-10-track-b-affective-supervision-audit.md",
+      "limits": [
+        "54 rated intervals across 18 media",
+        "no reliable ordinal severity",
+        "expert preannotation, not raw visual perception",
+        "small heldout test",
+        "not clinical generalization"
+      ]
+    }
+  ],
+  "excluded_from_v0_1": [
+    "CatMeows experimental-context diagnostic",
+    "retired legacy welfare/valence/pain benchmarks",
+    "all caretaker-alert tasks without independently verified review outcomes"
+  ],
+  "aggregation_policy": "No single scalar overall score; report per task and evidence tier, keep nonranking seeds separate",
+  "canonical_spec": "docs/research/OPENFARM_DECISION_SUITE_V0_1.md"
+}

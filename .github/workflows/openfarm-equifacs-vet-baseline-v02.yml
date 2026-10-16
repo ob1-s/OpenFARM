@@ -1,0 +1,26 @@
+name: OpenFARM independent veterinarian Level-2 source baseline
+on:
+  push:
+    branches: [research/2026-10-data-prospecting]
+    paths:
+      - scripts/benchmark_equifacs_vet_binary_v02.py
+      - .github/workflows/openfarm-equifacs-vet-baseline-v02.yml
+  workflow_dispatch:
+jobs:
+  vet-interpretation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 16
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install 'pandas>=2.2,<3' numpy scikit-learn requests openpyxl
+      - name: Test fixed low-capacity model on untouched five clinical media
+        run: python scripts/benchmark_equifacs_vet_binary_v02.py --report reports/equifacs-independent-vet-baseline.json
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: equifacs-independent-vet-baseline
+          path: reports/equifacs-independent-vet-baseline.json
+          retention-days: 30

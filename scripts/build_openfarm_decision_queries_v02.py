@@ -56,19 +56,23 @@ def pigweb(c:Compiler,test_site="WUR"):
             fid=f"pigweb.{assay}"
             # Both binary and signed delta are scored views of the SAME
             # independent laboratory assay; never count them as two assays.
-            qid=f"{fid}.increased"
+            # The continuously measured *difference* is primary; whether it
+            # increased is the deterministic sign projection. Inverting this
+            # relationship made the provenance record scientifically backwards.
+            primary=f"{fid}.delta"
             kwargs={"relation":"future","reference_time":p["post"],
                     "reference_family":fid,"evidence_origin":"measured physiological assay",
                     "readiness":"site_limited_candidate" if assay=="eye_IRT" else "retrospective_lab_assay_candidate"}
-            qs.append(Question(question_id=qid,text=f"Did measured {assay} increase after this observation?",
-                 primitive="Noul",value=(int(inc) if inc is not None else None),
-                 valid=inc is not None,mask_reason=None if inc is not None else "missing_paired_assay",
-                 **kwargs))
-            qs.append(Question(question_id=f"{fid}.delta",
+            qs.append(Question(question_id=primary,
                  text=f"What was the signed subsequent change in measured {assay} ({unit})?",
                  primitive="Value",value=float(delta) if delta is not None else None,
                  valid=delta is not None,mask_reason=None if delta is not None else "missing_paired_assay",
-                 derived_from=qid,**kwargs))
+                 **kwargs))
+            qs.append(Question(question_id=f"{fid}.increased",
+                 text=f"Did measured {assay} increase after this observation?",
+                 primitive="Noul",value=(int(inc) if inc is not None else None),
+                 valid=inc is not None,mask_reason=None if inc is not None else "missing_paired_assay",
+                 derived_from=primary,derivation="delta_positive",**kwargs))
         obs=Observation(source="pigweb",state_id=":".join(("pigweb",p["institute"],p["pig_id"],p["context"])),
           split=split,group_scope="pig_within_institute",
           group_id=f"{p['institute']}:{p['pig_id']}",
@@ -109,7 +113,8 @@ def cattle(c:Compiler):
                  text=f"Was {name} the human-observed dominant behavior this minute?",
                  primitive="Noul",value=int(chosen==name),reference_family=family,
                  evidence_origin="derived_one_vs_rest_same_human_code",
-                 derived_from=primary_id,readiness="diagnostic_slice_not_independent_GT"))
+                 derived_from=primary_id,derivation="choice_equals",
+                 derivation_arg=name,readiness="diagnostic_slice_not_independent_GT"))
         c.add(Observation(source="cattle",state_id=f"cattle:source_row:{i}",
             split=membership[r.ID],group_scope="cow",group_id=str(r.ID),
             modalities=("wearable_preprocessed_motion_index",),
@@ -222,6 +227,7 @@ def meerkat(c:Compiler):
                     text=f"Is the human behavior label {code_name}?",
                     value=int(source_code==int(code)),
                     reference_family=family,derived_from=primary_id,
+                    derivation="choice_equals",derivation_arg=names_by_id[int(code)],
                     evidence_origin="one_vs_rest_of_same_human_ethogram",
                     readiness="diagnostic_slice_only"))
             c.add(Observation(source="meerkat",
@@ -256,7 +262,7 @@ def equifacs(c:Compiler):
                value=int(e["label"]),reference_family="equifacs.independent_vet",
                evidence_origin="binary_threshold_of_same_independent_clinician_score",
                derived_from="equifacs.vet_ordinal_observation",
-               readiness="nonranking_pilot")
+               derivation="score_positive",readiness="nonranking_pilot")
             ]
             # Model input only expert-coded FACS features, not labels/video ID.
             c.add(Observation(source="equifacs",

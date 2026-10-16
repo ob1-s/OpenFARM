@@ -9,7 +9,7 @@ try:
         csv=[v for v in infos if v.filename.lower().endswith(".csv")]
         r["total_files"]=len(infos);r["csv_files"]=len(csv)
         r["annotation_entries"]=[{"file":i.filename,"bytes":i.file_size,"compressed":i.compress_size} for i in csv[:17]]
-        ids=sorted([v for v in csv if "annotations/" in v.filename.lower()])
+        ids=sorted([v for v in csv if "annotations/" in v.filename.lower()],key=lambda v:v.filename)
         r["annotation_files"]=len(ids)
         if ids:
             for entry in [ids[0],ids[-1]]:

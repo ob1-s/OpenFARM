@@ -1,5 +1,9 @@
 # OpenFARM — multi-decision and historical-task expansion of the canonical v0.1 suite
 
+> **IMPORTANT scientific correction, 2026-10-16:** The PigWeb section below is historical brainstorming and wrongly assumes human-coded stimulus-response behavior was *available at the PRE saliva timestamp* because the behavior CSV has the same timestamp key. The published experiment observes behavior **during exposure**, so that is **not a defensible PRE model feature**. Code now excludes all `observed_*` fields from PRE forecasting, keeps them separately for retrospective association, and the corrected v0.2 suite has **zero** genuinely synchronized multi-input PRE states. [Updated verified tasks, heldout baselines and admission verdicts](OPENFARM_HISTORICAL_TASK_VALIDATION_V0_2.md) supersede these proposals.
+
+
+
 **Checkpoint: 15 Oct 2026, 23:44 BRT onward.** This is a **v0.2 proposal and audit queue**, *not* an amendment to the frozen [v0.1 canonical suite](OPENFARM_DECISION_SUITE_V0_1.md). Counts and admissions must not be conflated with dataset headline row counts or independent animal counts.
 
 ## Core thesis

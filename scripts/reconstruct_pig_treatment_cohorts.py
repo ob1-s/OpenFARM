@@ -111,5 +111,11 @@ if __name__=="__main__":
     report=build()
     a.out.parent.mkdir(parents=True,exist_ok=True)
     a.out.write_text(json.dumps(report,indent=2)+"\n")
-    print("TAIL_DAMAGE_COHORT_RECON:"+json.dumps({
-        k:v for k,v in report.items() if k!="cohort_summaries"}))
+    display={k:v for k,v in report.items() if k!="cohort_summaries"}
+    display["tail_biting_source_cohorts"]=[
+        {k:g[k] for k in ("site","source_pen_id","source_cohort_hash",
+            "record_min","record_max","anchor","pre_anchor_observed_days",
+            "at_or_post_anchor_days","rows","source_pigs",
+            "duplicate_source_pig_dates")}
+        for g in report["cohort_summaries"] if g["real_first_treatment"]]
+    print("TAIL_DAMAGE_COHORT_RECON:"+json.dumps(display))

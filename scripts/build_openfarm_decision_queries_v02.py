@@ -19,6 +19,7 @@ import numpy as np
 import pandas as pd
 from openfarm_query_compiler_v02 import Compiler,Observation,Question
 from build_pigweb_historical_v02 import build as build_pigweb,SITE_ORDER
+from validate_temporal_contract_v02 import pre_only_features,assert_pre_only,assert_future_clock
 from build_public_cattle_behavior_v0 import source as cattle_source,prepare as cattle_prepare,groups as cattle_groups
 from evaluate_hotpig_feeder_candidate import source_bytes as hotpig_bytes,FEATURES as HOTPIG_FEATURES
 from build_equifacs_clinical_v0 import produce as equifacs_source
@@ -43,10 +44,10 @@ def pigweb(c:Compiler,test_site="WUR"):
         # The future hormone decision must use PRE-only measured inputs.
         # Behavior/physiology association remains a different nonforecast
         # scientific analysis; do not silently pass it as a future state.
-        feat={k:(float(v) if v is not None else None)
-              for k,v in e["features"].items() if k.startswith("pre_")}
-        if not feat or any(k.startswith("observed_") for k in feat):
-            raise RuntimeError("Observed post-stimulus behavior leaked into pre-exposure state")
+        assert_future_clock(p["pre"],p["post"])
+        feat=pre_only_features(e["features"])
+        assert_pre_only(feat)
+        feat={k:(float(v) if v is not None else None) for k,v in feat.items()}
         missing=[k for k,v in feat.items() if v is None]
         qs=[]
         for assay,unit in (("cortisol","ng/mL"),("oxytocin","pg/mL"),("eye_IRT","temperature unit")):

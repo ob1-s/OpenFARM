@@ -1,0 +1,24 @@
+name: CC-BY 24 cow independent human behavior System-1 benchmark
+on:
+  push:
+    branches: [research/2026-10-data-prospecting]
+    paths: [scripts/build_public_cattle_behavior_v0.py, .github/workflows/openfarm-cattle-sensor-system1.yml]
+  workflow_dispatch:
+jobs:
+  cattle-groups:
+    runs-on: ubuntu-latest
+    timeout-minutes: 17
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install 'pandas>=2.2,<3' numpy scikit-learn requests
+      - name: Verify exact source and heldout cows and independent site testing
+        run: python scripts/build_public_cattle_behavior_v0.py --out audit-reports/cattle-choice-baseline.json
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cattle-human-labeled-site-heldout
+          path: audit-reports/cattle-choice-baseline.json
+          retention-days: 30

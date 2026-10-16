@@ -34,7 +34,7 @@
 - Review and promotion happen **after** each operator's PR. No automatic joint benchmark inflation.
 
 ## Promising external source finding to route correctly
-- Heseker et al. (2024) pig screams + staff removal of biters, https://www.nature.com/articles/s41598-024-55336-7 : source *paper* contains true action descriptions, **not verified open audio/video/row data**. A checks outcome access, C checks any genuinely available video/audio.
+- Heseker et al. (2024) pig screams + staff removal of biters, https://www.nature.com/articles/s41598-024-55336-7 : source *paper* contains true action descriptions, **the paper explicitly says data are available only on request and not publicly available due to privacy concerns** (Data Availability). Do not spend time attempting private recordings; preserve as example of a real staff-action study, but use public sources first.
 - 2026 broiler footpad dermatitis / hock-burn study, https://doi.org/10.1016/j.psj.2026.106968 : 500 independent human multi-rater image assessments across two slaughterhouses. Its https://zenodo.org/records/19885754 release appears to contain PDF/HTML only, **not the study's images**. B should not claim usable benchmark until original data found.
 - CowScreeningDB https://github.com/Shahid-Ismail/CowScreeningDB-A-public-database-for-lameness-detection has hours of real cow motion with vet lameness assessment, **but requires signed license/email/password to access source dataset**, not a public-first default.
 

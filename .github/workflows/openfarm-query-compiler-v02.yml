@@ -5,6 +5,7 @@ on:
     paths:
       - scripts/openfarm_query_compiler_v02.py
       - scripts/build_openfarm_decision_queries_v02.py
+      - scripts/aggregate_openfarm_queries_v02.py
       - tests/test_openfarm_query_compiler_v02.py
       - .github/workflows/openfarm-query-compiler-v02.yml
   workflow_dispatch:
@@ -17,7 +18,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: Check syntax
-        run: python -m py_compile scripts/openfarm_query_compiler_v02.py scripts/build_openfarm_decision_queries_v02.py tests/test_openfarm_query_compiler_v02.py
+        run: python -m py_compile scripts/openfarm_query_compiler_v02.py scripts/build_openfarm_decision_queries_v02.py scripts/aggregate_openfarm_queries_v02.py tests/test_openfarm_query_compiler_v02.py
       - name: Adversarial offline compiler contract
         run: python -m unittest discover -s tests -p 'test_openfarm_query_compiler_v02.py' -v
   real-sources:
@@ -62,4 +63,23 @@ jobs:
         with:
           name: openfarm-v02-multiquery-${{ matrix.source }}-manifest
           path: reports/openfarm-v02-${{ matrix.source }}.json
+          retention-days: 30
+
+  suite-summary:
+    needs: real-sources
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: openfarm-v02-multiquery-*-manifest
+          path: reports/source-reports
+          merge-multiple: true
+      - name: Aggregate without duplicate-source inflation
+        run: |
+          python scripts/aggregate_openfarm_queries_v02.py --reports 'reports/source-reports/openfarm-v02-*.json' --output reports/openfarm-v02-aggregated.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: openfarm-v02-aggregated-suite
+          path: reports/openfarm-v02-aggregated.json
           retention-days: 30

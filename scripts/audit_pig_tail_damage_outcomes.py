@@ -68,7 +68,7 @@ def main():
             if v.nunique(dropna=True)<=40:
                 col["distribution"]={str(k):int(x) for k,x in v.value_counts(dropna=False).head(35).items()}
             info.setdefault("key_fields",{})[key]=col
-    needed={"Farm","PenID","PenType","TBSTART","date"}
+    needed={"Farm","PenID","PenType","TBSTART_","date"}
     if needed.issubset(d.columns):
         by_pen=d.groupby(["Farm","PenID"],dropna=False)
         out=[]
@@ -76,15 +76,26 @@ def main():
             out.append({"farm":str(site),"type":str(frame.PenType.iloc[0]),
                         "rows":len(frame),"unique_animals":int(frame["ID"].nunique()) if "ID" in frame else None,
                         "start":str(frame.date.min()),"end":str(frame.date.max()),
-                        "onset":str(frame.TBSTART.iloc[0]),
+                        "onset":str(frame["TBSTART_"].iloc[0]),
                         "type_conflict":bool(frame.PenType.nunique()>1),
-                        "date_conflict":bool(frame.TBSTART.nunique()>1)})
+                        "date_conflict":bool(frame["TBSTART_"].nunique()>1)})
         info["pen_groups"]=len(out)
         info["pens_by_farm_type"]=dict(collections.Counter(
             (str(x["farm"]),x["type"]) for x in out).items())
         info["pen_type_or_onset_conflicts"]=[x for x in out if x["type_conflict"] or x["date_conflict"]][:15]
         info["example_group_summaries"]=out[:12]
         info["first_treatment_events"]=sum(str(x["type"]).upper()=="TB" for x in out)
+        info["source_date_encoding_by_farm"]={
+          str(site):{
+            "date_length_distribution":dict(collections.Counter(
+                map(lambda s:len(str(s)),d.loc[d.Farm==site,"date"]))),
+            "onset_length_distribution":dict(collections.Counter(
+                map(lambda s:len(str(s)),d.loc[d.Farm==site,"TBSTART_"]))),
+            "first_five_source_date_literals":list(map(str,d.loc[d.Farm==site,"date"].head(5))),
+            "first_five_onset_literals":list(map(str,d.loc[d.Farm==site,"TBSTART_"].head(5)))
+          } for site in d.Farm.unique()
+        }
+        info["farm_pen_groups"]=out
     a.out.parent.mkdir(parents=True,exist_ok=True)
     a.out.write_text(json.dumps(info,ensure_ascii=False,indent=2)+"\n")
     print("TAIL_DAMAGE_OUTCOME_AUDIT:"+json.dumps(info,ensure_ascii=False))

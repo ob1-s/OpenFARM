@@ -6,6 +6,8 @@ on:
       - benchmarks/decision-index/v0.1/**
       - scripts/index_v01_validate.py
       - scripts/index_v01_validate_results.py
+      - scripts/index_v01_score.py
+      - tests/test_decision_index_v01_scoring.py
       - scripts/index_v01_wong_rater_audit.py
       - tests/test_decision_index_v01.py
       - .github/workflows/openfarm-decision-index-v01.yml
@@ -27,6 +29,8 @@ jobs:
         run: python scripts/index_v01_validate_results.py
       - name: Run offline regression fixtures for independent vet votes
         run: python -m unittest discover -s tests -p test_decision_index_v01.py -v
+      - name: Test typed scorer with synthetic Noul Choice Score and censor masks
+        run: python -m unittest discover -s tests -p test_decision_index_v01_scoring.py -v
       - name: Verify original Wong heldout human-rating patterns
         env:
           WONG_TEST_CASES_B64: ${{ secrets.WONG_TEST_CASES_B64 }}

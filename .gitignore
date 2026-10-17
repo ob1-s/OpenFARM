@@ -29,4 +29,5 @@ data
 
 /.agents/
 /.prime/
+/.prime_data/
 .prime-managed-link

@@ -1,0 +1,420 @@
+{
+  "exp1_externals_vs_gt1": {
+    "clara|cheek": {
+      "exact_acc": 0.33772652388797364,
+      "mae": 0.7331136738056013,
+      "masked_count": 0,
+      "n": 607,
+      "n_used": 607
+    },
+    "clara|ear": {
+      "exact_acc": 0.5950840879689522,
+      "mae": 0.4126778783958603,
+      "masked_count": 0,
+      "n": 773,
+      "n_used": 773
+    },
+    "clara|eye": {
+      "exact_acc": 0.5847347994825356,
+      "mae": 0.4243208279430789,
+      "masked_count": 0,
+      "n": 773,
+      "n_used": 773
+    },
+    "clara|nose": {
+      "exact_acc": 0.4519230769230769,
+      "mae": 0.5913461538461539,
+      "masked_count": 0,
+      "n": 624,
+      "n_used": 624
+    },
+    "clara|whisker": {
+      "exact_acc": 0.4438202247191011,
+      "mae": 0.5926966292134831,
+      "masked_count": 10,
+      "n": 366,
+      "n_used": 356
+    },
+    "hohlbaum|cheek": {
+      "exact_acc": 0.7561436672967864,
+      "mae": 0.24574669187145556,
+      "masked_count": 78,
+      "n": 607,
+      "n_used": 529
+    },
+    "hohlbaum|ear": {
+      "exact_acc": 0.7244501940491591,
+      "mae": 0.2755498059508409,
+      "masked_count": 0,
+      "n": 773,
+      "n_used": 773
+    },
+    "hohlbaum|eye": {
+      "exact_acc": 0.7606727037516171,
+      "mae": 0.240620957309185,
+      "masked_count": 0,
+      "n": 773,
+      "n_used": 773
+    },
+    "hohlbaum|nose": {
+      "exact_acc": 0.7192660550458716,
+      "mae": 0.28256880733944956,
+      "masked_count": 79,
+      "n": 624,
+      "n_used": 545
+    },
+    "hohlbaum|whisker": {
+      "exact_acc": 0.8561643835616438,
+      "mae": 0.14726027397260275,
+      "masked_count": 74,
+      "n": 366,
+      "n_used": 292
+    },
+    "yvonne|cheek": {
+      "exact_acc": 0.5601317957166392,
+      "mae": 0.43986820428336076,
+      "masked_count": 0,
+      "n": 607,
+      "n_used": 607
+    },
+    "yvonne|ear": {
+      "exact_acc": 0.49288486416558863,
+      "mae": 0.592496765847348,
+      "masked_count": 0,
+      "n": 773,
+      "n_used": 773
+    },
+    "yvonne|eye": {
+      "exact_acc": 0.7554980595084088,
+      "mae": 0.24708926261319533,
+      "masked_count": 0,
+      "n": 773,
+      "n_used": 773
+    },
+    "yvonne|nose": {
+      "exact_acc": 0.6330128205128205,
+      "mae": 0.36698717948717946,
+      "masked_count": 0,
+      "n": 624,
+      "n_used": 624
+    },
+    "yvonne|whisker": {
+      "exact_acc": 0.6016949152542372,
+      "mae": 0.3983050847457627,
+      "masked_count": 12,
+      "n": 366,
+      "n_used": 354
+    }
+  },
+  "exp1_loro_majority_ceiling": {
+    "clara": {
+      "cheek": {
+        "exact_acc": 0.28264462809917357,
+        "mae": 0.8115702479338843,
+        "masked_count": 168,
+        "n": 773,
+        "n_used": 605
+      },
+      "ear": {
+        "exact_acc": 0.6269727403156384,
+        "mae": 0.38450502152080346,
+        "masked_count": 76,
+        "n": 773,
+        "n_used": 697
+      },
+      "eye": {
+        "exact_acc": 0.6511024643320363,
+        "mae": 0.35797665369649806,
+        "masked_count": 2,
+        "n": 773,
+        "n_used": 771
+      },
+      "nose": {
+        "exact_acc": 0.470125786163522,
+        "mae": 0.5849056603773585,
+        "masked_count": 137,
+        "n": 773,
+        "n_used": 636
+      },
+      "whisker": {
+        "exact_acc": 0.35428571428571426,
+        "mae": 0.6828571428571428,
+        "masked_count": 287,
+        "n": 637,
+        "n_used": 350
+      }
+    },
+    "gt1": {
+      "cheek": {
+        "exact_acc": 0.69,
+        "mae": 0.312,
+        "masked_count": 107,
+        "n": 607,
+        "n_used": 500
+      },
+      "ear": {
+        "exact_acc": 0.737300435413643,
+        "mae": 0.262699564586357,
+        "masked_count": 84,
+        "n": 773,
+        "n_used": 689
+      },
+      "eye": {
+        "exact_acc": 0.7696335078534031,
+        "mae": 0.23167539267015708,
+        "masked_count": 9,
+        "n": 773,
+        "n_used": 764
+      },
+      "nose": {
+        "exact_acc": 0.7197106690777577,
+        "mae": 0.28028933092224234,
+        "masked_count": 71,
+        "n": 624,
+        "n_used": 553
+      },
+      "whisker": {
+        "exact_acc": 0.8345323741007195,
+        "mae": 0.16546762589928057,
+        "masked_count": 88,
+        "n": 366,
+        "n_used": 278
+      }
+    },
+    "hohlbaum": {
+      "cheek": {
+        "exact_acc": 0.7024291497975709,
+        "mae": 0.2975708502024291,
+        "masked_count": 120,
+        "n": 614,
+        "n_used": 494
+      },
+      "ear": {
+        "exact_acc": 0.7562043795620438,
+        "mae": 0.24379562043795622,
+        "masked_count": 88,
+        "n": 773,
+        "n_used": 685
+      },
+      "eye": {
+        "exact_acc": 0.8268229166666666,
+        "mae": 0.17447916666666666,
+        "masked_count": 5,
+        "n": 773,
+        "n_used": 768
+      },
+      "nose": {
+        "exact_acc": 0.7064056939501779,
+        "mae": 0.29537366548042704,
+        "masked_count": 53,
+        "n": 615,
+        "n_used": 562
+      },
+      "whisker": {
+        "exact_acc": 0.84,
+        "mae": 0.16363636363636364,
+        "masked_count": 112,
+        "n": 387,
+        "n_used": 275
+      }
+    },
+    "yvonne": {
+      "cheek": {
+        "exact_acc": 0.5222816399286988,
+        "mae": 0.48484848484848486,
+        "masked_count": 212,
+        "n": 773,
+        "n_used": 561
+      },
+      "ear": {
+        "exact_acc": 0.4589308996088657,
+        "mae": 0.6388526727509778,
+        "masked_count": 6,
+        "n": 773,
+        "n_used": 767
+      },
+      "eye": {
+        "exact_acc": 0.7666232073011734,
+        "mae": 0.23468057366362452,
+        "masked_count": 6,
+        "n": 773,
+        "n_used": 767
+      },
+      "nose": {
+        "exact_acc": 0.6411092985318108,
+        "mae": 0.3621533442088091,
+        "masked_count": 160,
+        "n": 773,
+        "n_used": 613
+      },
+      "whisker": {
+        "exact_acc": 0.5198863636363636,
+        "mae": 0.4943181818181818,
+        "masked_count": 280,
+        "n": 632,
+        "n_used": 352
+      }
+    }
+  },
+  "exp1_round2_selfconsistency": {
+    "clara": {
+      "abs_delta_mae": 0.32238193018480493,
+      "cells": 487,
+      "exact_match": 0.6837782340862423
+    },
+    "hohlbaum": {
+      "abs_delta_mae": 0.10455764075067024,
+      "cells": 373,
+      "exact_match": 0.8954423592493298
+    },
+    "yvonne": {
+      "abs_delta_mae": 0.06329113924050633,
+      "cells": 474,
+      "exact_match": 0.9367088607594937
+    }
+  },
+  "exp2_gt2_vs_externals": {
+    "gt2_vs_clara|cheek": {
+      "exact_acc": 0.43658536585365854,
+      "mae": 0.5804878048780487,
+      "masked_count": 0,
+      "n": 410,
+      "n_used": 410
+    },
+    "gt2_vs_clara|ear": {
+      "exact_acc": 0.701271186440678,
+      "mae": 0.298728813559322,
+      "masked_count": 0,
+      "n": 472,
+      "n_used": 472
+    },
+    "gt2_vs_clara|eye": {
+      "exact_acc": 0.6080508474576272,
+      "mae": 0.3961864406779661,
+      "masked_count": 0,
+      "n": 472,
+      "n_used": 472
+    },
+    "gt2_vs_clara|nose": {
+      "exact_acc": 0.46715328467153283,
+      "mae": 0.559610705596107,
+      "masked_count": 0,
+      "n": 411,
+      "n_used": 411
+    },
+    "gt2_vs_clara|whisker": {
+      "exact_acc": 0.3739130434782609,
+      "mae": 0.6898550724637681,
+      "masked_count": 5,
+      "n": 350,
+      "n_used": 345
+    },
+    "gt2_vs_hohlbaum|cheek": {
+      "exact_acc": 0.7702020202020202,
+      "mae": 0.23232323232323232,
+      "masked_count": 14,
+      "n": 410,
+      "n_used": 396
+    },
+    "gt2_vs_hohlbaum|ear": {
+      "exact_acc": 0.7680851063829788,
+      "mae": 0.23191489361702128,
+      "masked_count": 2,
+      "n": 472,
+      "n_used": 470
+    },
+    "gt2_vs_hohlbaum|eye": {
+      "exact_acc": 0.8326271186440678,
+      "mae": 0.1673728813559322,
+      "masked_count": 0,
+      "n": 472,
+      "n_used": 472
+    },
+    "gt2_vs_hohlbaum|nose": {
+      "exact_acc": 0.7828282828282829,
+      "mae": 0.2196969696969697,
+      "masked_count": 15,
+      "n": 411,
+      "n_used": 396
+    },
+    "gt2_vs_hohlbaum|whisker": {
+      "exact_acc": 0.8803986710963455,
+      "mae": 0.12292358803986711,
+      "masked_count": 49,
+      "n": 350,
+      "n_used": 301
+    },
+    "gt2_vs_yvonne|cheek": {
+      "exact_acc": 0.684863523573201,
+      "mae": 0.32754342431761785,
+      "masked_count": 7,
+      "n": 410,
+      "n_used": 403
+    },
+    "gt2_vs_yvonne|ear": {
+      "exact_acc": 0.5966029723991507,
+      "mae": 0.40764331210191085,
+      "masked_count": 1,
+      "n": 472,
+      "n_used": 471
+    },
+    "gt2_vs_yvonne|eye": {
+      "exact_acc": 0.7817796610169492,
+      "mae": 0.21822033898305085,
+      "masked_count": 0,
+      "n": 472,
+      "n_used": 472
+    },
+    "gt2_vs_yvonne|nose": {
+      "exact_acc": 0.6763990267639902,
+      "mae": 0.3333333333333333,
+      "masked_count": 0,
+      "n": 411,
+      "n_used": 411
+    },
+    "gt2_vs_yvonne|whisker": {
+      "exact_acc": 0.6735294117647059,
+      "mae": 0.3352941176470588,
+      "masked_count": 10,
+      "n": 350,
+      "n_used": 340
+    }
+  },
+  "exp3_hohlbaum_vs_automatic": {
+    "cheek": {
+      "n": 0,
+      "n_used": 0,
+      "raw_abs_delta_mae": null
+    },
+    "ear": {
+      "exact_acc": 0.6638655462184874,
+      "mae": 0.33613445378151263,
+      "masked_count": 0,
+      "n": 119,
+      "n_used": 119,
+      "raw_abs_delta_mae": 0.33613445378151263
+    },
+    "eye": {
+      "exact_acc": 0.7478991596638656,
+      "mae": 0.25210084033613445,
+      "masked_count": 0,
+      "n": 119,
+      "n_used": 119,
+      "raw_abs_delta_mae": 0.25210084033613445
+    },
+    "nose": {
+      "n": 0,
+      "n_used": 0,
+      "raw_abs_delta_mae": null
+    },
+    "whisker": {
+      "n": 0,
+      "n_used": 0,
+      "raw_abs_delta_mae": null
+    }
+  },
+  "protocol": {
+    "no_consensus_rule": "strict majority of >=2 usable raters; NO_CONSENSUS rows excluded from a metric, counted in n/n_used",
+    "reference": "per-rater labels; blank cell = NOT_RATEABLE (never coerced to 0)"
+  }
+}

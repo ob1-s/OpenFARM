@@ -1,0 +1,31 @@
+{
+  "anomalies": [
+    "exp3 hohlbaum rows without deposit image: [('a12_c_24h_front_12', 1379), ('a12_c_24h_front_12', 10147), ('a4_c_24h_front_5', 581), ('a4_c_24h_front_5', 11058), ('a4_c_24h_front_5', 15570)] (n=5)",
+    "exp3 automatic rows referencing videos absent from the deposit image tree (n=82; csv-only sessions: a12_c_24h_front_12 [deposit ships unscored sibling a12_c_24h_front_13 with disjoint frame numbers], a4_c_24h_front_5 [no images])",
+    "exp2 handled label-only: its scored pixels are absent from the deposit (kept for cross-experiment rater-agreement evidence; excluded from the image benchmark)"
+  ],
+  "counts": {
+    "images_exp1": 773,
+    "images_exp1r2_round2_rows": 103,
+    "images_exp2_labelonly": 472,
+    "images_exp3": 1725,
+    "images_exp3_with_human_labels": 119,
+    "mice_exp1": 15,
+    "mice_exp2": 16,
+    "mice_exp3": 9,
+    "sessions_exp1": 74,
+    "sessions_exp3": 53
+  },
+  "label_digest": "7063683380647426bf32de3aeec99e3c1e38fc4b8b137cad0a97ad2cb567c7b0",
+  "source": {
+    "data_zip_md5": "729262e0872aab38cab3da52b499672d",
+    "data_zip_sha256": "d2e974b8be4111adbe932f5999e342b2b3a1541e707abb5f1de77089fa91b6f6",
+    "labels_via_byte_range": false,
+    "origin": "https://zenodo.org/records/18299984",
+    "zenodo_record": "zenodo.org/records/18299984"
+  },
+  "split_digests": {
+    "exp1": "f67c8319bebbe20015f863953f3daf3fd40d582971a2b07af77396d5ddc01083",
+    "exp3": "0df49e5e20c01a4e23e927b05f0a94aa03199622119ba3e7ba3f8cd712882399"
+  }
+}

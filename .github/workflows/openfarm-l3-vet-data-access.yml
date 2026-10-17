@@ -5,6 +5,7 @@ on:
     paths:
       - scripts/index_l3_vet_access_probe.py
       - .github/workflows/openfarm-l3-vet-data-access.yml
+      - scripts/index_l3_farrow_score_probe.py
   workflow_dispatch:
 jobs:
   source-access:
@@ -19,9 +20,13 @@ jobs:
         run: python -m pip install 'requests>=2.31,<3' 'openpyxl>=3.1,<4'
       - name: Test official original-source file download endpoints
         run: python scripts/index_l3_vet_access_probe.py
+      - name: Cross-check Farrow owner urgency scores against original questions
+        run: python scripts/index_l3_farrow_score_probe.py
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: l3-vet-data-access-results
-          path: reports/index_l3_vet_access_probe.json
+          path: |
+            reports/index_l3_vet_access_probe.json
+            reports/index_l3_farrow_gold_score_audit.json
           retention-days: 7

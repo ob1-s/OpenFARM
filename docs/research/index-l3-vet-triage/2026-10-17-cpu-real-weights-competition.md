@@ -47,3 +47,17 @@ For same frozen 102 cases:
 5. Stage our already-approved L1 sources HotPig, cattle wearable and Meerkat as separate task protocols rather than pretend all have L3 clinical consequence labels.
 
 **No training source records, secret payloads, or veterinarian case descriptions are committed to GitHub.** 
+
+## Calibration-only escalation policy (one new, frozen test pass)
+
+A *post-model action policy* was tuned on **67 calibration cases only**: choose the largest threshold on P(Immediate) meeting at least **5 of 6** majority-immediate calibration cases while minimizing the number of immediate escalations. The selected threshold was **0.1223801002**, flagging 24 of 67 calibration cases for immediate priority.
+
+On **102 test cases**, unmodified 171-trained TF-IDF logistic probabilities + this frozen threshold had:
+- **9/9** majority-immediate cases assigned Immediate (versus 0/9 using ordinary argmax)
+- **22/102** cases assigned Immediate; original median reference contains only 9/102 immediate
+- **47/102** exact median matches (46.1%) vs 42/102 with argmax
+- Vote-weighted undertriage **24.51%** vs 40.52% with argmax
+- Vote-weighted overtriage **36.93%** vs 27.45% with argmax
+- Raw predictive Brier remains **0.30569**; the policy does not alter the underlying probability distribution, just converts that distribution to the proposed decision.
+
+This is *not* a safety proof. Only six calibration and nine test immediate cases, and the Wong test set had previously been inspected in earlier exploratory comparisons. Nor does the rule eliminate mistakes in non-immediate urgency categories. This is a demonstration of **separating probabilistic estimation from an asymmetric-loss action policy**, with the burden of extra escalation measured explicitly. Reproducible source-only archive delivered to user as `OpenFARM_Wong_Clinical_CPU_Baselines_v2.zip` (contains scripts and aggregate-only JSON; original source workbook omitted).

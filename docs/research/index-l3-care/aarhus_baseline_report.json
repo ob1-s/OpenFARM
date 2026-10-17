@@ -1,0 +1,317 @@
+{
+  "n_rule_thresholds_tuned_on_test": 0,
+  "prior_train_prevalence_per_window": 0.014578,
+  "splits": {
+    "calibration": {
+      "prevalence_positive": 0.0038147138964577656,
+      "rules": {
+        "constant_prior_train_prevalence_no_alert_below_0.5": {
+          "evaluable_windows": 2782,
+          "f1": null,
+          "false_alerts": 0,
+          "false_alerts_per_1000_at_risk_pig_day_windows": 0.0,
+          "mean_alert_lead_days": null,
+          "missed_events": 14,
+          "positive_windows": 14,
+          "precision": null,
+          "recall": 0.0,
+          "true_alerts": 0
+        },
+        "rule_ear_or_penmate": {
+          "evaluable_windows": 2782,
+          "f1": 0.015523932729624837,
+          "false_alerts": 753,
+          "false_alerts_per_1000_at_risk_pig_day_windows": 270.669,
+          "mean_alert_lead_days": 2.63,
+          "missed_events": 8,
+          "positive_windows": 14,
+          "precision": 0.007905138339920948,
+          "recall": 0.42857142857142855,
+          "true_alerts": 6
+        },
+        "rule_own_ear_damage_prior": {
+          "evaluable_windows": 2782,
+          "f1": 0.0037037037037037034,
+          "false_alerts": 525,
+          "false_alerts_per_1000_at_risk_pig_day_windows": 188.713,
+          "mean_alert_lead_days": 1.91,
+          "missed_events": 13,
+          "positive_windows": 14,
+          "precision": 0.0019011406844106464,
+          "recall": 0.07142857142857142,
+          "true_alerts": 1
+        },
+        "rule_pen_hours_2days": {
+          "evaluable_windows": 2782,
+          "f1": null,
+          "false_alerts": 16,
+          "false_alerts_per_1000_at_risk_pig_day_windows": 5.751,
+          "mean_alert_lead_days": null,
+          "missed_events": 14,
+          "positive_windows": 14,
+          "precision": 0.0,
+          "recall": 0.0,
+          "true_alerts": 0
+        },
+        "rule_pen_mate_flag_ge1": {
+          "evaluable_windows": 2782,
+          "f1": 0.030674846625766868,
+          "false_alerts": 307,
+          "false_alerts_per_1000_at_risk_pig_day_windows": 110.352,
+          "mean_alert_lead_days": 2.78,
+          "missed_events": 9,
+          "positive_windows": 14,
+          "precision": 0.016025641025641024,
+          "recall": 0.35714285714285715,
+          "true_alerts": 5
+        },
+        "rule_pen_mate_flag_ge3": {
+          "evaluable_windows": 2782,
+          "f1": null,
+          "false_alerts": 0,
+          "false_alerts_per_1000_at_risk_pig_day_windows": 0.0,
+          "mean_alert_lead_days": null,
+          "missed_events": 14,
+          "positive_windows": 14,
+          "precision": null,
+          "recall": 0.0,
+          "true_alerts": 0
+        }
+      },
+      "status_counts": {
+        "censored": 809,
+        "negative": 2768,
+        "not_measured": 79,
+        "positive": 14
+      }
+    },
+    "test": {
+      "pen_cohort_detail_rule_ge1": {
+        "1-803": {
+          "alert_rate_ge1": 0.125,
+          "positives": 4,
+          "windows": 544
+        },
+        "1-805": {
+          "alert_rate_ge1": 0.0,
+          "positives": 0,
+          "windows": 918
+        },
+        "1-812": {
+          "alert_rate_ge1": 0.639080459770115,
+          "positives": 11,
+          "windows": 435
+        },
+        "1-824": {
+          "alert_rate_ge1": 0.0,
+          "positives": 0,
+          "windows": 918
+        },
+        "1-831": {
+          "alert_rate_ge1": 0.0,
+          "positives": 0,
+          "windows": 918
+        },
+        "1-832": {
+          "alert_rate_ge1": 0.09670079635949944,
+          "positives": 5,
+          "windows": 879
+        },
+        "2-801": {
+          "alert_rate_ge1": 0.13313609467455623,
+          "positives": 1,
+          "windows": 676
+        },
+        "2-802": {
+          "alert_rate_ge1": 0.11078286558345643,
+          "positives": 2,
+          "windows": 677
+        },
+        "2-807": {
+          "alert_rate_ge1": 0.17761194029850746,
+          "positives": 1,
+          "windows": 670
+        },
+        "2-812": {
+          "alert_rate_ge1": 0.34782608695652173,
+          "positives": 7,
+          "windows": 713
+        },
+        "2-815": {
+          "alert_rate_ge1": 0.17753120665742025,
+          "positives": 1,
+          "windows": 721
+        },
+        "2-836": {
+          "alert_rate_ge1": 0.10964912280701754,
+          "positives": 3,
+          "windows": 228
+        }
+      },
+      "prevalence_positive": 0.004218392189948174,
+      "rules": {
+        "constant_prior_train_prevalence_no_alert_below_0.5": {
+          "evaluable_windows": 6293,
+          "f1": null,
+          "false_alerts": 0,
+          "false_alerts_per_1000_at_risk_pig_day_windows": 0.0,
+          "mean_alert_lead_days": null,
+          "missed_events": 35,
+          "positive_windows": 35,
+          "precision": null,
+          "recall": 0.0,
+          "true_alerts": 0
+        },
+        "rule_ear_or_penmate": {
+          "evaluable_windows": 6293,
+          "f1": 0.014276443867618428,
+          "false_alerts": 1495,
+          "false_alerts_per_1000_at_risk_pig_day_windows": 237.566,
+          "mean_alert_lead_days": 3.47,
+          "missed_events": 24,
+          "positive_windows": 35,
+          "precision": 0.0073041168658698535,
+          "recall": 0.3142857142857143,
+          "true_alerts": 11
+        },
+        "rule_own_ear_damage_prior": {
+          "evaluable_windows": 6293,
+          "f1": 0.016260162601626018,
+          "false_alerts": 697,
+          "false_alerts_per_1000_at_risk_pig_day_windows": 110.758,
+          "mean_alert_lead_days": 3.55,
+          "missed_events": 29,
+          "positive_windows": 35,
+          "precision": 0.008534850640113799,
+          "recall": 0.17142857142857143,
+          "true_alerts": 6
+        },
+        "rule_pen_hours_2days": {
+          "evaluable_windows": 6293,
+          "f1": 0.041580041580041575,
+          "false_alerts": 436,
+          "false_alerts_per_1000_at_risk_pig_day_windows": 69.283,
+          "mean_alert_lead_days": 3.52,
+          "missed_events": 25,
+          "positive_windows": 35,
+          "precision": 0.02242152466367713,
+          "recall": 0.2857142857142857,
+          "true_alerts": 10
+        },
+        "rule_pen_mate_flag_ge1": {
+          "evaluable_windows": 6293,
+          "f1": 0.020554984583761562,
+          "false_alerts": 928,
+          "false_alerts_per_1000_at_risk_pig_day_windows": 147.465,
+          "mean_alert_lead_days": 3.52,
+          "missed_events": 25,
+          "positive_windows": 35,
+          "precision": 0.010660980810234541,
+          "recall": 0.2857142857142857,
+          "true_alerts": 10
+        },
+        "rule_pen_mate_flag_ge3": {
+          "evaluable_windows": 6293,
+          "f1": 0.051413881748071974,
+          "false_alerts": 344,
+          "false_alerts_per_1000_at_risk_pig_day_windows": 54.664,
+          "mean_alert_lead_days": 3.52,
+          "missed_events": 25,
+          "positive_windows": 35,
+          "precision": 0.02824858757062147,
+          "recall": 0.2857142857142857,
+          "true_alerts": 10
+        }
+      },
+      "status_counts": {
+        "censored": 1829,
+        "negative": 6258,
+        "not_measured": 175,
+        "positive": 35
+      }
+    },
+    "train": {
+      "prevalence_positive": 0.011079410366143605,
+      "rules": {
+        "constant_prior_train_prevalence_no_alert_below_0.5": {
+          "evaluable_windows": 15983,
+          "f1": null,
+          "false_alerts": 0,
+          "false_alerts_per_1000_at_risk_pig_day_windows": 0.0,
+          "mean_alert_lead_days": null,
+          "missed_events": 233,
+          "positive_windows": 233,
+          "precision": null,
+          "recall": 0.0,
+          "true_alerts": 0
+        },
+        "rule_ear_or_penmate": {
+          "evaluable_windows": 15983,
+          "f1": 0.07876447876447877,
+          "false_alerts": 3499,
+          "false_alerts_per_1000_at_risk_pig_day_windows": 218.92,
+          "mean_alert_lead_days": 3.45,
+          "missed_events": 80,
+          "positive_windows": 233,
+          "precision": 0.041894852135815994,
+          "recall": 0.6566523605150214,
+          "true_alerts": 153
+        },
+        "rule_own_ear_damage_prior": {
+          "evaluable_windows": 15983,
+          "f1": 0.04772727272727272,
+          "false_alerts": 1485,
+          "false_alerts_per_1000_at_risk_pig_day_windows": 92.911,
+          "mean_alert_lead_days": 3.72,
+          "missed_events": 191,
+          "positive_windows": 233,
+          "precision": 0.0275049115913556,
+          "recall": 0.18025751072961374,
+          "true_alerts": 42
+        },
+        "rule_pen_hours_2days": {
+          "evaluable_windows": 15983,
+          "f1": 0.1542372881355932,
+          "false_alerts": 856,
+          "false_alerts_per_1000_at_risk_pig_day_windows": 53.557,
+          "mean_alert_lead_days": 3.3,
+          "missed_events": 142,
+          "positive_windows": 233,
+          "precision": 0.09609292502639916,
+          "recall": 0.3905579399141631,
+          "true_alerts": 91
+        },
+        "rule_pen_mate_flag_ge1": {
+          "evaluable_windows": 15983,
+          "f1": 0.10244648318042812,
+          "false_alerts": 2249,
+          "false_alerts_per_1000_at_risk_pig_day_windows": 140.712,
+          "mean_alert_lead_days": 3.36,
+          "missed_events": 99,
+          "positive_windows": 233,
+          "precision": 0.056231640788921525,
+          "recall": 0.575107296137339,
+          "true_alerts": 134
+        },
+        "rule_pen_mate_flag_ge3": {
+          "evaluable_windows": 15983,
+          "f1": 0.19438444924406045,
+          "false_alerts": 603,
+          "false_alerts_per_1000_at_risk_pig_day_windows": 37.728,
+          "mean_alert_lead_days": 3.27,
+          "missed_events": 143,
+          "positive_windows": 233,
+          "precision": 0.12987012987012986,
+          "recall": 0.38626609442060084,
+          "true_alerts": 90
+        }
+      },
+      "status_counts": {
+        "censored": 4601,
+        "negative": 15750,
+        "not_measured": 446,
+        "positive": 233
+      }
+    }
+  }
+}

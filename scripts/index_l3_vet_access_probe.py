@@ -59,10 +59,30 @@ def docx_stats(blob: bytes) -> dict:
             if "[Content_Types].xml" not in names or "word/document.xml" not in names:
                 return {"valid_docx": False, "members": len(names)}
             main = z.read("word/document.xml")
+            from xml.etree import ElementTree as ET
+            root = ET.fromstring(main)
+            w = "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}"
+            def wordtext(elem):
+                return "".join((n.text or "") for n in elem.iter(w + "t")).strip()
+            tables = []
+            for i, tbl in enumerate(root.findall(".//" + w + "tbl")):
+                rows = tbl.findall("./" + w + "tr")
+                headers = []
+                for row in rows[:2]:
+                    cells = row.findall("./" + w + "tc")
+                    headers.append([wordtext(cell)[:100] for cell in cells[:5]])
+                tables.append({"i": i, "rows": len(rows),
+                               "first_two_rows_preview": headers})
+            sections = []
+            for p in root.findall(".//" + w + "p"):
+                txt = wordtext(p)
+                if re.search(r"(?i)(vignette|S[1-9] table|urgency|validation|surgeons|questionnaire|condition)", txt) and len(txt) < 210:
+                    sections.append(txt[:160])
             return {"valid_docx": True, "members": len(names),
                     "word_document_xml_bytes": len(main),
-                    "paragraph_tags": len(re.findall(rb"<w:p(?: |>|\r|\n)", main)),
-                    "table_tags": len(re.findall(rb"<w:tbl(?: |>|\r|\n)", main))}
+                    "tables": tables[:60],
+                    "section_hints": sections[:50],
+                    "total_tables": len(tables)}
     except Exception as e:
         return {"valid_docx": False, "error": str(e)[:160]}
 
@@ -141,6 +161,11 @@ def main():
                           "valid_docx=", (row.get("docx") or {}).get("valid_docx"),
                           "files=", len(row.get("files", [])),
                           "error=", x.get("error", ""))
+    print("WONG_DATACITE", json.dumps({k: result['wong']['datacite'].get(k) for k in ('doi','title','rights','destination_url')}, ensure_ascii=False))
+    for k in ('plos_figshare','owner_data_figshare'):
+        print("FARROW_FIGSHARE", k, json.dumps(result['farrow'].get(k,{}).get('files',[]), ensure_ascii=False)[:2000])
+    for k in ('figshare_docx','plos_original'):
+        print("FARROW_DOCX_STRUCTURE", k, json.dumps(result['farrow'].get(k,{}).get('docx',{}), ensure_ascii=False)[:12000])
     print("PROBE_RESULT", OUT)
 
 

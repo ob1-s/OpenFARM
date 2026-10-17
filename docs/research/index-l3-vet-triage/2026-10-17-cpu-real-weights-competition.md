@@ -39,6 +39,22 @@ For same frozen 102 cases:
 - The earlier Jev Score-vs-Choice rubric also changes instructions, so observed gain does not isolate the backend output primitive.
 - Run **actual weights** or record the lane as NOT EXECUTED; no inferences from model cards or API wrappers alone count as scores.
 
+
+## Liquid d1-omni-600M Q8 original-weights CPU results — COMPLETED
+
+Full successful GitHub Actions run: https://github.com/ob1-s/OpenFARM/actions/runs/39005386559 (workflow executed original `LiquidAI/d1-omni-600M-GGUF` Q8 quantized weights with locally compiled `llama.cpp` CPU `/v1/systemone`; **132/132** original cases valid, no errors). No training, no clinical source cases logged or publicly committed. The GGUF Q8 model is distinct in size/precision from Julia-1's float CPU runtime and from Jev hosted inference.
+
+| Task | n original cases | exact expert-median/consensus | Brier vs 3-vet frequencies (Wong) or hard-panel label (Farrow) ↓ | vote/consensus undertriage | overtriage | majority-immediate recall | median CPU request latency |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| Wong hospital waiting priority | 102 | 35/102 (34.31%) | **0.435524** | 18.63% | 52.61% | **7/9 (77.8%)** | **2247.63 ms** |
+| Farrow owner seek-care time | 30 | 1/30 (3.33%) | **1.398073** | **90.0%** | 6.67% | **0/5** | **1355.04 ms** |
+
+**Critical contrasts:** Liquid recognized 7 of 9 majority-immediate Wong cases, unlike Julia-1 (0/9), but with lower accuracy/higher Brier than Jev 1.14 (Choice 45/102, 0.380465; Score 51/102, 0.359701; both 8/9 emergency recall). For Farrow, Liquid's 90% undertriage relative to expert panel and 0/5 immediate recall is a severe research-benchmark failure; the model should not be used to give owner-directed emergency advice. This **may reflect task framing/criteria sensitivity or poor pre-hospital triage capability** and should be diagnosed without declaring universal veterinary incompetence or changing the heldout benchmark until it scores better. We did not log per-case probabilities/predicted category histogram, so the specific failure mechanism is not yet verified.
+
+**Timing caveat:** Liquid ~1.4–2.25 seconds *per case on generic GitHub Actions CPU*, excluding model load and build. Julia-1 ~159–299 ms CPU; hosted Jev 1.14 ~81–89 ms observed network/API request latency. These are different runtimes/platforms and **not controlled hardware-normalized model latency**. Jev is not publicly self-hosted, so it is an API reference, not apples-to-apples CPU speed measurement.
+
+**Status:** source verified, actual model weights downloaded/loaded, original human-labeled L3 trials fully executed. Treat this as a completed **zero-shot exploratory model baseline**, no fine-tuning or prospective clinical validation.
+
 ## Next fixed-scope experiments
 1. Finish Liquid actual Q8 CPU inference, compare on Wong/Farrow with source-only inputs and annotate source-native decision-head behavior.
 2. Tune candidate action thresholds / abstentions **on calibration cases only**, measuring emergency recall against escalation burden, then test *once* on new untouched cases for model selection claims. The existing 102 Wong test cases have already been investigated and should be considered exploratory dev benchmark from here forward.

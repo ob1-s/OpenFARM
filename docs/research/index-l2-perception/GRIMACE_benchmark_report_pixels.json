@@ -1,0 +1,837 @@
+{
+  "cal_preview_A_gray": {
+    "cheek": {
+      "acc": 0.6436781609195402,
+      "mean_max_proba": 0.6938668797756063,
+      "n": 87
+    },
+    "ear": {
+      "acc": 0.5961538461538461,
+      "mean_max_proba": 0.6976610210079414,
+      "n": 104
+    },
+    "eye": {
+      "acc": 0.6923076923076923,
+      "mean_max_proba": 0.7582269482887708,
+      "n": 104
+    },
+    "nose": {
+      "acc": 0.7065217391304348,
+      "mean_max_proba": 0.6938945080922998,
+      "n": 92
+    },
+    "whisker": {
+      "acc": 0.6911764705882353,
+      "mean_max_proba": 0.7766306785976186,
+      "n": 68
+    }
+  },
+  "protocol": {
+    "counted_on_test": {
+      "cal": 104,
+      "note": "the 215 test rows are 4 mice, so they are NOT 215 independent units; uncertainty is quantified with animal-blocked label permutations",
+      "test": 215,
+      "train": 454
+    },
+    "exp3": "inventory + agreement evidence only (119 human-labelled frames)",
+    "features_A": "64x64 grayscale resample of the exact scored 1280x1024 frame",
+    "features_B": "quality-only control: [mean, std, |d/dx|, |d/dy|, max-min]",
+    "features_C": "centre 60% crop (approximate face region; no face boxes exist for the MGS frames)",
+    "features_D": "border-ring control (outer ring, centre window removed) - background/nuisance statistics only",
+    "model": "multinomial logistic regression C=1.0 per AU; NOT_RATEABLE masked in train only",
+    "null": "permutation_null: lower-tail blocked permutation, p = (1+#{null<=obs})/(n_perm+1), q05 = 5th percentile of the null MAE distribution; labels permuted within mouse blocks",
+    "split": "frozen animal-disjoint exp1 layout: train 9 | cal 2 | test 4 mice"
+  },
+  "test_vs_gt1": {
+    "A_gray": {
+      "cheek": {
+        "auroc_gt0": 0.6638983878847093,
+        "blocked_null": {
+          "n_perm": 400,
+          "n_usable": 181,
+          "null_mae_median": 0.5027624309392266,
+          "null_mae_q05": 0.44751381215469616,
+          "obs_mae": 0.34806629834254144,
+          "p_lower": 0.0024937655860349127
+        },
+        "brier": 0.4862584151660908,
+        "exact_acc": 0.6519337016574586,
+        "logloss": 0.6999542384576429,
+        "mae": 0.34806629834254144,
+        "masked_count": 0,
+        "n": 181,
+        "n_used": 181
+      },
+      "ear": {
+        "auroc_gt0": 0.6041367766618843,
+        "blocked_null": {
+          "n_perm": 400,
+          "n_usable": 215,
+          "null_mae_median": 0.44651162790697674,
+          "null_mae_q05": 0.4186046511627907,
+          "obs_mae": 0.4372093023255814,
+          "p_lower": 0.4513715710723192
+        },
+        "brier": 0.5237103828079048,
+        "exact_acc": 0.6046511627906976,
+        "logloss": 0.9372374815481916,
+        "mae": 0.4372093023255814,
+        "masked_count": 0,
+        "n": 215,
+        "n_used": 215
+      },
+      "eye": {
+        "auroc_gt0": 0.6361788617886179,
+        "blocked_null": {
+          "n_perm": 400,
+          "n_usable": 215,
+          "null_mae_median": 0.4604651162790698,
+          "null_mae_q05": 0.4232558139534884,
+          "obs_mae": 0.3767441860465116,
+          "p_lower": 0.0024937655860349127
+        },
+        "brier": 0.5078954046300175,
+        "exact_acc": 0.6232558139534884,
+        "logloss": 0.7657164448724398,
+        "mae": 0.3767441860465116,
+        "masked_count": 0,
+        "n": 215,
+        "n_used": 215
+      },
+      "nose": {
+        "auroc_gt0": 0.6775949953660797,
+        "blocked_null": {
+          "n_perm": 400,
+          "n_usable": 187,
+          "null_mae_median": 0.48128342245989303,
+          "null_mae_q05": 0.41711229946524064,
+          "obs_mae": 0.3850267379679144,
+          "p_lower": 0.00997506234413965
+        },
+        "brier": 0.46362969348054356,
+        "exact_acc": 0.6149732620320856,
+        "logloss": 0.6590656101065415,
+        "mae": 0.3850267379679144,
+        "masked_count": 0,
+        "n": 187,
+        "n_used": 187
+      },
+      "whisker": {
+        "auroc_gt0": 0.734435261707989,
+        "blocked_null": {
+          "n_perm": 400,
+          "n_usable": 121,
+          "null_mae_median": 0.4297520661157025,
+          "null_mae_q05": 0.39669421487603307,
+          "obs_mae": 0.38016528925619836,
+          "p_lower": 0.034912718204488775
+        },
+        "brier": 0.48453308648293747,
+        "exact_acc": 0.6198347107438017,
+        "logloss": 0.7151351169512277,
+        "mae": 0.38016528925619836,
+        "masked_count": 0,
+        "n": 121,
+        "n_used": 121
+      }
+    },
+    "B_quality": {
+      "cheek": {
+        "auroc_gt0": 0.3770151441133366,
+        "blocked_null": {
+          "n_perm": 400,
+          "n_usable": 181,
+          "null_mae_median": 0.49171270718232046,
+          "null_mae_q05": 0.49171270718232046,
+          "obs_mae": 0.49171270718232046,
+          "p_lower": 1.0
+        },
+        "brier": 0.511930674694891,
+        "exact_acc": 0.5082872928176796,
+        "logloss": 0.7052734308153477,
+        "mae": 0.49171270718232046,
+        "masked_count": 0,
+        "n": 181,
+        "n_used": 181
+      },
+      "ear": {
+        "auroc_gt0": 0.18065518890483023,
+        "blocked_null": {
+          "n_perm": 400,
+          "n_usable": 215,
+          "null_mae_median": 0.2744186046511628,
+          "null_mae_q05": 0.2744186046511628,
+          "obs_mae": 0.2744186046511628,
+          "p_lower": 1.0
+        },
+        "brier": 0.48082161540835083,
+        "exact_acc": 0.7255813953488373,
+        "logloss": 0.8473738958970137,
+        "mae": 0.2744186046511628,
+        "masked_count": 0,
+        "n": 215,
+        "n_used": 215
+      },
+      "eye": {
+        "auroc_gt0": 0.4209968186638388,
+        "blocked_null": {
+          "n_perm": 400,
+          "n_usable": 215,
+          "null_mae_median": 0.42790697674418604,
+          "null_mae_q05": 0.42790697674418604,
+          "obs_mae": 0.42790697674418604,
+          "p_lower": 1.0
+        },
+        "brier": 0.4943625521599402,
+        "exact_acc": 0.5720930232558139,
+        "logloss": 0.6964154744633994,
+        "mae": 0.42790697674418604,
+        "masked_count": 0,
+        "n": 215,
+        "n_used": 215
+      },
+      "nose": {
+        "auroc_gt0": 0.3094300278035218,
+        "blocked_null": {
+          "n_perm": 400,
+          "n_usable": 187,
+          "null_mae_median": 0.44385026737967914,
+          "null_mae_q05": 0.44385026737967914,
+          "obs_mae": 0.44385026737967914,
+          "p_lower": 1.0
+        },
+        "brier": 0.49942810910290286,
+        "exact_acc": 0.5561497326203209,
+        "logloss": 0.6926113978979037,
+        "mae": 0.44385026737967914,
+        "masked_count": 0,
+        "n": 187,
+        "n_used": 187
+      },
+      "whisker": {
+        "auroc_gt0": 0.37245179063360884,
+        "blocked_null": {
+          "n_perm": 400,
+          "n_usable": 121,
+          "null_mae_median": 0.45454545454545453,
+          "null_mae_q05": 0.45454545454545453,
+          "obs_mae": 0.45454545454545453,
+          "p_lower": 1.0
+        },
+        "brier": 0.5505299601421344,
+        "exact_acc": 0.5454545454545454,
+        "logloss": 0.750108468615898,
+        "mae": 0.45454545454545453,
+        "masked_count": 0,
+        "n": 121,
+        "n_used": 121
+      }
+    },
+    "C_center": {
+      "cheek": {
+        "auroc_gt0": 0.6928431851489986,
+        "blocked_null": {
+          "n_perm": 400,
+          "n_usable": 181,
+          "null_mae_median": 0.49171270718232046,
+          "null_mae_q05": 0.43646408839779005,
+          "obs_mae": 0.3259668508287293,
+          "p_lower": 0.0024937655860349127
+        },
+        "brier": 0.4734668726072442,
+        "exact_acc": 0.6740331491712708,
+        "logloss": 0.7181750412982353,
+        "mae": 0.3259668508287293,
+        "masked_count": 0,
+        "n": 181,
+        "n_used": 181
+      },
+      "ear": {
+        "auroc_gt0": 0.5375418460066954,
+        "blocked_null": {
+          "n_perm": 400,
+          "n_usable": 215,
+          "null_mae_median": 0.4883720930232558,
+          "null_mae_q05": 0.4511627906976744,
+          "obs_mae": 0.49767441860465117,
+          "p_lower": 0.8079800498753117
+        },
+        "brier": 0.6152288977180089,
+        "exact_acc": 0.5441860465116279,
+        "logloss": 1.0522553497776828,
+        "mae": 0.49767441860465117,
+        "masked_count": 0,
+        "n": 215,
+        "n_used": 215
+      },
+      "eye": {
+        "auroc_gt0": 0.5993283845881937,
+        "blocked_null": {
+          "n_perm": 400,
+          "n_usable": 215,
+          "null_mae_median": 0.4790697674418605,
+          "null_mae_q05": 0.4232558139534884,
+          "obs_mae": 0.4046511627906977,
+          "p_lower": 0.02493765586034913
+        },
+        "brier": 0.5350086739417509,
+        "exact_acc": 0.5953488372093023,
+        "logloss": 0.8082616922744574,
+        "mae": 0.4046511627906977,
+        "masked_count": 0,
+        "n": 215,
+        "n_used": 215
+      },
+      "nose": {
+        "auroc_gt0": 0.7115384615384616,
+        "blocked_null": {
+          "n_perm": 400,
+          "n_usable": 187,
+          "null_mae_median": 0.48128342245989303,
+          "null_mae_q05": 0.41711229946524064,
+          "obs_mae": 0.3422459893048128,
+          "p_lower": 0.0024937655860349127
+        },
+        "brier": 0.44554985996996654,
+        "exact_acc": 0.6577540106951871,
+        "logloss": 0.6477641633208824,
+        "mae": 0.3422459893048128,
+        "masked_count": 0,
+        "n": 187,
+        "n_used": 187
+      },
+      "whisker": {
+        "auroc_gt0": 0.7677685950413223,
+        "blocked_null": {
+          "n_perm": 400,
+          "n_usable": 121,
+          "null_mae_median": 0.4462809917355372,
+          "null_mae_q05": 0.38016528925619836,
+          "obs_mae": 0.34710743801652894,
+          "p_lower": 0.004987531172069825
+        },
+        "brier": 0.45566465144905866,
+        "exact_acc": 0.6528925619834711,
+        "logloss": 0.6852223460885104,
+        "mae": 0.34710743801652894,
+        "masked_count": 0,
+        "n": 121,
+        "n_used": 121
+      }
+    },
+    "D_border": {
+      "cheek": {
+        "auroc_gt0": 0.47325354176844164,
+        "blocked_null": {
+          "n_perm": 400,
+          "n_usable": 181,
+          "null_mae_median": 0.49171270718232046,
+          "null_mae_q05": 0.43646408839779005,
+          "obs_mae": 0.5469613259668509,
+          "p_lower": 0.9351620947630923
+        },
+        "brier": 0.5681028354952311,
+        "exact_acc": 0.4530386740331492,
+        "logloss": 0.7691203232013814,
+        "mae": 0.5469613259668509,
+        "masked_count": 0,
+        "n": 181,
+        "n_used": 181
+      },
+      "ear": {
+        "auroc_gt0": 0.5413677666188427,
+        "blocked_null": {
+          "n_perm": 400,
+          "n_usable": 215,
+          "null_mae_median": 0.4232558139534884,
+          "null_mae_q05": 0.3953488372093023,
+          "obs_mae": 0.413953488372093,
+          "p_lower": 0.5012468827930174
+        },
+        "brier": 0.544512345903876,
+        "exact_acc": 0.6372093023255814,
+        "logloss": 1.0036503740639755,
+        "mae": 0.413953488372093,
+        "masked_count": 0,
+        "n": 215,
+        "n_used": 215
+      },
+      "eye": {
+        "auroc_gt0": 0.4261223047013079,
+        "blocked_null": {
+          "n_perm": 400,
+          "n_usable": 215,
+          "null_mae_median": 0.4697674418604651,
+          "null_mae_q05": 0.4232558139534884,
+          "obs_mae": 0.49767441860465117,
+          "p_lower": 0.9326683291770573
+        },
+        "brier": 0.6611945385756026,
+        "exact_acc": 0.5023255813953489,
+        "logloss": 1.0078211434251378,
+        "mae": 0.49767441860465117,
+        "masked_count": 0,
+        "n": 215,
+        "n_used": 215
+      },
+      "nose": {
+        "auroc_gt0": 0.49721964782205746,
+        "blocked_null": {
+          "n_perm": 400,
+          "n_usable": 187,
+          "null_mae_median": 0.47593582887700536,
+          "null_mae_q05": 0.42245989304812837,
+          "obs_mae": 0.5187165775401069,
+          "p_lower": 0.912718204488778
+        },
+        "brier": 0.5625791499067136,
+        "exact_acc": 0.48128342245989303,
+        "logloss": 0.7642336994314264,
+        "mae": 0.5187165775401069,
+        "masked_count": 0,
+        "n": 187,
+        "n_used": 187
+      },
+      "whisker": {
+        "auroc_gt0": 0.39862258953168045,
+        "blocked_null": {
+          "n_perm": 400,
+          "n_usable": 121,
+          "null_mae_median": 0.4628099173553719,
+          "null_mae_q05": 0.4462809917355372,
+          "obs_mae": 0.4462809917355372,
+          "p_lower": 0.24688279301745636
+        },
+        "brier": 0.6664160589428522,
+        "exact_acc": 0.5537190082644629,
+        "logloss": 0.9682354059568711,
+        "mae": 0.4462809917355372,
+        "masked_count": 0,
+        "n": 121,
+        "n_used": 121
+      }
+    },
+    "external_clara": {
+      "cheek": {
+        "exact_acc": 0.3259668508287293,
+        "mae": 0.7513812154696132,
+        "masked_count": 0,
+        "n": 181,
+        "n_used": 181
+      },
+      "ear": {
+        "exact_acc": 0.5627906976744186,
+        "mae": 0.4558139534883721,
+        "masked_count": 0,
+        "n": 215,
+        "n_used": 215
+      },
+      "eye": {
+        "exact_acc": 0.6325581395348837,
+        "mae": 0.3674418604651163,
+        "masked_count": 0,
+        "n": 215,
+        "n_used": 215
+      },
+      "nose": {
+        "exact_acc": 0.47058823529411764,
+        "mae": 0.5508021390374331,
+        "masked_count": 0,
+        "n": 187,
+        "n_used": 187
+      },
+      "whisker": {
+        "exact_acc": 0.47107438016528924,
+        "mae": 0.5454545454545454,
+        "masked_count": 0,
+        "n": 121,
+        "n_used": 121
+      }
+    },
+    "external_hohlbaum": {
+      "cheek": {
+        "exact_acc": 0.7602339181286549,
+        "mae": 0.24561403508771928,
+        "masked_count": 10,
+        "n": 181,
+        "n_used": 171
+      },
+      "ear": {
+        "exact_acc": 0.7395348837209302,
+        "mae": 0.26046511627906976,
+        "masked_count": 0,
+        "n": 215,
+        "n_used": 215
+      },
+      "eye": {
+        "exact_acc": 0.8046511627906977,
+        "mae": 0.19534883720930232,
+        "masked_count": 0,
+        "n": 215,
+        "n_used": 215
+      },
+      "nose": {
+        "exact_acc": 0.7183908045977011,
+        "mae": 0.28160919540229884,
+        "masked_count": 13,
+        "n": 187,
+        "n_used": 174
+      },
+      "whisker": {
+        "exact_acc": 0.8679245283018868,
+        "mae": 0.1320754716981132,
+        "masked_count": 15,
+        "n": 121,
+        "n_used": 106
+      }
+    },
+    "external_yvonne": {
+      "cheek": {
+        "exact_acc": 0.585635359116022,
+        "mae": 0.4143646408839779,
+        "masked_count": 0,
+        "n": 181,
+        "n_used": 181
+      },
+      "ear": {
+        "exact_acc": 0.7395348837209302,
+        "mae": 0.26976744186046514,
+        "masked_count": 0,
+        "n": 215,
+        "n_used": 215
+      },
+      "eye": {
+        "exact_acc": 0.7813953488372093,
+        "mae": 0.2186046511627907,
+        "masked_count": 0,
+        "n": 215,
+        "n_used": 215
+      },
+      "nose": {
+        "exact_acc": 0.5668449197860963,
+        "mae": 0.43315508021390375,
+        "masked_count": 0,
+        "n": 187,
+        "n_used": 187
+      },
+      "whisker": {
+        "exact_acc": 0.5454545454545454,
+        "mae": 0.45454545454545453,
+        "masked_count": 0,
+        "n": 121,
+        "n_used": 121
+      }
+    },
+    "loro_majority_of_other3": {
+      "cheek": {
+        "exact_acc": 0.7006369426751592,
+        "mae": 0.3057324840764331,
+        "masked_count": 24,
+        "n": 181,
+        "n_used": 157
+      },
+      "ear": {
+        "exact_acc": 0.7853658536585366,
+        "mae": 0.2146341463414634,
+        "masked_count": 10,
+        "n": 215,
+        "n_used": 205
+      },
+      "eye": {
+        "exact_acc": 0.8,
+        "mae": 0.2,
+        "masked_count": 0,
+        "n": 215,
+        "n_used": 215
+      },
+      "nose": {
+        "exact_acc": 0.6857142857142857,
+        "mae": 0.3142857142857143,
+        "masked_count": 12,
+        "n": 187,
+        "n_used": 175
+      },
+      "whisker": {
+        "exact_acc": 0.8137254901960784,
+        "mae": 0.18627450980392157,
+        "masked_count": 19,
+        "n": 121,
+        "n_used": 102
+      }
+    },
+    "prior_baseline": {
+      "cheek": {
+        "blocked_null": {
+          "n_perm": 400,
+          "n_usable": 181,
+          "null_mae_median": 0.49171270718232046,
+          "null_mae_q05": 0.49171270718232046,
+          "obs_mae": 0.49171270718232046,
+          "p_lower": 1.0
+        },
+        "exact_acc": 0.5082872928176796,
+        "mae": 0.49171270718232046,
+        "n": 181
+      },
+      "ear": {
+        "blocked_null": {
+          "n_perm": 400,
+          "n_usable": 215,
+          "null_mae_median": 0.2744186046511628,
+          "null_mae_q05": 0.2744186046511628,
+          "obs_mae": 0.2744186046511628,
+          "p_lower": 1.0
+        },
+        "exact_acc": 0.7255813953488373,
+        "mae": 0.2744186046511628,
+        "n": 215
+      },
+      "eye": {
+        "blocked_null": {
+          "n_perm": 400,
+          "n_usable": 215,
+          "null_mae_median": 0.42790697674418604,
+          "null_mae_q05": 0.42790697674418604,
+          "obs_mae": 0.42790697674418604,
+          "p_lower": 1.0
+        },
+        "exact_acc": 0.5720930232558139,
+        "mae": 0.42790697674418604,
+        "n": 215
+      },
+      "nose": {
+        "blocked_null": {
+          "n_perm": 400,
+          "n_usable": 187,
+          "null_mae_median": 0.44385026737967914,
+          "null_mae_q05": 0.44385026737967914,
+          "obs_mae": 0.44385026737967914,
+          "p_lower": 1.0
+        },
+        "exact_acc": 0.5561497326203209,
+        "mae": 0.44385026737967914,
+        "n": 187
+      },
+      "whisker": {
+        "blocked_null": {
+          "n_perm": 400,
+          "n_usable": 121,
+          "null_mae_median": 0.45454545454545453,
+          "null_mae_q05": 0.45454545454545453,
+          "obs_mae": 0.45454545454545453,
+          "p_lower": 1.0
+        },
+        "exact_acc": 0.5454545454545454,
+        "mae": 0.45454545454545453,
+        "n": 121
+      }
+    },
+    "prior_proba_baseline": {
+      "cheek": {
+        "auroc_gt0": null,
+        "auroc_reason": "constant-probability baseline",
+        "brier": 0.5096301321767976,
+        "logloss": 0.7029077275885192,
+        "n": 181
+      },
+      "ear": {
+        "auroc_gt0": null,
+        "auroc_reason": "constant-probability baseline",
+        "brier": 0.47299353220381035,
+        "logloss": 0.830772656230483,
+        "n": 215
+      },
+      "eye": {
+        "auroc_gt0": null,
+        "auroc_reason": "constant-probability baseline",
+        "brier": 0.48972680545206576,
+        "logloss": 0.6915676360815279,
+        "n": 215
+      },
+      "nose": {
+        "auroc_gt0": null,
+        "auroc_reason": "constant-probability baseline",
+        "brier": 0.4938329812076061,
+        "logloss": 0.6869682770959893,
+        "n": 187
+      },
+      "whisker": {
+        "auroc_gt0": null,
+        "auroc_reason": "constant-probability baseline",
+        "brier": 0.5512522524875295,
+        "logloss": 0.75098431390742,
+        "n": 121
+      }
+    },
+    "test_support_per_mouse": {
+      "3367": {
+        "cheek": {
+          "gold_counts": {
+            "0": 33,
+            "1": 14,
+            "2": 0
+          },
+          "usable": 47
+        },
+        "ear": {
+          "gold_counts": {
+            "0": 12,
+            "1": 38,
+            "2": 1
+          },
+          "usable": 51
+        },
+        "eye": {
+          "gold_counts": {
+            "0": 32,
+            "1": 19,
+            "2": 0
+          },
+          "usable": 51
+        },
+        "nose": {
+          "gold_counts": {
+            "0": 36,
+            "1": 10,
+            "2": 0
+          },
+          "usable": 46
+        },
+        "whisker": {
+          "gold_counts": {
+            "0": 22,
+            "1": 6,
+            "2": 0
+          },
+          "usable": 28
+        }
+      },
+      "3371": {
+        "cheek": {
+          "gold_counts": {
+            "0": 21,
+            "1": 20,
+            "2": 0
+          },
+          "usable": 41
+        },
+        "ear": {
+          "gold_counts": {
+            "0": 17,
+            "1": 32,
+            "2": 1
+          },
+          "usable": 50
+        },
+        "eye": {
+          "gold_counts": {
+            "0": 30,
+            "1": 20,
+            "2": 0
+          },
+          "usable": 50
+        },
+        "nose": {
+          "gold_counts": {
+            "0": 23,
+            "1": 20,
+            "2": 0
+          },
+          "usable": 43
+        },
+        "whisker": {
+          "gold_counts": {
+            "0": 18,
+            "1": 6,
+            "2": 0
+          },
+          "usable": 24
+        }
+      },
+      "3376": {
+        "cheek": {
+          "gold_counts": {
+            "0": 19,
+            "1": 24,
+            "2": 0
+          },
+          "usable": 43
+        },
+        "ear": {
+          "gold_counts": {
+            "0": 4,
+            "1": 49,
+            "2": 1
+          },
+          "usable": 54
+        },
+        "eye": {
+          "gold_counts": {
+            "0": 32,
+            "1": 22,
+            "2": 0
+          },
+          "usable": 54
+        },
+        "nose": {
+          "gold_counts": {
+            "0": 25,
+            "1": 19,
+            "2": 0
+          },
+          "usable": 44
+        },
+        "whisker": {
+          "gold_counts": {
+            "0": 12,
+            "1": 18,
+            "2": 0
+          },
+          "usable": 30
+        }
+      },
+      "3379": {
+        "cheek": {
+          "gold_counts": {
+            "0": 19,
+            "1": 31,
+            "2": 0
+          },
+          "usable": 50
+        },
+        "ear": {
+          "gold_counts": {
+            "0": 18,
+            "1": 37,
+            "2": 5
+          },
+          "usable": 60
+        },
+        "eye": {
+          "gold_counts": {
+            "0": 29,
+            "1": 31,
+            "2": 0
+          },
+          "usable": 60
+        },
+        "nose": {
+          "gold_counts": {
+            "0": 20,
+            "1": 34,
+            "2": 0
+          },
+          "usable": 54
+        },
+        "whisker": {
+          "gold_counts": {
+            "0": 14,
+            "1": 25,
+            "2": 0
+          },
+          "usable": 39
+        }
+      }
+    }
+  }
+}

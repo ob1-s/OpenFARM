@@ -126,6 +126,69 @@ def split_block(data: dict) -> dict:
     }
 
 
+def _segment_iou(detected: list[tuple[int, int]], reference: list[tuple[int, int]]) -> tuple[float, float]:
+    """Greedy-overlap segment IoU (same matching as episode_metrics): returns
+    (mean IoU over detected runs with unmatched detected = 0,
+     mean IoU over reference runs with unmatched reference = 0)."""
+    used: set[int] = set()
+    det_ious: list[float] = []
+    ref_ious = {i: 0.0 for i in range(len(reference))}
+    for da, db in detected:
+        best, ri_best = 0.0, -1
+        for ri, (ra, rb) in enumerate(reference):
+            if ri in used:
+                continue
+            inter = max(0, min(db, rb) - max(da, ra) + 1)
+            if inter <= 0:
+                continue
+            union = (db - da + 1) + (rb - ra + 1) - inter
+            iou = inter / union
+            if iou > best:
+                best, ri_best = iou, ri
+        det_ious.append(best)
+        if ri_best >= 0:
+            used.add(ri_best)
+            ref_ious[ri_best] = best
+    det_mean = float(np.mean(det_ious)) if det_ious else 0.0
+    ref_mean = float(np.mean(list(ref_ious.values()))) if ref_ious else 0.0
+    return det_mean, ref_mean
+
+
+def per_video_rows(data: dict, per_video: dict, model, threshold: float) -> list[dict]:
+    """Per-video window counts + episode accounting at a fixed operating point.
+    Yields the video-level distribution used for uncertainty reporting."""
+    ok = ~data["masked"]
+    X, y, groups = data["X"][ok], data["y"][ok], data["groups"][ok]
+    prob = model.predict_proba(X)[:, 1] if model is not None else np.zeros(len(X))
+    pred = prob >= threshold
+    rows = []
+    for stem in data["stems"]:
+        m = groups == stem
+        p_bool, y_bool = pred[m], y[m]
+        tp = int((p_bool & y_bool).sum())
+        fp_n = int((p_bool & ~y_bool).sum())
+        fn_n = int((~p_bool & y_bool).sum())
+        prec = tp / max(1, tp + fp_n); rec = tp / max(1, tp + fn_n)
+        ref_runs = core.merge_state_runs(y_bool)
+        det_runs = core.merge_state_runs(p_bool)
+        metr = core.episode_metrics(det_runs, ref_runs)
+        iou_det, iou_ref = _segment_iou(det_runs, ref_runs)
+        f1v = 0.0
+        if y_bool.sum() > 0:
+            f1v = 2 * prec * rec / max(1e-12, prec + rec)
+        rows.append({
+            "stem": stem, "setup": int(per_video[stem]["_setup"]),
+            "age": int(per_video[stem]["_age"]),
+            "scorable_states": int(m.sum()), "pos_states": int(y_bool.sum()),
+            "window_tp": tp, "window_fp": fp_n, "window_fn": fn_n,
+            "window_f1": None if y_bool.sum() == 0 else round(f1v, 4),
+            "episodes": {"tp": metr["tp"], "fp": metr["fp"], "fn": metr["fn"]},
+            "segment_iou_detected": round(iou_det, 4),
+            "segment_iou_reference": round(iou_ref, 4),
+        })
+    return rows
+
+
 def evaluate(data: dict, per_video: dict, model, threshold: float) -> dict:
     ok = ~data["masked"]
     X, y, groups = data["X"][ok], data["y"][ok], data["groups"][ok]
@@ -177,6 +240,25 @@ def evaluate(data: dict, per_video: dict, model, threshold: float) -> dict:
         "stream_hours": round(hours, 3),
     }
     block["false_episode_rate"] = block["episode_metrics"]["false_episodes_per_stream_hour"]
+
+    # per-video rows -> video-level uncertainty (operator follow-up)
+    rows = per_video_rows(data, per_video, model, threshold)
+    block["per_video"] = rows
+    f1s = [r["window_f1"] for r in rows if r["pos_states"] > 0]
+    block["per_video_uncertainty"] = {
+        "videos_scored": len(rows),
+        "videos_with_positives": len(f1s),
+        "videos_zero_positive": len(rows) - len(f1s),
+        "window_f1_mean_over_positive_videos": float(np.mean(f1s)) if f1s else None,
+        "window_f1_median": float(np.median(f1s)) if f1s else None,
+        "window_f1_sd": float(np.std(f1s)) if f1s else None,
+        "window_f1_min": float(np.min(f1s)) if f1s else None,
+        "window_f1_max": float(np.max(f1s)) if f1s else None,
+        "segment_iou_detected_mean": round(float(np.mean([r["segment_iou_detected"] for r in rows])) if rows else 0.0, 4),
+        "segment_iou_reference_mean": round(float(np.mean([r["segment_iou_reference"] for r in rows])) if rows else 0.0, 4),
+        "episodes_fp_total": int(sum(r["episodes"]["fp"] for r in rows)),
+        "episodes_fp_per_video": [r["episodes"]["fp"] for r in rows],
+    }
 
     # confuser-subset false detections at the same operating point
     pred_full = np.zeros(len(data["y"]), dtype=bool)
@@ -347,6 +429,79 @@ def main(argv: list[str] | None = None) -> int:
         acc[s]["positive"] += int(dtest["y"][shown].sum())
     report["models"]["extra_trees_55"]["test_by_setup_states"] = {
         str(k): v for k, v in sorted(acc.items())}
+
+    THRESH_GRID = np.unique(np.concatenate([np.linspace(0.01, 0.99, 99), [0.5]]))
+
+    # ---------------- operator follow-up: family-blocked robustness ------------- #
+    # (a) existing diagnostic split per-setup breakdown (descriptive only)
+    diagnostic = {}
+    for split in ("cal", "test"):
+        d = dataset[split]
+        fams = sorted({setup_of[s] for s in d["stems"]})
+        diagnostic[split] = {}
+        for fam in fams:
+            stems_f = [s for s in d["stems"] if setup_of[s] == fam]
+            entry = {"videos": len(stems_f), "counts": split_block(assemble(per_video, stems_f))}
+            for name, model in (("logistic_l2", logit), ("extra_trees_55", trees)):
+                ev_f = evaluate(assemble(per_video, stems_f), per_video, model,
+                                cal_thr[name]["threshold"])
+                entry[name] = {
+                    "f1": round(ev_f["f1"], 4),
+                    "episode_fp": ev_f["episode_metrics"]["fp"],
+                    "per_video_f1_mean": ev_f["per_video_uncertainty"]["window_f1_mean_over_positive_videos"],
+                    "videos_with_positives": ev_f["per_video_uncertainty"]["videos_with_positives"],
+                }
+            diagnostic[split][str(fam)] = entry
+    report["diagnostics_split_per_setup"] = diagnostic
+
+    # (b) leave-one-setup-out (LOSO) family-blocked generalization: train on the
+    # OTHER two setups' videos, threshold picked on train-side windows only
+    # (no outcome info from the eval family), evaluate on the whole held-out family.
+    loso = {}
+    for fam in sorted(set(setup_of.values())):
+        held = [s for s in stem_keep if setup_of[s] == fam]
+        other = [s for s in stem_keep if setup_of[s] != fam]
+        tr = assemble(per_video, other)
+        ev = assemble(per_video, held)
+        ok_tr = ~tr["masked"]
+        Xtr2, ytr2 = tr["X"][ok_tr], tr["y"][ok_tr]
+        fam_entry = {
+            "held_videos": len(held),
+            "train_videos": len(other),
+            "held_windows": ev["y"].size,
+            "held_scorable": int((~ev["masked"]).sum()),
+            "held_positives": int(ev["y"][~ev["masked"]].sum()),
+            "train_prevalence": float(ytr2.mean()),
+        }
+        for name in ("logistic_l2", "extra_trees_55"):
+            model2 = (core.fit_logistic(Xtr2, ytr2) if name == "logistic_l2"
+                      else core.fit_trees(Xtr2, ytr2))
+            prob_tr = model2.predict_proba(Xtr2)[:, 1]
+            best_thr, best_f1 = 0.5, -1.0
+            for thr in THRESH_GRID:
+                pr = prob_tr >= thr
+                tp = int((pr & ytr2).sum()); fp_c = int((pr & ~ytr2).sum())
+                fn_c = int((~pr & ytr2).sum())
+                p_ = tp / max(1, tp + fp_c); r_ = tp / max(1, tp + fn_c)
+                f1_ = 2 * p_ * r_ / max(1e-12, p_ + r_)
+                if f1_ > best_f1:
+                    best_f1, best_thr = float(f1_), float(thr)
+            ev2 = evaluate(ev, per_video, model2, best_thr)
+            fam_entry[name] = {
+                "train_chosen_threshold": round(best_thr, 3),
+                "held_f1": round(ev2["f1"], 4),
+                "held_precision": round(ev2["precision"], 4),
+                "held_recall": round(ev2["recall"], 4),
+                "episode": {k: ev2["episode_metrics"][k]
+                            for k in ("tp", "fp", "fn", "false_episodes_per_stream_hour", "stream_hours")},
+                "per_video_uncertainty": ev2["per_video_uncertainty"],
+                "per_video": ev2.pop("per_video"),
+            }
+        loso[str(fam)] = fam_entry
+        print(f"LOSO setup{fam}: videos={len(held)} "
+              f"logit_f1={loso[str(fam)]['logistic_l2']['held_f1']:.4f} "
+              f"trees_f1={loso[str(fam)]['extra_trees_55']['held_f1']:.4f}", flush=True)
+    report["loso_family_blocked"] = loso
 
     report["elapsed_sec"] = round(time.time() - t0, 1)
     args.report.parent.mkdir(parents=True, exist_ok=True)

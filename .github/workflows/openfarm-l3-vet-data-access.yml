@@ -8,6 +8,7 @@ on:
       - scripts/index_l3_farrow_score_probe.py
       - scripts/index_l3_farrow_builder.py
       - scripts/index_l3_farrow_jev_eval.py
+      - scripts/index_l3_farrow_jev_retry.py
       - scripts/index_l3_farrow_jev_schema_probe.py
   workflow_dispatch:
 jobs:
@@ -32,6 +33,11 @@ jobs:
           TYPESAFE_API_KEY: ${{ secrets.TYPESAFE_API_KEY }}
           FARROW_JEV_N: "30"
         run: python scripts/index_l3_farrow_jev_retry.py
+      - name: Jev 1.14 pinned, same original 30-case Farrow protocol
+        env:
+          TYPESAFE_API_KEY: ${{ secrets.TYPESAFE_API_KEY }}
+          FARROW_JEV_MODEL: "jev-1.14.0"
+        run: python scripts/index_l3_farrow_jev_retry.py
       - name: Diagnose anomalous 16th Jev Choice envelope without case contents
         env:
           TYPESAFE_API_KEY: ${{ secrets.TYPESAFE_API_KEY }}
@@ -45,4 +51,6 @@ jobs:
             reports/index_l3_farrow_gold_score_audit.json
             reports/index_l3_farrow/
             reports/index_l3_vet/farrow_jev_aggregate.json
+            reports/index_l3_vet/farrow_jev_jev-1_13_0_aggregate.json
+            reports/index_l3_vet/farrow_jev_jev-1_14_0_aggregate.json
           retention-days: 7

@@ -1,0 +1,35 @@
+name: OpenFARM v0.1 original Big Broiler video decode and label alignment
+on:
+  push:
+    branches: [research/decision-index-v01-2026-10]
+    paths:
+      - scripts/index_v01_big_broiler_video_probe.py
+      - .github/workflows/openfarm-index-v01-broiler-video-probe.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  source-mp4-verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install source-ZIP HTTP ranged retrieval
+        run: |
+          python -m pip install 'remotezip>=0.12,<1.0' 'requests>=2.31,<3'
+          sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg >/dev/null
+          ffprobe -version | head -1
+          ffmpeg -version | head -1
+      - name: Verify three source MP4s, tracking annotation match and decoded frames
+        run: python scripts/index_v01_big_broiler_video_probe.py
+      - name: Publish source-fingerprint metadata only
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: broiler-native-original-video-proof-no-media
+          path: reports/decision-index/big_broiler_original_video_probe.json
+          if-no-files-found: ignore
+          retention-days: 30

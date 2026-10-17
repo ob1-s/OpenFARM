@@ -1,0 +1,82 @@
+name: OpenFARM v0.1 Farrow decision-model forensics
+on:
+  push:
+    branches: [research/decision-index-v01-2026-10]
+    paths:
+      - scripts/index_v01_farrow_liquid_forensics.py
+      - .github/workflows/openfarm-index-v01-farrow-forensics.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  jev-presentation-invariance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Rebuild original Farrow 30 expert-consensus cases
+        run: |
+          python -m pip install 'requests>=2.31,<3' 'openpyxl>=3.1,<4'
+          python scripts/index_l3_farrow_builder.py
+      - name: Evaluate 4 preregistered rubrics using real Jev 1.14 API
+        env:
+          OPENFARM_MODEL_BACKEND: jev
+          TYPESAFE_API_KEY: ${{ secrets.TYPESAFE_API_KEY }}
+        run: python scripts/index_v01_farrow_liquid_forensics.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: farrow-jev-original-vs-reversed-v01
+          path: |
+            reports/decision-index/farrow_jev_forensics.json
+            reports/decision-index/farrow_jev_public_case_predictions.json
+          retention-days: 14
+  liquid-cpu-presentation-invariance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Download source-pinned Farrow data and original Liquid Q8 weights
+        run: |
+          python -m pip install 'requests>=2.31,<3' 'openpyxl>=3.1,<4' 'huggingface_hub>=0.34'
+          python scripts/index_l3_farrow_builder.py
+          mkdir -p models
+          python -c "from huggingface_hub import hf_hub_download; print(hf_hub_download('LiquidAI/d1-omni-600M-GGUF',filename='d1-omni-600M-Q8_0.gguf',local_dir='models'))"
+      - name: Compile native ggml decision-head CPU runtime
+        run: |
+          git clone --depth 1 https://github.com/ggml-org/llama.cpp.git
+          cmake -S llama.cpp -B llama.cpp/build -DCMAKE_BUILD_TYPE=Release -DGGML_CUDA=OFF
+          cmake --build llama.cpp/build --target llama-server -j 4
+      - name: Compare order/rephrasing/ordinal primitive on 30 original Farrow vignettes
+        env:
+          OPENFARM_MODEL_BACKEND: liquid
+        run: |
+          ./llama.cpp/build/bin/llama-server -m models/d1-omni-600M-Q8_0.gguf -c 4096 -b 4096 -ub 4096 -t 4 --host 127.0.0.1 --port 8080 >/tmp/openfarm-liquid-forensics-server.log 2>&1 &
+          SERVER=$!
+          trap 'kill "$SERVER" 2>/dev/null || true' EXIT
+          python - <<'PY'
+          import time,urllib.request
+          for i in range(150):
+            try:
+              with urllib.request.urlopen("http://127.0.0.1:8080/health",timeout=3) as r:
+                if r.status==200:break
+            except Exception:pass
+            time.sleep(2)
+          else:raise RuntimeError("Liquid native ggml systemone server not ready")
+          print("SOURCE_PINNED_LIQUID_Q8_READY",flush=True)
+          PY
+          python scripts/index_v01_farrow_liquid_forensics.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: farrow-liquid-original-vs-reversed-v01
+          path: |
+            reports/decision-index/farrow_liquid_forensics.json
+            reports/decision-index/farrow_liquid_public_case_predictions.json
+          retention-days: 14

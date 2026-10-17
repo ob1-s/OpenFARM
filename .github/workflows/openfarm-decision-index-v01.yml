@@ -1,0 +1,48 @@
+name: Decision Index v0.1 scientific contracts and Wong rater audit
+on:
+  push:
+    branches: [research/decision-index-v01-2026-10]
+    paths:
+      - benchmarks/decision-index/v0.1/**
+      - scripts/index_v01_validate.py
+      - scripts/index_v01_validate_results.py
+      - scripts/index_v01_score.py
+      - tests/test_decision_index_v01_scoring.py
+      - scripts/index_v01_wong_rater_audit.py
+      - tests/test_decision_index_v01.py
+      - .github/workflows/openfarm-decision-index-v01.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  index-and-rater-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Assert deterministic source/input/metric contracts
+        run: python scripts/index_v01_validate.py
+      - name: Check observed model score registry
+        run: python scripts/index_v01_validate_results.py
+      - name: Run offline regression fixtures for independent vet votes
+        run: python -m unittest discover -s tests -p test_decision_index_v01.py -v
+      - name: Test typed scorer with synthetic Noul Choice Score and censor masks
+        run: python -m unittest discover -s tests -p test_decision_index_v01_scoring.py -v
+      - name: Verify original Wong heldout human-rating patterns
+        env:
+          WONG_TEST_CASES_B64: ${{ secrets.WONG_TEST_CASES_B64 }}
+        run: python scripts/index_v01_wong_rater_audit.py
+      - name: Export aggregated science evidence only
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: decision-index-v01-contract-and-wong-reference-audit
+          path: |
+            reports/decision-index/v0.1_contract_validation.json
+            reports/decision-index/test_case_102_wong_expert_agreement.json
+          retention-days: 30
+          if-no-files-found: ignore
+

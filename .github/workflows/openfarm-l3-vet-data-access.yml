@@ -1,0 +1,81 @@
+name: Veterinary original dataset access probe
+on:
+  push:
+    branches: [research/index-l3-veterinary-triage-2026-10]
+    paths:
+      - scripts/index_l3_vet_access_probe.py
+      - .github/workflows/openfarm-l3-vet-data-access.yml
+      - scripts/index_l3_farrow_score_probe.py
+      - scripts/index_l3_farrow_builder.py
+      - scripts/index_l3_farrow_jev_eval.py
+      - scripts/index_l3_farrow_jev_retry.py
+      - scripts/index_l3_farrow_jev_pairwise.py
+      - scripts/index_l3_farrow_jev_score_ablation.py
+      - scripts/index_l3_farrow_urgency_risk.py
+      - scripts/index_l3_farrow_jev_schema_probe.py
+  workflow_dispatch:
+jobs:
+  source-access:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install only HTTP client
+        run: python -m pip install 'requests>=2.31,<3' 'openpyxl>=3.1,<4'
+      - name: Test official original-source file download endpoints
+        run: python scripts/index_l3_vet_access_probe.py
+      - name: Cross-check Farrow owner urgency scores against original questions
+        run: python scripts/index_l3_farrow_score_probe.py
+      - name: Recover 30 independent veterinarian-consensus clinical questions
+        run: python scripts/index_l3_farrow_builder.py
+      - name: Run all 30 original Farrow vignettes
+        env:
+          TYPESAFE_API_KEY: ${{ secrets.TYPESAFE_API_KEY }}
+          FARROW_JEV_N: "30"
+        run: python scripts/index_l3_farrow_jev_retry.py
+      - name: Jev 1.14 pinned, same original 30-case Farrow protocol
+        env:
+          TYPESAFE_API_KEY: ${{ secrets.TYPESAFE_API_KEY }}
+          FARROW_JEV_MODEL: "jev-1.14.0"
+        run: python scripts/index_l3_farrow_jev_retry.py
+      - name: Compare 1.13 and 1.14 paired vet urgency predictions
+        run: python scripts/index_l3_farrow_jev_pairwise.py
+      - name: Test Jev 1.14 native ordinal Score on original 30 cases
+        env:
+          TYPESAFE_API_KEY: ${{ secrets.TYPESAFE_API_KEY }}
+        run: python scripts/index_l3_farrow_jev_score_ablation.py
+      - name: Test Jev 1.13 native ordinal Score using identical 30 cases
+        env:
+          TYPESAFE_API_KEY: ${{ secrets.TYPESAFE_API_KEY }}
+          FARROW_SCORE_MODEL: "jev-1.13.0"
+        run: python scripts/index_l3_farrow_jev_score_ablation.py
+      - name: Measure missed urgent care and false emergency escalation
+        run: python scripts/index_l3_farrow_urgency_risk.py
+      - name: Diagnose anomalous 16th Jev Choice envelope without case contents
+        env:
+          TYPESAFE_API_KEY: ${{ secrets.TYPESAFE_API_KEY }}
+        run: python scripts/index_l3_farrow_jev_schema_probe.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: l3-vet-data-access-results
+          path: |
+            reports/index_l3_vet_access_probe.json
+            reports/index_l3_farrow_gold_score_audit.json
+            reports/index_l3_farrow/
+            reports/index_l3_vet/farrow_jev_aggregate.json
+            reports/index_l3_vet/farrow_jev_jev-1_13_0_aggregate.json
+            reports/index_l3_vet/farrow_jev_jev-1_14_0_aggregate.json
+            reports/index_l3_vet/farrow_jev_jev-1_13_0_case_predictions.json
+            reports/index_l3_vet/farrow_jev_jev-1_14_0_case_predictions.json
+            reports/index_l3_vet/farrow_jev_paired_comparison.json
+            reports/index_l3_vet/farrow_jev_1_14_score_ablation.json
+            reports/index_l3_vet/farrow_jev-1_13_0_score_ablation.json
+            reports/index_l3_vet/farrow_jev-1_14_0_score_ablation.json
+            reports/index_l3_vet/farrow_jev-1_13_0_score_predictions.json
+            reports/index_l3_vet/farrow_jev-1_14_0_score_predictions.json
+            reports/index_l3_vet/farrow_jev_urgency_risk_report.json
+          retention-days: 7

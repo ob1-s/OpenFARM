@@ -1,0 +1,64 @@
+name: OpenFARM CPU Liquid d1 omni real-weight veterinary decisions
+on:
+  push:
+    branches: [research/index-l3-veterinary-triage-2026-10]
+    paths:
+      - .github/workflows/openfarm-cpu-liquid-vet.yml
+      - scripts/index_l3_cpu_liquid_omni_eval.py
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  liquid-omni-q8:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Download original quantized Liquid weights and rebuild Farrow data
+        run: |
+          python -m pip install "huggingface_hub>=0.34" "requests>=2.31,<3" "openpyxl>=3.1,<4"
+          mkdir -p models
+          python -c "from huggingface_hub import hf_hub_download; p=hf_hub_download('LiquidAI/d1-omni-600M-GGUF',filename='d1-omni-600M-Q8_0.gguf',local_dir='models'); print('Downloaded official Liquid GGUF to',p)"
+          python scripts/index_l3_farrow_builder.py
+      - name: Compile official llama.cpp CPU inference server
+        run: |
+          git clone --depth 1 https://github.com/ggml-org/llama.cpp.git
+          git -C llama.cpp rev-parse HEAD
+          cmake -S llama.cpp -B llama.cpp/build -DCMAKE_BUILD_TYPE=Release -DGGML_CUDA=OFF
+          cmake --build llama.cpp/build --config Release --target llama-server -j 4
+      - name: Run real d1-omni-600M Q8 model on Farrow and Wong
+        env:
+          WONG_TEST_CASES_B64: ${{ secrets.WONG_TEST_CASES_B64 }}
+        run: |
+          ./llama.cpp/build/bin/llama-server -m models/d1-omni-600M-Q8_0.gguf -c 4096 -b 4096 -ub 4096 -t 4 --host 127.0.0.1 --port 8080 >/tmp/openfarm-d1-omni-server.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill "$SERVER_PID" 2>/dev/null || true' EXIT
+          python - <<'PY'
+          import time,urllib.request
+          for step in range(180):
+              try:
+                  with urllib.request.urlopen('http://127.0.0.1:8080/health',timeout=2) as r:
+                      if r.status==200:
+                          print('Liquid d1 official GGUF loaded on CPU',flush=True)
+                          break
+              except Exception:
+                  pass
+              time.sleep(2)
+          else:
+              raise RuntimeError('Liquid d1-omni CPU model never became ready; check server log artifact')
+          PY
+          python scripts/index_l3_cpu_liquid_omni_eval.py --task farrow
+          python scripts/index_l3_cpu_liquid_omni_eval.py --task wong
+      - name: Upload aggregate metrics and startup diagnostics only
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: genuine-liquid-d1omni-q8-cpu-wong-farrow
+          path: |
+            reports/index_l3_vet/cpu_liquid_d1_omni_farrow_choice.json
+            reports/index_l3_vet/cpu_liquid_d1_omni_wong_choice.json
+          retention-days: 14
+          if-no-files-found: ignore

@@ -63,8 +63,8 @@ def per_model(cases,model,key,kind):
         escalated=[r for r in rec if r['prob'][0]>=t]
         urgent=reference_groups['majority_immediate']
         by_t.append({'p_immediate_threshold':t,'escalations':len(escalated),
-             'majority_immediate_detected':sum(r in escalated for r in urgent),'majority_immediate_total':len(urgent),
-             'any_vet_immediate_detected':sum(r in escalated for r in reference_groups['any_vet_immediate'])})
+             'majority_immediate_detected':sum(r['prob'][0]>=t for r in urgent),'majority_immediate_total':len(urgent),
+             'any_vet_immediate_detected':sum(r['prob'][0]>=t for r in reference_groups['any_vet_immediate'])})
     return {'model':model,'type':kind,'n':len(rec),'invalid':invalid,'served_models':sorted(served),
         'per_vet':by_vet,'critical_reference_slices':slice_scores,
         'mean_brier_vs_3vet_frequency':statistics.mean(x['brier_q'] for x in rec),

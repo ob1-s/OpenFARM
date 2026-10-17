@@ -1,0 +1,32 @@
+name: Wong 102-case private Jev research benchmark
+on:
+  push:
+    branches: [research/index-l3-veterinary-triage-2026-10]
+    paths:
+      - scripts/index_l3_wong_jev_private_runner.py
+      - .github/workflows/openfarm-l3-wong-private-jev.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  heldout-wong-jev:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Evaluate 102 original Wong cases against Jev 1.13 and 1.14
+        env:
+          TYPESAFE_API_KEY: ${{ secrets.TYPESAFE_API_KEY }}
+          WONG_TEST_CASES_B64: ${{ secrets.WONG_TEST_CASES_B64 }}
+        run: python scripts/index_l3_wong_jev_private_runner.py
+      - name: Preserve only aggregate science metrics
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: wong-jev-private-research-aggregate
+          path: reports/index_l3_vet/wong_jev_secret_heldout_aggregate.json
+          retention-days: 14
+          if-no-files-found: ignore

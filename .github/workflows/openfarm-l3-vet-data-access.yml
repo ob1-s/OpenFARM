@@ -7,6 +7,7 @@ on:
       - .github/workflows/openfarm-l3-vet-data-access.yml
       - scripts/index_l3_farrow_score_probe.py
       - scripts/index_l3_farrow_builder.py
+      - scripts/index_l3_farrow_jev_eval.py
   workflow_dispatch:
 jobs:
   source-access:
@@ -25,6 +26,11 @@ jobs:
         run: python scripts/index_l3_farrow_score_probe.py
       - name: Recover 30 independent veterinarian-consensus clinical questions
         run: python scripts/index_l3_farrow_builder.py
+      - name: Run five real Farrow cases through Jev
+        env:
+          TYPESAFE_API_KEY: ${{ secrets.TYPESAFE_API_KEY }}
+          FARROW_JEV_N: "5"
+        run: python scripts/index_l3_farrow_jev_eval.py
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -33,4 +39,5 @@ jobs:
             reports/index_l3_vet_access_probe.json
             reports/index_l3_farrow_gold_score_audit.json
             reports/index_l3_farrow/
+            reports/index_l3_vet/farrow_jev_aggregate.json
           retention-days: 7

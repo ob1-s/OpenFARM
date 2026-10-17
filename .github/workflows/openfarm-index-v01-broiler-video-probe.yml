@@ -20,6 +20,7 @@ jobs:
       - name: Install source-ZIP HTTP ranged retrieval
         run: |
           python -m pip install 'remotezip>=0.12,<1.0' 'requests>=2.31,<3'
+          sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg >/dev/null
           ffprobe -version | head -1
           ffmpeg -version | head -1
       - name: Verify three source MP4s, tracking annotation match and decoded frames

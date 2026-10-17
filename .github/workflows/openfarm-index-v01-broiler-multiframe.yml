@@ -21,7 +21,7 @@ jobs:
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y -qq ffmpeg >/dev/null
-          python -m pip install 'requests>=2.31,<3' 'remotezip>=0.12,<1.0' 'huggingface_hub>=0.34'
+          python -m pip install 'requests>=2.31,<3' 'remotezip>=0.12,<1.0' 'huggingface_hub>=0.34' 'pillow>=10'
           mkdir -p models
           python -c "from huggingface_hub import hf_hub_download; print(hf_hub_download('LiquidAI/d1-omni-600M-GGUF',filename='d1-omni-600M-Q8_0.gguf',local_dir='models'))"
       - name: Compile real native decision-head Liquid CPU server

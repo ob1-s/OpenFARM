@@ -13,7 +13,7 @@ Input JSONL per line:
   "status":"scorable"|"unscorable"|"abstain"}
 Group IDs must reflect each source's scientifically justified split unit.
 """
-import argparse,collections,json,math,random,statistics
+import argparse,collections,hashlib,json,math,random,statistics
 from pathlib import Path
 
 INDEX=Path('benchmarks/decision-index/v0.1/tasks.json')
@@ -122,9 +122,15 @@ def main():
     p.add_argument('--input',type=Path,required=True)
     p.add_argument('--output',type=Path,required=True)
     p.add_argument('--bootstrap',type=int,default=500)
+    p.add_argument('--model-id',required=True,help='immutable model checkpoint/version reference')
+    p.add_argument('--protocol-id',required=True,help='frozen prompt/task protocol identity')
     a=p.parse_args()
     rows=[json.loads(line) for line in a.input.read_text().splitlines() if line.strip()]
     result=score(rows,a.bootstrap)
+    result['model_id']=a.model_id
+    result['protocol_id']=a.protocol_id
+    result['input_sha256']=hashlib.sha256(a.input.read_bytes()).hexdigest()
+    result['task_registry_sha256']=hashlib.sha256(INDEX.read_bytes()).hexdigest()
     a.output.parent.mkdir(parents=True,exist_ok=True)
     a.output.write_text(json.dumps(result,indent=2)+'\n')
     print('INDEX_V01_SCORE',json.dumps(result,sort_keys=True))

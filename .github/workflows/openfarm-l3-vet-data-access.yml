@@ -11,6 +11,7 @@ on:
       - scripts/index_l3_farrow_jev_retry.py
       - scripts/index_l3_farrow_jev_pairwise.py
       - scripts/index_l3_farrow_jev_score_ablation.py
+      - scripts/index_l3_farrow_urgency_risk.py
       - scripts/index_l3_farrow_jev_schema_probe.py
   workflow_dispatch:
 jobs:
@@ -51,6 +52,8 @@ jobs:
           TYPESAFE_API_KEY: ${{ secrets.TYPESAFE_API_KEY }}
           FARROW_SCORE_MODEL: "jev-1.13.0"
         run: python scripts/index_l3_farrow_jev_score_ablation.py
+      - name: Measure missed urgent care and false emergency escalation
+        run: python scripts/index_l3_farrow_urgency_risk.py
       - name: Diagnose anomalous 16th Jev Choice envelope without case contents
         env:
           TYPESAFE_API_KEY: ${{ secrets.TYPESAFE_API_KEY }}
@@ -74,4 +77,5 @@ jobs:
             reports/index_l3_vet/farrow_jev-1_14_0_score_ablation.json
             reports/index_l3_vet/farrow_jev-1_13_0_score_predictions.json
             reports/index_l3_vet/farrow_jev-1_14_0_score_predictions.json
+            reports/index_l3_vet/farrow_jev_urgency_risk_report.json
           retention-days: 7

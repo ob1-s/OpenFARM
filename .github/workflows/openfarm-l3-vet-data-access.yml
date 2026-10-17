@@ -31,7 +31,7 @@ jobs:
         env:
           TYPESAFE_API_KEY: ${{ secrets.TYPESAFE_API_KEY }}
           FARROW_JEV_N: "30"
-        run: python scripts/index_l3_farrow_jev_eval.py
+        run: python scripts/index_l3_farrow_jev_retry.py
       - name: Diagnose anomalous 16th Jev Choice envelope without case contents
         env:
           TYPESAFE_API_KEY: ${{ secrets.TYPESAFE_API_KEY }}

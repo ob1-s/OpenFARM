@@ -5,6 +5,7 @@ on:
     paths:
       - benchmarks/decision-index/v0.1/**
       - scripts/index_v01_validate.py
+      - scripts/index_v01_validate_results.py
       - scripts/index_v01_wong_rater_audit.py
       - tests/test_decision_index_v01.py
       - .github/workflows/openfarm-decision-index-v01.yml
@@ -22,6 +23,8 @@ jobs:
           python-version: '3.12'
       - name: Assert deterministic source/input/metric contracts
         run: python scripts/index_v01_validate.py
+      - name: Check observed model score registry
+        run: python scripts/index_v01_validate_results.py
       - name: Run offline regression fixtures for independent vet votes
         run: python -m unittest discover -s tests -p test_decision_index_v01.py -v
       - name: Verify original Wong heldout human-rating patterns
@@ -38,3 +41,4 @@ jobs:
             reports/decision-index/test_case_102_wong_expert_agreement.json
           retention-days: 30
           if-no-files-found: ignore
+

@@ -19,6 +19,7 @@ jobs:
           python-version: '3.12'
       - name: Compare exact same 102 clinical cases against each veterinarian
         env:
+          PYTHONPATH: '.:scripts'
           WONG_TEST_CASES_B64: ${{ secrets.WONG_TEST_CASES_B64 }}
           TYPESAFE_API_KEY: ${{ secrets.TYPESAFE_API_KEY }}
         run: python -m scripts.index_v01_wong_jev_per_vet

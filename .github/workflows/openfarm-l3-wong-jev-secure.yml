@@ -1,0 +1,37 @@
+name: OpenFARM Wong Jev secure trial
+on:
+  push:
+    branches: [research/index-l3-veterinary-triage-2026-10]
+    paths:
+      - scripts/index_l3_wong_jev_secure.py
+      - data/index_l3_vet/wong_test_subset.sealed
+      - .github/workflows/openfarm-l3-wong-jev-secure.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  secure-jev-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install crypto transport
+        run: python -m pip install 'cryptography>=44,<47'
+      - name: Derive public transport key without disclosing the API secret
+        env:
+          TYPESAFE_API_KEY: \${{ secrets.TYPESAFE_API_KEY }}
+        run: python scripts/index_l3_wong_jev_secure.py --mode pubkey
+      - name: Run five true heldout cases against Jev
+        env:
+          TYPESAFE_API_KEY: \${{ secrets.TYPESAFE_API_KEY }}
+        run: python scripts/index_l3_wong_jev_secure.py --mode run --n 5 --model jev-1.13.0
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: wong-jev-aggregate-only
+          path: reports/index_l3_vet/wong_jev_aggregate.json
+          retention-days: 14
+          if-no-files-found: ignore

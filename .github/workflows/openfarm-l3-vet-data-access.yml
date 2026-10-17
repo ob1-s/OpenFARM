@@ -27,10 +27,10 @@ jobs:
         run: python scripts/index_l3_farrow_score_probe.py
       - name: Recover 30 independent veterinarian-consensus clinical questions
         run: python scripts/index_l3_farrow_builder.py
-      - name: Run first 15 original Farrow vignettes
+      - name: Run all 30 original Farrow vignettes
         env:
           TYPESAFE_API_KEY: ${{ secrets.TYPESAFE_API_KEY }}
-          FARROW_JEV_N: "15"
+          FARROW_JEV_N: "30"
         run: python scripts/index_l3_farrow_jev_eval.py
       - name: Diagnose anomalous 16th Jev Choice envelope without case contents
         env:

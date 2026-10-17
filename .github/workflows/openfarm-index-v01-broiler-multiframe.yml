@@ -23,6 +23,7 @@ jobs:
           sudo apt-get install -y -qq ffmpeg >/dev/null
           python -m pip install 'requests>=2.31,<3' 'remotezip>=0.12,<1.0' 'huggingface_hub>=0.34' 'pillow>=10'
           mkdir -p models
+          python -c "from huggingface_hub import hf_hub_download; print(hf_hub_download('LiquidAI/d1-omni-600M-GGUF',filename='mmproj-d1-omni-600M-Q8_0.gguf',local_dir='models'))"
           python -c "from huggingface_hub import hf_hub_download; print(hf_hub_download('LiquidAI/d1-omni-600M-GGUF',filename='d1-omni-600M-Q8_0.gguf',local_dir='models'))"
       - name: Compile real native decision-head Liquid CPU server
         run: |
@@ -31,7 +32,7 @@ jobs:
           cmake --build llama.cpp/build --target llama-server -j 4
       - name: Six predeclared original 10s chicken video decisions from sampled frames
         run: |
-          ./llama.cpp/build/bin/llama-server -m models/d1-omni-600M-Q8_0.gguf -c 16384 -b 16384 -ub 16384 -t 4 --host 127.0.0.1 --port 8080 >/tmp/openfarm-d1-multiframe-server.log 2>&1 &
+          ./llama.cpp/build/bin/llama-server -m models/d1-omni-600M-Q8_0.gguf --mmproj models/mmproj-d1-omni-600M-Q8_0.gguf --no-mmproj-offload -c 16384 -b 16384 -ub 16384 -t 4 --host 127.0.0.1 --port 8080 >/tmp/openfarm-d1-multiframe-server.log 2>&1 &
           S=$!
           trap 'kill "$S" 2>/dev/null || true' EXIT
           python - <<'PY'

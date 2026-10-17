@@ -41,42 +41,69 @@ exp1: 454 train / 104 cal / 215 test frames. Membership per animal with image co
 Per AU, per (model, reference-rater):
 - ordinal MAE over usable rows, exact accuracy, masked count,
 - binary AUROC for `score > 0` (probability-mass sum over classes {1, 2}),
-- multiclass Brier (3-way, aligned to classes 0/1/2),
-- label-shuffle null (200 permutations, seed 0) - MAE median/q95.
+- multiclass Brier and multinomial log loss (model vs train-prior-probability baseline),
+- **blocked lower-tail permutation null**: 400 permutations, seed 0, labels permuted
+  *within each held-out mouse's own row set* (animal-blocked, preserving per-mouse
+  label marginals and sample size); one-sided inference for a lower-is-better
+  metric is `p = (1 + #{null_MAE <= obs}) / (400 + 1)` with the null q05 reported
+  alongside. The 215 test rows are 4 mice - they are NOT 215 independent units,
+  and no claim derived from unblocked statistics is supported.
 Rater agreement ceilings: leave-one-rater-out strict majority of the other three;
 external raters scored as "label-only weak models" on the same test slice.
+Per-mouse gold support (usable n, counts by ordinal) is reported in
+`GRIMACE_benchmark_report.json` (`test_support_per_mouse`).
 
-## Results (exp1 test slice: 215 frames, 4 unseen mice; 200-perm null)
+## Results (exp1 test slice: 215 frames = 4 unseen mice; 400-perm animal-blocked null)
 
-| model | AU | MAE | exact | AUROC `>0` | Brier | null MAE q95 |
-|---|---|---|---|---|---|---|
-| prior (train majority) | eye | 0.428 | 0.572 | - | - | 0.428 |
-| prior | nose | 0.444 | 0.556 | - | - | 0.444 |
-| prior | cheek | 0.492 | 0.508 | - | - | 0.492 |
-| prior | ear | 0.274 | 0.726 | - | - | 0.274 |
-| prior | whisker | 0.455 | 0.545 | - | - | 0.455 |
-| B_quality control (5 global stats) | cheek | 0.492 | 0.508 | 0.377 | 0.512 | 0.492 |
-| B_quality control | ear | 0.274 | 0.726 | 0.181 | 0.481 | 0.274 |
-| A_gray (64x64 px + multinomial LR) | eye | **0.377** | 0.623 | **0.636** | 0.508 | 0.498 |
-| A_gray | nose | **0.385** | 0.615 | **0.678** | 0.464 | 0.567 |
-| A_gray | cheek | **0.348** | 0.652 | **0.664** | 0.486 | 0.558 |
-| A_gray | ear | 0.437 | 0.605 | 0.604 | 0.524 | 0.465 |
-| A_gray | whisker | **0.380** | 0.620 | **0.734** | 0.485 | 0.512 |
-| external clara (labels) | cheek | 0.751 | 0.326 | - | - | - |
-| external yvonne (labels) | eye | 0.219 | 0.781 | - | - | - |
-| external hohlbaum (labels) | whisker | **0.132** | **0.868** | - | - | - |
-| external hohlbaum (labels) | eye | 0.195 | 0.805 | - | - | - |
-| LORO majority-of-other-3 vs gt1 | eye | 0.200 | 0.800 | - | - | - |
-| LORO majority-of-other-3 vs gt1 | whisker | 0.186 | 0.814 | - | - | - |
+Shortcut/nuisance ablation (this is the load-bearing row set, per review):
 
-Interpretation (aggregate, no per-row claims): the raw-gray weak model beats its
-own shuffle-null on eye/nose/cheek/whisker (MAE below q95) and beats the
-quality-only control consistently on AUROC (0.60-0.73 vs 0.18-0.42), i.e. the pixels
-carry animal-specific score signal beyond acquisition statistics. It remains far
-below the independent expert raters (3-state MAE 0.13-0.22) and the rater-majority
-ceiling (0.19-0.31 MAE) on the identical slice, which is the honest headroom of the
-task. Calibration preview on the 104-frame cal slice is stable (acc 0.60-0.71),
-no overfit collapse.
+| family | AU | MAE | exact | AUROC `>0` | log loss | p (blocked lower tail) | null q05 |
+|---|---|---|---|---|---|---|---|
+| **C_center** (centre crop ~face) | nose | **0.342** | 0.658 | **0.712** | 0.648 | **0.0025** | 0.417 |
+| C_center | cheek | **0.326** | 0.674 | **0.693** | 0.718 | **0.0025** | 0.436 |
+| C_center | whisker | **0.347** | 0.653 | **0.768** | 0.685 | **0.005** | 0.380 |
+| C_center | eye | 0.405 | 0.595 | **0.599** | 0.808 | **0.025** | 0.423 |
+| C_center | ear | 0.498 | 0.544 | 0.538 | 1.052 | 0.808 (n.s.) | 0.451 |
+| **D_border** (background-only ring) | eye | 0.498 | 0.502 | 0.426 | 1.008 | 0.933 (n.s.) | 0.423 |
+| D_border | nose | 0.519 | 0.481 | 0.497 | 0.764 | 0.913 (n.s.) | 0.422 |
+| D_border | cheek | 0.547 | 0.453 | 0.473 | 0.769 | 0.935 (n.s.) | 0.436 |
+| D_border | ear | 0.414 | 0.637 | 0.541 | 1.004 | 0.501 (n.s.) | 0.395 |
+| D_border | whisker | 0.446 | 0.554 | 0.399 | 0.968 | 0.247 (n.s.) | 0.446 |
+| **A_gray** (full frame) | eye | 0.377 | 0.623 | 0.636 | 0.766 | **0.0025** | 0.423 |
+| A_gray | nose | 0.385 | 0.615 | 0.678 | 0.659 | **0.010** | 0.417 |
+| A_gray | cheek | 0.348 | 0.652 | 0.664 | 0.700 | **0.0025** | 0.448 |
+| A_gray | ear | 0.437 | 0.605 | 0.604 | 0.937 | 0.451 (n.s.) | 0.419 |
+| A_gray | whisker | 0.380 | 0.620 | 0.734 | 0.715 | **0.035** | 0.397 |
+| B_quality control | (all) | ~prior | - | 0.31-0.42 | ~0.70 | 1.0 (n.s.) | = obs |
+| prior-proba baseline (train freqs) | eye | - | - | const | 0.692 (Brier 0.490) | - | - |
+
+Per-mouse gold support (aggregate counts; no test mouse carries ordinal-`2`
+support except ear's 1-5 frames per mouse - the `2` extreme is not testable on
+this test slice and is excluded from any "severe" claim):
+
+| mouse | eye | ear | nose | cheek | whisker |
+|---|---|---|---|---|---|
+| 3367 | 32/19/0 | 12/38/1 | 36/10/0 | 33/14/0 | 22/6/0 |
+| 3371 | 30/20/0 | 17/32/1 | 23/20/0 | 21/20/0 | 18/6/0 |
+| 3376 | 32/22/0 | 4/49/1 | 25/19/0 | 19/24/0 | 12/18/0 |
+| 3379 | 29/31/0 | 18/37/5 | 20/34/0 | 19/31/0 | 14/25/0 |
+
+Interpretation (aggregate, no per-row claims):
+- The face-region model (C_center) is significantly below its animal-blocked
+  permutation null on eye/nose/cheek/whisker (p 0.0025-0.025) and the
+  background-only control (D_border) is null on every AU (p >= 0.25), so the
+  signal is carried by the face window, not by cage/camera/acquisition geometry.
+  The B_quality control stays at chance-or-worse (AUROC 0.31-0.42, p = 1.0).
+- **ear is NOT significant under the corrected lower-tail inference in any model
+  (p = 0.45-0.81)** - the earlier "beats null q95" claim for ear is withdrawn;
+  ear MAE can be as good as the prior purely via the `1`-dominant marginals.
+- The weak low-capacity pixel model remains far below the independent expert
+  raters on the identical slice (3-state MAE 0.13-0.22; e.g. hohlbaum whisker
+  0.132, eye 0.195) and below the rater-majority ceiling (MAE 0.19-0.31), which
+  is the honest headroom of the task. Calibration preview on the 104-frame cal
+  slice is stable (acc 0.60-0.71), no overfit collapse.
+- Brier/log-loss: the models beat the train-prior-probability baseline on
+  nose/cheek/whisker but not on ear; eye is near-parity (0.508 vs 0.490).
 
 Round-2 external self-consistency on the same 103 exp1 frames:
 yvonne 0.937 exact, hohlbaum 0.895, clara 0.684 (487/474/373 usable cells).
@@ -93,8 +120,13 @@ contextualizes rater reliability across experiments.
 - Any metric dependence on session-folder text (filenames are never features).
 - Any leakage between mouse ids across splits (machine-asserted in the build).
 - Treating the automatic posterior rows as ground truth (they are baselines).
-- Quality-artifact shortcutting: the B_quality control shows acquisition statistics
-  alone do not produce the A_gray AUROCs.
+- Quality-artifact shortcutting: the B_quality control (and, more directly, the
+  null D_border background-only family) shows acquisition/background statistics
+  alone do not produce the face-window AUROCs on the corrected blocked inference.
+- Unblocked significance claims: the four test mice contribute 80-215 usable rows
+  per AU, not 215 independent units; only the animal-blocked permutation p-values
+  above support the "signal beyond chance" statements, and ear carries no
+  significant signal in any model family.
 
 ## Reproduction
 

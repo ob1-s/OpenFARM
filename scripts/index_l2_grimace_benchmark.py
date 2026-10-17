@@ -8,14 +8,17 @@ Subcommands (run from repository root):
 
   uv run --with pillow,numpy,scikit-learn scripts/index_l2_grimace_benchmark.py pixels
       pixel baselines on the frozen exp1 split (train 9 | cal 2 | test 4 mice;
-      animal-disjoint). Features A: 64x64 grayscale of the exact scored 1280x1024
-      frame. Features B: quality-only control (mean/std/edge/range). Model:
-      multinomial logistic regression per AU; NOT_RATEABLE cells are masked out of
-      training (never silently zeroed) while staying in the test counts. Reference
-      labels: gt1. Externals (clara/yvonne/hohlbaum) and the leave-one-rater-out
-      majority of the remaining three are evaluated on the identical test slice as
-      label-only comparators; the image-decoder baselines must beat them to count
-      as animal-associated signal.
+      animal-disjoint). Feature families A: full 64x64 grayscale; C: centre-60%
+      crop (approximate face region); D: border-ring background control; B:
+      quality-only control. Model: multinomial logistic regression per AU;
+      NOT_RATEABLE cells are masked OUT of training (never silently zeroed) while
+      staying in the test counts. Reference labels: gt1. Externals (clara/yvonne/
+      hohlbaum) and the leave-one-rater-out majority of the remaining three are
+      reported on the identical test slice as label-only comparators. Uncertainty
+      comes from animal-blocked label permutations (labels exchanged inside each
+      held-out mouse's own support), giving a lower-tail p-value
+      (1+#{null<=obs})/(n_perm+1) - never the upper-tail of a lower-is-better
+      metric.
 
 Committed aggregate report: docs/research/index-l2-perception/GRIMACE_benchmark_report.json
 (no per-row label payloads - apgl-v3).
@@ -97,21 +100,58 @@ def brier_multiclass(probas: list[list[float]], golds: list[int]) -> float | Non
     return tot / len(golds)
 
 
-def shuffle_null(preds: list, golds: list[int], n_perm: int = 200, seed: int = 0) -> dict:
+def logloss(preds: list, probas: list, golds: list[int]) -> float | None:
+    """Mean multinomial NLL using the model's probability mass (or the provided
+    prior proba columns); rows without proba support are skipped."""
+    import math
+
+    n = 0
+    tot = 0.0
+    for p, y in zip(probas, golds):
+        if p is None or y is None:
+            continue
+        pv = [float(v) for v in p]
+        pred_masked = pv[y] if y < len(pv) else 0.0
+        tot += -math.log(max(pred_masked, 1e-12))
+        n += 1
+    return tot / n if n else None
+
+
+def permutation_null(ints_pred_or_none: list, golds: list[int], blocks: list | None = None,
+                     n_perm: int = 400, seed: int = 0) -> dict:
+    """Blocked lower-tail permutation inference for MAE (lower is better).
+
+    One-sided H0: observed MAE is not below chance. Labels are permuted within
+    blocks (users pass one block id per gold row, e.g. the animal id) so each
+    block keeps its own label marginals and sample size; the held-out mouse's
+    label support is therefore respected. Reports the lower-tail permutation
+    p-value with the (1 + #null<=obs) / (n_perm + 1) correction, plus null q05
+    and median, and the observed MAE for direct comparison."""
     rng = random.Random(seed)
-    usable = [(p, g) for p, g in zip(preds, golds) if p is not None]
-    if len(usable) < 5:
+    P, G, B = [], [], []
+    for p, g, b in zip(ints_pred_or_none, golds, blocks if blocks else [None] * len(golds)):
+        if p is not None:
+            P.append(p); G.append(g); B.append(b)
+    if len(P) < 5:
         return {}
-    P = [u[0] for u in usable]
-    G = [u[1] for u in usable]
+    groups: dict = {}
+    for i, b in enumerate(B):
+        groups.setdefault(b, []).append(i)
+    obs = sum(abs(p - g) for p, g in zip(P, G)) / len(P)
     maes = []
     for _ in range(n_perm):
-        rng.shuffle(P)
-        maes.append(sum(abs(p - g) for p, g in zip(P, G)) / len(usable))
+        for idxs in groups.values():
+            pull = [G[i] for i in idxs]
+            rng.shuffle(pull)
+            for i, v in zip(idxs, pull):
+                G[i] = v
+        maes.append(sum(abs(p - g) for p, g in zip(P, G)) / len(P))
     maes.sort()
-    return {"shuffle_mae_median": maes[len(maes) // 2],
-            "shuffle_mae_q95": maes[int(0.95 * (len(maes) - 1))],
-            "n_perm": n_perm}
+    return {"obs_mae": obs,
+            "p_lower": (1 + sum(1 for m in maes if m <= obs)) / (n_perm + 1),
+            "null_mae_q05": maes[int(0.05 * (len(maes) - 1))],
+            "null_mae_median": maes[len(maes) // 2],
+            "n_perm": n_perm, "n_usable": len(P)}
 
 
 def maj_of_others(others: dict[str, int | None]) -> int | None:
@@ -249,6 +289,46 @@ def load_gray(zipref: zipfile.ZipFile, member: str, size: int = 64):
     return np.asarray(im, dtype="float32") / 255.0
 
 
+def load_center_crop(zipref: zipfile.ZipFile, member: str, size: int = 64):
+    """Approximate face region: centre 60%% x 60%% of the original frame (face box
+    geometry is not annotated for the MGS images, so this is a fixed centre window)."""
+    import io
+
+    from PIL import Image
+    raw = zipref.read(member)
+    im = Image.open(io.BytesIO(raw))
+    W, H = im.size
+    box = (int(0.2 * W), int(0.2 * H), int(0.8 * W), int(0.8 * H))
+    im = im.convert("L").resize((size, size), box=box)
+    import numpy as np
+    return np.asarray(im, dtype="float32") / 255.0
+
+
+def load_border_ring(zipref: zipfile.ZipFile, member: str):
+    """Background/nuisance control: the outer ring with the centre window removed,
+    resampled to four 32x32 strips concatenated left/top/right/bottom -> 4096 dims."""
+    import io
+
+    from PIL import Image
+    raw = zipref.read(member)
+    im = Image.open(io.BytesIO(raw))
+    W, H = im.size
+    X0, X1 = int(0.2 * W), int(0.8 * W)
+    Y0, Y1 = int(0.2 * H), int(0.8 * H)
+    strips = [
+        im.crop((0, 0, X0, H)),        # left
+        im.crop((X0, 0, X1, Y0)),      # top (between left/right)
+        im.crop((X1, 0, W, H)),        # right
+        im.crop((X0, Y1, X1, H)),      # bottom
+    ]
+    import numpy as np
+    feats = []
+    for st in strips:
+        st = st.convert("L").resize((32, 32))
+        feats.append(np.asarray(st, dtype="float32").reshape(-1) / 255.0)
+    return np.concatenate(feats)
+
+
 def quality_features(gray) -> list[float]:
     import numpy as np
     return [float(gray.mean()), float(gray.std()),
@@ -268,15 +348,21 @@ def run_pixels(manifest_path: Path, splits_path: Path, zip_path: Path) -> dict:
     part_of_animal = {a: p for p, members in splits["exp1"].items() for a in members}
 
     zf = zipfile.ZipFile(zip_path)
-    grays, quals, metas = [], [], []
+    grays, centers, borders, quals, metas = [], [], [], [], []
     for r in exp1:
         g = load_gray(zf, r["zip_path"])
+        c = load_center_crop(zf, r["zip_path"])
+        b = load_border_ring(zf, r["zip_path"])
         grays.append(g.reshape(-1))
+        centers.append(c.reshape(-1))
+        borders.append(b)
         quals.append(quality_features(g))
         metas.append({"animal": r["animal"], "part": part_of_animal[r["animal"]],
                       "labels": r["labels"], "zip_path": r["zip_path"]})
-    X_gray = np.asarray(grays, dtype="float32")
-    X_q = np.asarray(quals, dtype="float32")
+    X = {"A_gray": np.asarray(grays, dtype="float32"),
+         "C_center": np.asarray(centers, dtype="float32"),
+         "D_border": np.asarray(borders, dtype="float32"),
+         "B_quality": np.asarray(quals, dtype="float32")}
     idx_train = [i for i, m in enumerate(metas) if m["part"] == "train"]
     idx_cal = [i for i, m in enumerate(metas) if m["part"] == "cal"]
     idx_test = [i for i, m in enumerate(metas) if m["part"] == "test"]
@@ -288,8 +374,8 @@ def run_pixels(manifest_path: Path, splits_path: Path, zip_path: Path) -> dict:
         y = np.asarray([metas[i]["labels"][lib.TRAIN_RATER][au] for i in keep])
         if len(set(y.tolist())) < 2:
             continue  # degenerate (constant train label); fallback metric only
-        fitted[("A_gray", au)] = LogisticRegression(max_iter=2000, C=1.0).fit(X_gray[keep], y)
-        fitted[("B_quality", au)] = LogisticRegression(max_iter=2000, C=1.0).fit(X_q[keep], y)
+        for tag in ("A_gray", "C_center", "D_border", "B_quality"):
+            fitted[(tag, au)] = LogisticRegression(max_iter=2000, C=1.0).fit(X[tag][keep], y)
 
     prior = {}
     for au in lib.AUS:
@@ -301,10 +387,10 @@ def run_pixels(manifest_path: Path, splits_path: Path, zip_path: Path) -> dict:
         import numpy as np
 
         clf = fitted.get((tag, au))
-        X = X_gray if tag == "A_gray" else X_q
+        M = X[tag]
         if clf is None:
             return [None] * len(idx), None
-        pr = clf.predict_proba(X[idx])
+        pr = clf.predict_proba(M[idx])
         full = np.zeros((len(idx), 3), dtype="float64")
         for j, c in enumerate(clf.classes_):
             full[:, int(c)] = pr[:, j]
@@ -315,38 +401,76 @@ def run_pixels(manifest_path: Path, splits_path: Path, zip_path: Path) -> dict:
         out = {}
         for au in lib.AUS:
             preds, probas = predict(tag, idx, au)
-            golds, P, PR = [], [], []
+            golds, blocks, P, PR = [], [], [], []
             for k, i in enumerate(idx):
                 g = metas[i]["labels"][lib.TRAIN_RATER].get(au)
                 if g is None:
                     continue
                 golds.append(g)
+                blocks.append(metas[i]["animal"])
                 P.append(preds[k])
-                if probas is not None:
-                    PR.append(list(probas[k]))
-                else:
-                    PR.append(None)
+                PR.append(list(probas[k]) if probas is not None else None)
             m = ordinal_metrics(P, golds)
-            if PR and all(p is not None for p in PR):
-                bs = [p[1] + p[2] for p in PR]
-                m["auroc_gt0"] = binary_auc(bs, [1 if g > 0 else 0 for g in golds])
+            nonnull = [p for p in PR if p is not None]
+            bs = [(p[1] + p[2]) if p is not None else None for p in PR]
+            pairs = [(s, 1 if g > 0 else 0) for s, g in zip(bs, golds) if s is not None]
+            m["auroc_gt0"] = binary_auc([s for s, _ in pairs], [l for _, l in pairs]) if pairs else None
+            if nonnull and all(p is not None for p in PR):
                 m["brier"] = brier_multiclass([list(p) for p in PR], golds)
-            elif any(p is not None for p in PR):
-                bs = [(p[1] + p[2]) if p is not None else None for p in PR]
-                pairs = [(s, 1 if g > 0 else 0) for s, g in zip(bs, golds) if s is not None]
-                m["auroc_gt0"] = binary_auc([s for s, _ in pairs], [l for _, l in pairs]) if pairs else None
-            m["null"] = shuffle_null(P, golds)
+            m["logloss"] = logloss(P, PR, golds) if nonnull else None
+            m["blocked_null"] = permutation_null(P, golds, blocks)
             out[au] = m
+        return out
+
+    def test_support_per_mouse() -> dict:
+        out = {}
+        for mouse in sorted({metas[i]["animal"] for i in idx_test}):
+            rows = {}
+            for au in lib.AUS:
+                cnt = Counter(metas[i]["labels"][lib.TRAIN_RATER].get(au) for i in idx_test
+                              if metas[i]["animal"] == mouse)
+                out_v = {str(k): cnt.get(k, 0) for k in (0, 1, 2)}
+                rows[au] = {"usable": sum(out_v.values()), "gold_counts": out_v}
+            out[mouse] = rows
+        return out
+
+    prior = {}
+    prior_proba = {}
+    for au in lib.AUS:
+        vals = [metas[i]["labels"][lib.TRAIN_RATER][au] for i in idx_train]
+        vals = [v for v in vals if v is not None]
+        cnt = Counter(vals)
+        prior[au] = cnt.most_common(1)[0][0]
+        n = len(vals)
+        prior_proba[au] = [cnt.get(k, 0) / n for k in (0, 1, 2)]
+
+    def prior_proba_baseline(idx: list[int]) -> dict:
+        out = {}
+        for au in lib.AUS:
+            golds = [metas[i]["labels"][lib.TRAIN_RATER].get(au) for i in idx]
+            golds = [g for g in golds if g is not None]
+            if not golds:
+                out[au] = {"n": 0}
+                continue
+            pv = prior_proba[au]
+            # constant proba column -> AUROC undefined by construction
+            out[au] = {"n": len(golds),
+                       "brier": brier_multiclass([pv] * len(golds), golds),
+                       "logloss": logloss([pv.index(max(pv))] * len(golds),
+                                          [[pv[0], pv[1], pv[2]]] * len(golds), golds),
+                       "auroc_gt0": None, "auroc_reason": "constant-probability baseline"}
         return out
 
     test_metrics: dict = {}
     test_metrics["prior_baseline"] = _prior_baseline(idx_test, prior, metas)
-    test_metrics["A_gray"] = metrics_vs_gt1("A_gray", idx_test)
-    test_metrics["B_quality"] = metrics_vs_gt1("B_quality", idx_test)
+    test_metrics["prior_proba_baseline"] = prior_proba_baseline(idx_test)
+    for tag in ("A_gray", "C_center", "D_border", "B_quality"):
+        test_metrics[tag] = metrics_vs_gt1(tag, idx_test)
     test_metrics["external_clara"] = external_slices(idx_test, "clara", metas)
     test_metrics["external_yvonne"] = external_slices(idx_test, "yvonne", metas)
     test_metrics["external_hohlbaum"] = external_slices(idx_test, "hohlbaum", metas)
     test_metrics["loro_majority_of_other3"] = loro_slice(idx_test, metas)
+    test_metrics["test_support_per_mouse"] = test_support_per_mouse()
 
     cal_out = {}
     for au in lib.AUS:
@@ -354,7 +478,7 @@ def run_pixels(manifest_path: Path, splits_path: Path, zip_path: Path) -> dict:
         if clf is None:
             cal_out[au] = {"n": 0}
             continue
-        pr = clf.predict_proba(X_gray[idx_cal])
+        pr = clf.predict_proba(X["A_gray"][idx_cal])
         full = np.zeros((len(idx_cal), 3))
         for j, c in enumerate(clf.classes_):
             full[:, int(c)] = pr[:, j]
@@ -368,9 +492,15 @@ def run_pixels(manifest_path: Path, splits_path: Path, zip_path: Path) -> dict:
     report = {"protocol": {
         "features_A": "64x64 grayscale resample of the exact scored 1280x1024 frame",
         "features_B": "quality-only control: [mean, std, |d/dx|, |d/dy|, max-min]",
+        "features_C": "centre 60% crop (approximate face region; no face boxes exist for the MGS frames)",
+        "features_D": "border-ring control (outer ring, centre window removed) - background/nuisance statistics only",
         "model": "multinomial logistic regression C=1.0 per AU; NOT_RATEABLE masked in train only",
         "split": "frozen animal-disjoint exp1 layout: train 9 | cal 2 | test 4 mice",
-        "counted_on_test": {"train": len(idx_train), "cal": len(idx_cal), "test": len(idx_test)},
+        "counted_on_test": {"train": len(idx_train), "cal": len(idx_cal), "test": len(idx_test),
+                            "note": "the 215 test rows are 4 mice, so they are NOT 215 independent units; "
+                                    "uncertainty is quantified with animal-blocked label permutations"},
+        "null": "permutation_null: lower-tail blocked permutation, p = (1+#{null<=obs})/(n_perm+1), "
+                "q05 = 5th percentile of the null MAE distribution; labels permuted within mouse blocks",
         "exp3": "inventory + agreement evidence only (119 human-labelled frames)",
     }}
     report["cal_preview_A_gray"] = cal_out
@@ -383,16 +513,19 @@ def run_pixels(manifest_path: Path, splits_path: Path, zip_path: Path) -> dict:
 def _prior_baseline(idx: list[int], prior: dict, metas: list[dict]) -> dict:
     out = {}
     for au in lib.AUS:
-        golds, preds = [], []
+        golds, preds, blocks = [], [], []
         for i in idx:
             g = metas[i]["labels"][lib.TRAIN_RATER].get(au)
             if g is None:
                 continue
             golds.append(g)
             preds.append(prior[au])
+            blocks.append(metas[i]["animal"])
         out[au] = {"n": len(golds), "mae": (sum(abs(p - e) for p, e in zip(preds, golds)) / len(golds)) if golds else None,
                    "exact_acc": (sum(1 for p, e in zip(preds, golds) if p == e) / len(golds)) if golds else None}
-        out[au]["null"] = shuffle_null(preds, golds) if len(golds) >= 5 else {}
+        # constant-prediction baseline: its blocked permutation null MAE is identical
+        # by construction (q05 == obs), which is why it carries no p-value claim
+        out[au]["blocked_null"] = permutation_null(preds, golds, blocks) if len(golds) >= 5 else {}
     return out
 
 

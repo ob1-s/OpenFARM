@@ -36,7 +36,7 @@ Example clinical record with synthetic values:
 Then:
 
 ```bash
-python scripts/index_v01_score.py --input local_predictions.jsonl --output local_scores.json --bootstrap 1000
+python scripts/index_v01_score.py --input local_predictions.jsonl --output local_scores.json --bootstrap 1000 --model-id model-checkpoint@sha256 --protocol-id wong-v01-canonical
 ```
 
 **Critical detail:** for Wong, the probability target is the **three-vet empirical distribution**, not a fabricated absolute clinical truth. If model probabilities `p` and three-rater relative frequencies `q` are defined on five classes, report `Σ(p−q)²`; `1−Σq²` is the additive variability term in expected single-vet one-hot Brier. That variance is measurable, not necessarily irreducible across new clinicians.

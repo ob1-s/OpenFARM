@@ -3,9 +3,10 @@
 Covers: monotone time causality (no later label may enter an earlier state),
 true-negatives have no pseudo-onset dates, censoring is never recast into a
 negative, first-day-flagged animals are excluded from the at-risk cohort,
-(batch, pen) cohort handling with PenID reuse across batches, ambiguous rows
-excluded from state, deterministic disjoint group splits, duplicate-key
-failure, and checksum enforcement.
+(batch, pen) cohort handling with PenID reuse across batches, ambiguous
+non-modal pen rows quarantined from both states and every pen history,
+deterministic disjoint group splits, duplicate-key failure, and checksum
+enforcement.
 """
 from __future__ import annotations
 import io, json, sys, unittest, zipfile
@@ -54,10 +55,16 @@ def run_builder(tail_rows, fouling_rows, horizon=7):
     tail = make_tail(tail_rows)
     fouling = make_fouling(fouling_rows)
     pmap, amb = B.primary_pen_map(tail)
-    pen_animals = B.cohort_pen_animal_map(tail, pmap)
     tail = tail.assign(primary_pen=[pmap[(int(b), int(a))] for b, a in
                                     zip(tail["Batch"], tail["AnimalID"])])
+    keep = tail["PenID"] == tail["primary_pen"]
+    quarantine = {"rows_quarantined": int((~keep).sum()),
+                  "detail": tail.loc[~keep, ["Batch", "PenID", "AnimalID", "Day"]]
+                  .to_dict(orient="records")}
+    tail = tail[keep].copy()
+    pen_animals = B.cohort_pen_animal_map(tail, pmap)
     states, prov = B.build_states(tail, fouling, pen_animals, horizon_days=horizon)
+    prov["quarantine"] = quarantine
     if not states.empty:
         states, membership = B.attach_split(states)
     else:
@@ -235,6 +242,29 @@ class AmbiguousPenTests(unittest.TestCase):
         self.assertEqual(len(amb), 1)
         self.assertEqual(amb[0]["ambiguous_rows"], 1)
         self.assertEqual(pmap[(2, 54605)], 821)
+
+    def test_quarantined_nonmodal_row_excluded_from_states_and_pen_history(self):
+        t0 = pd.Timestamp("2023-03-06 09:00:00", tz="UTC")
+        a_id, b_id = 54605, 54699
+        rows = [
+            scan_row(2, 831, 3, a_id, t0, tail=1),
+            scan_row(2, 821, 4, a_id, t0 + timedelta(days=1)),
+            scan_row(2, 821, 5, a_id, t0 + timedelta(days=2)),
+            scan_row(2, 831, 5, b_id, t0 + timedelta(days=2)),
+        ]
+        states, prov, membership, amb = run_builder(rows, [])
+        self.assertEqual(prov["quarantine"]["rows_quarantined"], 1)
+        self.assertEqual(prov["quarantine"]["detail"][0], {
+            "Batch": 2, "PenID": 831, "AnimalID": 54605, "Day": 3})
+        self.assertEqual(amb[0]["ambiguous_rows"], 1)
+        self.assertEqual(prov["animals_flagged_at_first_observed_day"], 0)
+        self.assertEqual(len(states[states["prediction_day"] == 3]), 0)
+        s_a = states[states["animal_id"] == a_id]
+        self.assertEqual(sorted(s_a["prediction_day"].tolist()), [4, 5])
+        s_b = states[states["animal_id"] == b_id]
+        self.assertEqual(len(s_b), 1)
+        self.assertEqual(float(s_b["pen_mate_fresh_tail_days_prior7"].iloc[0]), 0.0)
+        self.assertEqual(float(s_b["pen_scans_prior_day"].iloc[0]), 0.0)
 
 
 if __name__ == "__main__":

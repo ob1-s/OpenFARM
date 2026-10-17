@@ -20,6 +20,9 @@ Contracts enforced by construction and unit-tested:
   with no later scans are "not_measured"; neither is ever a negative.
 - animals already flagged on their first observed day have no reliable clean
   prior, so they are excluded from the at-risk cohort and reported separately.
+- rows recorded under a non-modal pen for an animal (release documents no cage
+  moves; two enigmatic one-day rows exist) are quarantined: they are reported
+  in provenance and excluded from states AND from every pen history.
 - PenID is reused across batches: cohort identity is (batch, pen) and pen
   features/splits always include the batch.
 
@@ -315,9 +318,14 @@ def main() -> None:
     tail = read_tail_csv(members[TAIL_MEMBER])
     fouling = read_fouling_csv(members[FOULING_MEMBER])
     pmap, ambiguous_report = primary_pen_map(tail)
-    pen_animals = cohort_pen_animal_map(tail, pmap)
     tail = tail.assign(primary_pen=[pmap[(int(b), int(a))] for b, a in
                                     zip(tail["Batch"], tail["AnimalID"])])
+    keep = tail["PenID"] == tail["primary_pen"]
+    quarantined_rows = int((~keep).sum())
+    quarantined_detail = (tail.loc[~keep, ["Batch", "PenID", "AnimalID", "Day"]]
+                          .to_dict(orient="records"))
+    tail = tail[keep].copy()
+    pen_animals = cohort_pen_animal_map(tail, pmap)
     states, prov = build_states(tail, fouling, pen_animals)
     if states.empty:
         raise SystemExit("no candidate windows built; aborting")
@@ -330,7 +338,10 @@ def main() -> None:
         "zip_md5": ZIP_MD5,
         "member_sha256": MEMBER_SHA256,
         "ambiguous_pen_animals": ambiguous_report,
-        "tail_rows_source": int(len(tail)),
+        "tail_rows_source": int(len(tail) + quarantined_rows),
+        "tail_rows_after_modal_pen_quarantine": int(len(tail)),
+        "ambiguous_pen_rows_quarantined": quarantined_rows,
+        "quarantined_rows_detail": quarantined_detail,
         "animals_source": int(tail[["Batch", "AnimalID"]].drop_duplicates().shape[0]),
         "cohorts_source": int(states["split_group"].nunique()),
         "split_membership": membership,

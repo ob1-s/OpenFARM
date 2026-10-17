@@ -1,24 +1,38 @@
 #!/usr/bin/env python3
-"""Cheap, exhaustive non-generative baselines for the Aarhus first-fresh-tail
-damage 7-day warning task built by index_l3_care_build_aarhus_historical.py.
+"""Cheap, fixed-threshold baselines for the Aarhus first-fresh-tail-damage
+7-day warning task built by index_l3_care_build_aarhus_historical.py.
 
-No model training is performed, matching the handoff stop rule. Every rule
-uses only causal prior features of the built states file. Metrics are
-evaluated on the fixed (batch, pen) heldout test cohorts; no threshold is
-tuned on test metrics.
+No model training and no threshold tuning on held-out data. Every rule uses
+only causal prior features of the built states file.
 
-Reported per rule and split:
-- positives/negatives and prevalence (proper denominators)
-- event-level precision, recall, F1 at the rule's fixed alert threshold
-- false alerts per 1000 at-risk pig-day evaluation windows
-- alert lead time (days from prediction scan to onset record) for true alerts
-- uncertainty by cohort (batch, pen) and treatment for the best information rule
+Denominator discipline:
+- Window-level metrics use EVALUABLE prediction windows only (target_status in
+  {positive, negative}). Censored and not_measured windows are never rule
+  metrics; total-window prevalence is still reported with its denominator
+  for transparency.
+- Event-level metrics de-duplicate overlapping windows belonging to the same
+  first-onset (batch, animal_id, event_ts): a recorded onset counts as detected
+  iff ANY of its evaluable windows alerted; lead time is measured from the
+  EARLIEST alerting window's prediction_ts inside that onset's horizon.
+- Alert-episode metrics collapse repeated detached per-animal window alerts:
+  consecutive alerted windows of one animal separated by <= COOLDOWN_DAYS form
+  one episode (non-consecutive alerts start a new episode).
+
+Unit note: false-positive rates are per 1,000 evaluable SCORING windows
+(weekday expert scoring events), not per 1,000 calendar pig-days and not
+per deduplicated alert after suppression. "Treatment" columns are assigned
+husbandry conditions of the source trial (Control/Enrichment/Roughage/Space),
+not treatments administered to an animal; clinical surveillance features
+require expert inspection of pen-mates and the animal's own ear.
 """
 from __future__ import annotations
 import argparse, json
+from datetime import timedelta
 from pathlib import Path
 
 import pandas as pd
+
+COOLDOWN_DAYS = 3
 
 
 def load_states(path: Path) -> pd.DataFrame:
@@ -38,37 +52,75 @@ def load_states(path: Path) -> pd.DataFrame:
     return df
 
 
-def eval_rule(df: pd.DataFrame, score: pd.Series, threshold: float) -> dict:
-    evaluable = df["target_status"].isin(["positive", "negative"]).to_numpy()
-    d = df[evaluable]
-    scorev = score.to_numpy()
-    alert = (scorev[evaluable] >= threshold)
-    pos = (d["target"] == 1).to_numpy()
-    tp = int((alert & pos).sum())
-    fp = int((alert & ~pos).sum())
-    fn = int((~alert & pos).sum())
-    tn = int((~alert & ~pos).sum())
-    precision = tp / (tp + fp) if tp + fp else None
-    recall = tp / (tp + fn) if tp + fn else None
+def eval_rule(sub: pd.DataFrame, score: pd.Series, threshold: float) -> dict:
+    evaluable = sub["target_status"].isin(["positive", "negative"]).to_numpy()
+    posv = sub["target"].to_numpy() == 1.0
+    alert = (score.to_numpy() >= threshold) & evaluable
+    tpw = int((alert & posv).sum())
+    fpw = int((alert & ~posv).sum())
+    mpw = int((~alert & posv).sum())
+    n_eval = int(evaluable.sum())
+    precision = tpw / (tpw + fpw) if tpw + fpw else None
+    recall = tpw / (tpw + mpw) if tpw + mpw else None
     f1 = (2 * precision * recall / (precision + recall)
-          if precision is not None and recall and precision + recall else None)
-    false_alerts = fp / len(d) * 1000
-    lead = None
-    if tp:
-        lead = (d.loc[alert & pos, "event_ts"] - d.loc[alert & pos, "prediction_ts"])
-        lead = float(lead.dt.total_seconds().mean() / 86400)
-    return {
-        "evaluable_windows": int(len(d)),
-        "positive_windows": int(pos.sum()),
-        "true_alerts": tp,
-        "false_alerts": fp,
-        "missed_events": fn,
-        "precision": precision,
-        "recall": recall,
-        "f1": f1,
-        "false_alerts_per_1000_at_risk_pig_day_windows": round(false_alerts, 3),
-        "mean_alert_lead_days": round(lead, 2) if lead is not None else None,
+          if precision is not None and recall is not None
+          and precision + recall > 0 else None)
+    out = {
+        "evaluable_windows": n_eval,
+        "true_positive_windows": tpw,
+        "false_positive_windows": fpw,
+        "missed_positive_windows": mpw,
+        "precision_windows": precision,
+        "recall_windows": recall,
+        "f1_windows": f1,
+        "false_positive_windows_per_1000_evaluable_scoring_windows":
+            round(fpw / n_eval * 1000, 3),
+        "mean_lead_days_alerted_positive_windows": None,
+        "onsets_total_distinct_first_onsets": 0,
+        "onsets_detected_distinct": 0,
+        "onset_recall": None,
+        "mean_first_alert_lead_days": None,
+        "alert_episodes_cooldown_3d_per_pig": 0,
+        "alerted_animals_any_window": 0,
+        "mean_episodes_per_alerted_animal": None,
+        "mean_alert_episodes_per_pen_cohort": None,
     }
+    flagged = sub[alert]
+    hit = flagged[posv[alert]]
+    if len(hit):
+        lead = ((pd.to_datetime(hit["event_ts"]) - hit["prediction_ts"])
+                .dt.total_seconds() / 86400.0)
+        out["mean_lead_days_alerted_positive_windows"] = round(float(lead.mean()), 2)
+    onsets_total = (sub[posv].groupby(["batch", "animal_id"])["event_ts"]
+                    .nunique().sum())
+    out["onsets_total_distinct_first_onsets"] = int(onsets_total)
+    if len(hit):
+        per_onset = (hit.assign(event_key=hit["event_ts"])
+                     .groupby(["batch", "animal_id", "event_key"])
+                     .agg(first_alert=("prediction_ts", "min")).reset_index())
+        out["onsets_detected_distinct"] = int(len(per_onset))
+        lead_ev = ((per_onset["event_key"] - per_onset["first_alert"])
+                   .dt.total_seconds() / 86400.0)
+        out["mean_first_alert_lead_days"] = round(float(lead_ev.mean()), 2)
+    if out["onsets_total_distinct_first_onsets"]:
+        out["onset_recall"] = (out["onsets_detected_distinct"]
+                               / out["onsets_total_distinct_first_onsets"])
+    if len(flagged):
+        grouped = flagged.groupby(["batch", "animal_id"])["prediction_ts"]
+        episodes = 0
+        for _, ts in grouped:
+            ts = sorted(ts.tolist())
+            episodes += 1
+            for a, b in zip(ts[:-1], ts[1:]):
+                if b - a > timedelta(days=COOLDOWN_DAYS):
+                    episodes += 1
+        animals = int(flagged[["batch", "animal_id"]].drop_duplicates().shape[0])
+        pens = int(flagged["split_group"].nunique())
+        out["alert_episodes_cooldown_3d_per_pig"] = episodes
+        out["alerted_animals_any_window"] = animals
+        out["mean_episodes_per_alerted_animal"] = round(episodes / animals, 2)
+        out["mean_alert_episodes_per_pen_cohort"] = round(episodes / pens, 2)
+    return out
 
 
 def main() -> None:
@@ -80,58 +132,54 @@ def main() -> None:
     states = load_states(args.states)
     prior = float(states[states["split"] == "train"]["target"].mean())
     rules = {
-        "constant_prior_train_prevalence_no_alert_below_0.5":
-            lambda sub: pd.Series(prior, index=sub.index),
+        "constant_prior_train_prevalence_threshold_0.5_no_alerts":
+            (lambda sub: pd.Series(prior, index=sub.index), 0.5),
         "rule_pen_mate_flag_ge1":
-            lambda sub: sub["pen_mate_fresh_tail_days_prior7"],
+            (lambda sub: sub["pen_mate_fresh_tail_days_prior7"], 1.0),
         "rule_pen_mate_flag_ge3":
-            lambda sub: sub["pen_mate_fresh_tail_days_prior7"],
-        "rule_pen_hours_2days":
-            lambda sub: sub["pen_mates_flagged_prior7"],
-        "rule_own_ear_damage_prior":
-            lambda sub: sub["own_ear_fresh_days_prior"],
-        "rule_ear_or_penmate":
-            lambda sub: sub[["pen_mate_fresh_tail_days_prior7",
-                             "own_ear_fresh_days_prior"]].max(axis=1),
+            (lambda sub: sub["pen_mate_fresh_tail_days_prior7"], 3.0),
+        "rule_pen_mates_distinct_ge2":
+            (lambda sub: sub["pen_mates_flagged_prior7"], 2.0),
+        "rule_own_ear_fresh_ge1":
+            (lambda sub: sub["own_ear_fresh_days_prior"], 1.0),
+        "rule_ear_or_pen_mate_ge1":
+            (lambda sub: sub[["pen_mate_fresh_tail_days_prior7",
+                              "own_ear_fresh_days_prior"]].max(axis=1), 1.0),
     }
-    thresholds = {"constant_prior_train_prevalence_no_alert_below_0.5": 0.5,
-                  "rule_pen_mate_flag_ge1": 1.0,
-                  "rule_pen_mate_flag_ge3": 3.0,
-                  "rule_pen_hours_2days": 2.0,
-                  "rule_own_ear_damage_prior": 1.0,
-                  "rule_ear_or_penmate": 1.0}
-    report = {"prior_train_prevalence_per_window": round(prior, 6),
-              "n_rule_thresholds_tuned_on_test": 0,
-              "splits": {}}
+    report = {
+        "prior_train_prevalence_per_window": round(prior, 6),
+        "n_rule_thresholds_tuned_on_test": 0,
+        "unit_note": ("false-positive rates are per 1000 evaluable weekday "
+                      "scoring windows; not calendar pig-days, not "
+                      "deduplicated alerts; onset recall deduplicates "
+                      "overlapping windows of one (animal, event_ts)"),
+        "splits": {},
+    }
     for split in ("train", "calibration", "test"):
         sub = states[states["split"] == split].reset_index(drop=True)
-        entry = {"status_counts": {k: int(v) for k, v in
-                                   sub["target_status"].value_counts().items()},
-                 "prevalence_positive": float((sub["target"] == 1).mean()),
-                 "rules": {}}
-        for name, fn in rules.items():
-            entry["rules"][name] = eval_rule(sub, fn(sub), thresholds[name])
-        if split == "test":
-            by_pen = {}
-            for key, group in sub.groupby("split_group"):
-                by_pen[key] = {
-                    "windows": int(len(group)),
-                    "positives": int((group["target"] == 1).sum()),
-                    "alert_rate_ge1": float((group["pen_mate_fresh_tail_days_prior7"] >= 1).mean()),
-                }
-            entry["pen_cohort_detail_rule_ge1"] = by_pen
+        posv = sub["target"] == 1.0
+        entry = {
+            "total_windows": int(len(sub)),
+            "evaluable_windows": int(sub["target_status"].isin(["positive", "negative"]).sum()),
+            "status_counts": {k: int(v) for k, v in sub["target_status"].value_counts().items()},
+            "prevalence_total_windows_incl_censored": round(float(posv.mean()), 6),
+            "evaluable_positives": int(posv.sum()),
+            "prevalence_evaluable_windows": round(float((posv).sum()
+                    / max(1, int(sub["target_status"].isin(["positive", "negative"]).sum()))), 6),
+            "distinct_first_onsets_in_split": int(sub[posv].groupby(["batch", "animal_id"])["event_ts"].nunique().sum()),
+            "rules": {},
+        }
+        for name, (fn, thr) in rules.items():
+            entry["rules"][name] = eval_rule(sub, fn(sub), thr)
         report["splits"][split] = entry
     text = json.dumps(report, indent=2, sort_keys=True)
     if args.output:
         args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_text(text + "\n")
     print(text)
-    post = report["splits"]["test"]["rules"]
-    sanity = [
-        post["rule_pen_mate_flag_ge1"]["precision"] is not None,
-        post["rule_pen_mate_flag_ge1"]["recall"] >= 0,
-    ]
-    if not all(sanity):
+    test = report["splits"]["test"]
+    if not (test["distinct_first_onsets_in_split"] > 0
+            and all("true_positive_windows" in m for m in test["rules"].values())):
         raise SystemExit(2)
 
 

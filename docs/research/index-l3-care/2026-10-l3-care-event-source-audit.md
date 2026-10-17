@@ -2,9 +2,11 @@
 
 **Date:** 2026-10-16. **Branch:** `research/index-l3-care-events-2026-10`. **Role:** independent prospecting for real train/eval animal-welfare care-event tasks. This document does **not** approve anything: statuses below are PROPOSED for review per the data approval policy (`docs/research/DATA_APPROVAL_POLICY.md`).
 
+**Corrective pass (2026-10-16, after PR #4 scientific review):** (1) non-modal-pen rows are now actually quarantined from states and pen histories, with an adversarial regression test; (2) baseline metrics renamed (`true/false/missed_positive_windows`) and a separate event-level evaluation added (distinct first-onsets covered, first-alert lead, 3-day-cooldown alert episodes); (3) prevalence denominators now report both total-window and evaluable-window rates (test: 0.422% vs **0.556%**; best-rule lift ~4.0×); (4) false-positive unit relabeled to per-1,000-evaluable-weekday-scoring-windows; (5/6) construct-cost and generalization-sensitivity section added (2.7b). Changed numbers only; no models trained.
+
 ## Executive result (four-line verdict)
 
-- **PASS (L2→L3 candidate, PROPOSED, not APPROVED):** Coutant et al. 2026 Aarhus dataset (Zenodo 18785731, CC BY 4.0): all bytes md5/SHA-verified, 37,093 real timestamped animal-day clinical rows, 810 pigs, 60 (batch, pen) cohorts, 282 causal 7-day first-onset warning windows with 24,776 clean-at-risk true negatives; deterministic builder + 15 offline unit tests + 6 non-generative baselines run on real bytes.
+- **PASS (L2→L3 candidate, PROPOSED, not APPROVED):** Coutant et al. 2026 Aarhus dataset (Zenodo 18785731, CC BY 4.0): all bytes md5/SHA-verified, 37,093 real timestamped animal-day clinical rows (37,091 used after quarantining 2 non-modal-pen rows), 810 pigs, 60 (batch, pen) cohorts, 282 causal 7-day first-onset warning windows with 24,774 clean-at-risk true negatives; deterministic builder + 16 offline unit tests + fixed-threshold baselines reporting window-, onset- and episode-level results on real bytes.
 - **PASS (access + structure, verified):** Chou et al. 2020 PLOS ONE supporting S1 XLSX (CC BY 4.0; SHA `250522604e6dfaf78ef135d2085d1ce5957d163f39f734556af67e18668d5b52`) — 672 pigs, 48 pens, date-stamped per-pig ordinal tail/ear scores with 154 at-risk wound-escalation windows; caregiver removals/treatments recorded only as pen-level totals (no per-event timestamps), so it cannot be an approved L3 action task as released.
 - **FAIL (quarantined, not realizable as a time-forecast event task):** Agroscope ethogram+lesion Zenodo 5920843 — all 10 files byte-verified and cleanly joined (prior join blocker resolved); only 3 pigs ever performed active tail bites across 380 focal rows; released tables contain **no observation dates**, so prediction times and horizons cannot be pinned; only 2 farrowing groups exist for separation.
 - **CONFIRMED NEGATIVE (still true):** zero public datasets with per-action timestamped staff care events (treatments/removals) found in this lane; the two scientifically-described action sources (Heseker 2024 staff biter removal; Eisermann 2025 Bite-o-Mat) release data only *on request*.
@@ -47,7 +49,7 @@ See `docs/research/index-l3-care/source_gate.csv` (rank 1–9, ≤12 rows, STATU
 ### 2.3 Structural findings that a correct task must respect (all verified in bytes)
 
 1. **PenID axis (801–830) is reused across both batches with different treatments** — e.g. pen 801 is "Space 9" in batch 1 and "Control" in batch 2. Cohort identity must be `(batch, pen)` = 60 cohorts; grouping by PenID alone confounds treatment and time.
-2. **Two animals appear one day in a second pen** (batch 2: 54598 rows day3 in 827 then 4–67 in 828; 54605 rows 4–67 in 821 plus a day-3 row in 831). Builder assigns the modal pen and flags the non-modal row ambiguous (excluded from history/state; kept as provenance).
+2. **Two rows conflict with the animal's modal pen** (batch 2: 54598 has one day-3 row in pen 827 while the remaining days are in 828; 54605 has one day-3 row in pen 831 while rows 4–67 are in 821). The release does not document pen moves. **Builder quarantines both rows**: they are listed in provenance under `quarantined_rows_detail` and excluded from every state window AND from every pen history (they can never inform pen-mate features or a candidate scan). Regression-tested adversarially: a contaminated pen history would flip pen-mate features on other animals.
 3. **19 batch-2 animals stop being scored after 1–16 days** (row counts 1–9). Some of them had fresh damage days before disappearing. The release explains nothing (paper full text is not accessible from this environment; Elsevier page bot-gated). Their disappeance is **informative censoring of unknown cause** — the builder treats any window whose later coverage ends >36 h before the horizon boundary as `censored`, never negative.
 4. **No scoring Sat/Sun** (day gaps in every animal); only batch-2 pens 831–836 partially deviate (18 animals have non-45-row counts, e.g. 51/50-row histories).
 5. **Paper totals sum to 824 animals vs 810 in the release** — small residual discrepancy; reconciliation requires the paper (DEFER to next gate). Irrelevant to task construction because the released table is the source of truth for labels, but reported honestly here.
@@ -57,49 +59,63 @@ See `docs/research/index-l3-care/source_gate.csv` (rank 1–9, ≤12 rows, STATU
 ### 2.4 Builder contracts (`scripts/index_l3_care_build_aarhus_historical.py`)
 
 - Source checksums enforced on load (zip md5 + member SHA-256); any mismatch fails closed.
-- `prediction_ts` = the animal's own scan time of a clean scanned day. Model-visible state = this scan and everything earlier (own arrival status, treatment, days-in-farm, own ear-damage days so far, pen-mate fresh-tail days and distinct flagged penmates in the prior 7 days from strictly earlier scans in the same `(batch, pen)`, pen fouling score from the latest prior fouling day, `PigsInPen`, weekday). Target = fresh tail damage recorded on later scans within 7 days.
+- `prediction_ts` = the animal's own scan time of a clean scanned day. Model-visible state = this scan and everything earlier (own arrival status, treatment, days-in-farm, own ear-damage days so far, pen-mate fresh-tail days and distinct flagged penmates in the prior 7 days from strictly earlier scans in the same `(batch, pen)`, pen fouling score from the latest prior fouling day, `PigsInPen`, weekday). Target = fresh tail damage recorded on later scans within 7 days. Non-modal-pen rows are quarantined before any state or history is built.
+- Treatment columns (Control/Enrichment/Roughage/Space 9/Space 6) are the assigned husbandry conditions of the source trial — never a treatment administered to an injured animal; the task's clinical surveillance features (own-ear and pen-mates' fresh-damage histories) require expert human inspection, so this construct validates scientifically on welfare outcomes, not the usefulness of a low-cost autonomous warning system.
 - Positives only from real scored rows (event_ts strictly later than prediction_ts). No pseudo-onset dates for controls ever exist in this design.
 - Statuses preserved: `positive` / `negative` (complete coverage of the 7-day horizon within 36 h grace) / `censored` (coverage ends too early: unknown removal) / `not_measured` (no later scans at all). Censored/not-measured are never turned into negatives.
 - Splits: per batch, the 30 cohorts are ranked by `sha256("openfarm-index-l3-care-aarhus-v0|batch-pen")`; bottom ~20% per batch = test, next ~10% = calibration, rest train. Result: 42 train / 6 calibration / 12 test cohorts; both batches represented in test. Membership digest embedded in provenance; cohort names in `data/index_l3_care/aarhus/provenance.json`.
 
-### 2.5 Real built numbers (rebuilt 2026-10-16, states.csv SHA-256 `c12deae00144cce4153fee6581b2de24d49da7a543f838857ecb9b065965b1ab`)
+### 2.5 Real built numbers (rebuilt after the quarantine fix; states.csv SHA-256 `93cd9be4de361589abc116afeb4e92fbc7eb0804430b56ac544f7347b901de09`)
+
+Source rows: 37,093 → 37,091 used (2 anomalous rows quarantined: batch 2, animal 54598, day 3, pen 827; animal 54605, day 3, pen 831). The two quarantined rows had produced 2 clean-negative windows in the pre-fix build; positives, censored and not_measured counts are unchanged.
 
 | split | windows | positive | negative | censored | not_measured | cohorts | animals |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| train | 21,030 | 233 | 15,750 | 4,601 | 446 | 42 | 515 |
+| train | 21,028 | 233 | 15,748 | 4,601 | 446 | 42 | 515 |
 | calibration | 3,670 | 14 | 2,768 | 809 | 79 | 6 | 83 |
 | test | 8,297 | 35 | 6,258 | 1,829 | 175 | 12 | 190 |
-| **total** | **32,997** | **282** | **24,776** | **7,239** | **700** | 60 | ~810 minus 39 first-day-flagged |
+| **total** | **32,995** | **282** | **24,774** | **7,239** | **700** | 60 | ~810 minus 39 first-day-flagged |
 
-Invariant checks on real output: zero positives with `event_ts <= prediction_ts`; zero censored/non-measured rows with a non-null target; zero duplicate `(batch, animal, prediction_ts)` keys; zero negatives carrying an event timestamp.
+<rb>Test split extra denominators (per the review): evaluable windows 6,293 (35 pos / 6,258 neg); evaluable-window prevalence 35/6,293 = **0.556%**; total-window prevalence 35/8,297 = 0.422%; distinct first onsets in test = **15**.
+
+Invariant checks on real output: zero positives with `event_ts <= prediction_ts`; zero censored/non-measured rows with a non-null target; zero duplicate `(batch, animal, prediction_ts)` keys; zero negatives carrying an event timestamp; the 2 quarantined rows appear in no state and in no pen history (regression-tested: pen-mate features of other animals cannot see them).
 
 No-effect tests for leakage: an onset occurring exactly at the horizon boundary (+7 d) is positive for predictions made ≤7 d earlier and a **negative** for the +6-day prediction made earlier than that (unit-tested); prediction rows after an animal's first flag do not exist at all (onset-cohort semantics, unit-tested); pen-history features only see scans strictly earlier than `prediction_ts` (unit-tested).
 
-### 2.6 Non-generative cheap baselines (`scripts/index_l3_care_benchmark_aarhus_baselines.py`, JSON in repo)
+### 2.6 Fixed-threshold baselines (`scripts/index_l3_care_benchmark_aarhus_baselines.py`, JSON in repo)
 
-Test split (12 cohorts, 35 positives / 6,258 negatives; prevalence 0.42%):
+No model training and no threshold tuning on held-out data. Window metrics use the evaluable subset only; a separate onset-level evaluation de-duplicates overlapping windows of the same first-onset `(batch, animal, event_ts)`; episode metrics collapse repeated per-animal alerts with a 3-day cooldown. False-positive rates are per **1,000 evaluable weekday scoring windows** — a unit distinct from calendar pig-days or deduplicated post-suppression alerts.
 
-| rule (fixed threshold, no tuning on test) | precision | recall | false alerts per 1000 at-risk pig-day windows | mean lead (d) |
-|---|---:|---:|---:|---:|
-| constant train prior (1.458%/window), threshold 0.5 → no alerts | — | 0.000 | 0.0 | — |
-| ≥1 pen-mate fresh-tail day in prior 7 d | 0.0107 | 0.286 | 147.5 | 3.52 |
-| **≥2 distinct intermittent pen-mates flagged in prior 7 d** | **0.0224** | **0.286** | **69.3** | **3.52** |
-| ≥3 pen-mate fresh-tail days in prior 7 d | 0.0282 | 0.286 | 54.7 | 3.52 |
-| own ear fresh damage ≥1 prior day | 0.0085 | 0.171 | 110.8 | 3.55 |
-| max(ear, penmate) ≥1 | 0.0073 | 0.314 | 237.6 | 3.47 |
+Test split (12 cohorts; 6,293 evaluable windows = 35 pos / 6,258 neg; evaluable prevalence 0.556%; **15 distinct first onsets**):
 
-Honest interpretation: threshold rules on prior pen-level history give a **5–7× prevalence lift with ~3.5-day average lead**, at false-alert rates far above any plausible caretaker budget (tens per 1000 at-risk animal-days). Calibration-split rule metrics are unstable (e.g., `≥3` fires almost never there; own-ear precision flips), showing that these candidate detectors are **not yet calibrated across cohorts** — exactly the kind of cross-cohort instability a real deployment-approval gate must evaluate. No learned model was trained (handoff stop rule).
+| rule | precision (windows) | window recall | false-positive windows per 1000 evaluable scoring windows | mean lead of alerted positive windows (d) | onsets covered | onset recall | mean first-alert lead (d) | alert episodes (3 d cooldown) | animals ever alerted |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| constant train prior, threshold 0.5 → no alerts | — | 0.000 | 0.0 | — | 0/15 | 0.000 | — | 0 | 0 |
+| ≥1 pen-mate fresh-tail day in prior 7 d | 0.0107 | 0.286 | 147.5 | 3.52 | 5/15 | 0.333 | 3.55 | 332 | 127 |
+| ≥2 distinct flagged pen-mates in prior 7 d | 0.0224 | 0.286 | 69.3 | 3.52 | **5/15** | **0.333** | 3.55 | 100 | 71 |
+| ≥3 pen-mate fresh-tail days in prior 7 d | 0.0282 | 0.286 | 54.7 | 3.52 | 5/15 | 0.333 | 3.55 | 82 | 56 |
+| own ear fresh ≥1 prior day | 0.0085 | 0.171 | 110.8 | 3.55 | 2/15 | 0.133 | 4.52 | 174 | 26 |
+| max(ear, pen-mate) ≥1 | 0.0073 | 0.314 | 237.6 | 3.47 | 5/15 | 0.333 | 3.76 | 458 | 132 |
+
+Honest interpretation (window vs event): 35 positive test **windows** collapse to 15 distinct recorded onsets; the best rules touch only **5 of the 15** (33%), yet are attributed 28.6% "window recall" — window recall is heavily repeated-window inflated and must not be read as event coverage. Evaluable-prevalence lift is **~4.0×** for the ≥2-pen-mate rule (0.0224/0.005562) and ~5.1× for ≥3, not the earlier loose "5–7×". Every rule alerts at false-positive rates of 54.7–237.6 per 1,000 evaluable scoring windows — grossly above any plausible caretaker budget — and alerts spread over 56–132 animals (i.e., many pigs warned without later recorded damage). In-sample (train) the same rules look far stronger (e.g., ≥3 rule precision 0.130, onset recall 0.362 on 69 onsets), confirming a real train→heldout generalization gap across pen cohorts. Calibration-split metrics are unstable (e.g., ≥2-pen-mate rule: 0 detections on 4 onsets; earlier own-ear precision flip), so these candidate detectors are **not calibrated across cohorts**. No learned model was trained (handoff stop rule).
 
 ### 2.7 Level assessment and admission verdict
 
 - This is **not** an approved Level-3 caregiver-action task: the release contains **no timestamps of staff actions** (no treatment/removal/dose rows). It is a genuine, time-causal **future adverse clinical outcome** (first fresh tail damage) task — precisely the "strongest defensible future adverse clinical outcome" fallback contemplated by the handoff.
 - **PROPOSED (PROPOSED_L2TO_L3 in gate):** APPROVED_RESEARCH_TRAIN/EVAL candidate scope = binary 7-day first-fresh-tail-damage warning restricted to clean-at-risk animals, `(batch, pen)`-cohort-heldout, noncommercial research, attribution to Coutant et al. (2026). Never claim deployment/alert-benchmark validity from it.
-- Conditions before any further admission: (a) reconcile 824-vs-810 and the fate of the 19 short-history animals with the paper/authors; (b) confirm published paper's protocol text (fresh-damage definition; removal handling); (c) event-level precision/recall at a pre-registered alert budget with a defined caretaker follow-up review, if this ever reaches APPROVED_DEPLOYMENT_VALIDATION discussions (not applicable now).
+- Conditions before any further admission: (a) reconcile 824-vs-810 and the fate of the 19 short-history animals with the paper/authors; (b) confirm published paper's protocol text (fresh-damage definition; removal handling so "first **recorded**" onset can be read despite weekday-only scoring possibly missing transient lesions); (c) pre-registered alert budget with event-level evaluation (onset recall, per-pig alert episodes) at a defined caretaker follow-up review, before any APPROVED_DEPLOYMENT_VALIDATION discussion (not applicable now).
+
+### 2.7b Construct cost and generalization sensitivities (review items 5–6)
+
+- **Feature cost:** the state features require expert clinical inspection of other pigs in the pen and of this pig's ear (fresh-damage surveillance). This is measured clinical surveillance, not low-cost sensor telemetry; the task validates the scientific welfare-outcome question, not an autonomous low-cost warning system.
+- **Censoring heterogeneity:** test-split unevaluable windows (1,829 censored + 175 not_measured of 8,297 = 24.2%) are cohort-dependent; window-generation censoring interacts with removal timing (animals removed within days of first damage are silently lost). A follow-up analysis must compare censor rates per cohort and by eventual outcome before any admission.
+- **Recorded ≠ true onset:** "first fresh tail damage" is first **recorded** on weekday scoring; transient damage occurring and healing between scans is unobservable in this release.
+- **Generalization boundary:** two batches of ONE experimental study at one study site; `(batch, pen)`-heldout is **not** farm-heldout; batch/treatment windows differ materially (test prevalence 0.15–1.3% per `(batch, treatment)` cell). Any admission text must state this scope limit explicitly.
 
 ### 2.8 Reproduce
 
 ```bash
-python3 -m pytest tests/test_index_l3_care_aarhus_build.py        # 15 offline tests
+python3 -m pytest tests/test_index_l3_care_aarhus_build.py        # 16 offline tests
 python3 scripts/index_l3_care_build_aarhus_historical.py --download \
   # or --zip <local copy with md5 7d07b5597b935abea7999c26adec9869>
 python3 scripts/index_l3_care_benchmark_aarhus_baselines.py \

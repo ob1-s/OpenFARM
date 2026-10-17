@@ -21,7 +21,7 @@ jobs:
         env:
           WONG_TEST_CASES_B64: ${{ secrets.WONG_TEST_CASES_B64 }}
           TYPESAFE_API_KEY: ${{ secrets.TYPESAFE_API_KEY }}
-        run: python scripts/index_v01_wong_jev_per_vet.py
+        run: python -m scripts.index_v01_wong_jev_per_vet
       - name: Preserve aggregate rater-differences and calibration statistics only
         if: always()
         uses: actions/upload-artifact@v4

@@ -70,7 +70,7 @@ def docx_stats(blob: bytes) -> dict:
                 headers = []
                 for row in rows[:2]:
                     cells = row.findall("./" + w + "tc")
-                    headers.append([wordtext(cell)[:100] for cell in cells[:5]])
+                    headers.append([wordtext(cell)[:100] for cell in cells[:15]])
                 tables.append({"i": i, "rows": len(rows),
                                "first_two_rows_preview": headers})
             sections = []
@@ -134,6 +134,21 @@ def main():
                            "link_only": f.get("is_link_only", False)}
                           for f in j.get("files", [])]}
         result["farrow"][key] = meta
+        if key == "owner_data_figshare":
+            for f in j.get("files", []):
+                if f.get("name", "").lower().endswith(".xlsx"):
+                    fd, blob = fetch(f["download_url"], limit=5 * 1024 * 1024, timeout=40)
+                    result["farrow"]["owner_data_xlsx"] = {**fd, "name": f.get("name")}
+                    if blob:
+                        from openpyxl import load_workbook
+                        book = load_workbook(BytesIO(blob), read_only=True, data_only=True)
+                        result["farrow"]["owner_data_xlsx"]["sheets"] = [
+                            {"sheet": ws.title, "rows": ws.max_row, "columns": ws.max_column,
+                            "column_headers": [str(x.value)[:100] if x.value is not None else ""
+                                               for x in next(ws.iter_rows(min_row=1, max_row=1))][:100]}
+                            for ws in book.worksheets
+                        ]
+                    break
         if key == "plos_figshare":
             for f in j.get("files", []):
                 if f.get("name", "").lower().endswith(".docx"):
@@ -165,7 +180,8 @@ def main():
     for k in ('plos_figshare','owner_data_figshare'):
         print("FARROW_FIGSHARE", k, json.dumps(result['farrow'].get(k,{}).get('files',[]), ensure_ascii=False)[:2000])
     for k in ('figshare_docx','plos_original'):
-        print("FARROW_DOCX_STRUCTURE", k, json.dumps(result['farrow'].get(k,{}).get('docx',{}), ensure_ascii=False)[:12000])
+        print("FARROW_DOCX_STRUCTURE", k, json.dumps(result['farrow'].get(k,{}).get('docx',{}), ensure_ascii=False)[:9000])
+    print("FARROW_OWNER_XLSX_STRUCTURE", json.dumps(result['farrow'].get('owner_data_xlsx', {}), ensure_ascii=False)[:18000])
     print("PROBE_RESULT", OUT)
 
 

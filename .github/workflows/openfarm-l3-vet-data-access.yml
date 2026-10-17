@@ -10,6 +10,7 @@ on:
       - scripts/index_l3_farrow_jev_eval.py
       - scripts/index_l3_farrow_jev_retry.py
       - scripts/index_l3_farrow_jev_pairwise.py
+      - scripts/index_l3_farrow_jev_score_ablation.py
       - scripts/index_l3_farrow_jev_schema_probe.py
   workflow_dispatch:
 jobs:
@@ -41,6 +42,10 @@ jobs:
         run: python scripts/index_l3_farrow_jev_retry.py
       - name: Compare 1.13 and 1.14 paired vet urgency predictions
         run: python scripts/index_l3_farrow_jev_pairwise.py
+      - name: Test Jev 1.14 native ordinal Score on original 30 cases
+        env:
+          TYPESAFE_API_KEY: ${{ secrets.TYPESAFE_API_KEY }}
+        run: python scripts/index_l3_farrow_jev_score_ablation.py
       - name: Diagnose anomalous 16th Jev Choice envelope without case contents
         env:
           TYPESAFE_API_KEY: ${{ secrets.TYPESAFE_API_KEY }}
@@ -59,4 +64,5 @@ jobs:
             reports/index_l3_vet/farrow_jev_jev-1_13_0_case_predictions.json
             reports/index_l3_vet/farrow_jev_jev-1_14_0_case_predictions.json
             reports/index_l3_vet/farrow_jev_paired_comparison.json
+            reports/index_l3_vet/farrow_jev_1_14_score_ablation.json
           retention-days: 7

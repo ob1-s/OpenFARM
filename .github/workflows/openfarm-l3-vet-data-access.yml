@@ -6,6 +6,7 @@ on:
       - scripts/index_l3_vet_access_probe.py
       - .github/workflows/openfarm-l3-vet-data-access.yml
       - scripts/index_l3_farrow_score_probe.py
+      - scripts/index_l3_farrow_builder.py
   workflow_dispatch:
 jobs:
   source-access:
@@ -22,6 +23,8 @@ jobs:
         run: python scripts/index_l3_vet_access_probe.py
       - name: Cross-check Farrow owner urgency scores against original questions
         run: python scripts/index_l3_farrow_score_probe.py
+      - name: Recover 30 independent veterinarian-consensus clinical questions
+        run: python scripts/index_l3_farrow_builder.py
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -29,4 +32,5 @@ jobs:
           path: |
             reports/index_l3_vet_access_probe.json
             reports/index_l3_farrow_gold_score_audit.json
+            reports/index_l3_farrow/
           retention-days: 7

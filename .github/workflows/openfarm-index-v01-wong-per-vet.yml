@@ -1,0 +1,32 @@
+name: OpenFARM v0.1 Jev-versus-three-veterinarians
+on:
+  push:
+    branches: [research/decision-index-v01-2026-10]
+    paths:
+      - scripts/index_v01_wong_jev_per_vet.py
+      - .github/workflows/openfarm-index-v01-wong-per-vet.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  real-jev-individual-rater-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compare exact same 102 clinical cases against each veterinarian
+        env:
+          WONG_TEST_CASES_B64: ${{ secrets.WONG_TEST_CASES_B64 }}
+          TYPESAFE_API_KEY: ${{ secrets.TYPESAFE_API_KEY }}
+        run: python scripts/index_v01_wong_jev_per_vet.py
+      - name: Preserve aggregate rater-differences and calibration statistics only
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: wong-jev-individual-vets-disagreement-eval
+          path: reports/decision-index/wong_jev_vs_individual_veterinarians.json
+          retention-days: 30
+          if-no-files-found: ignore

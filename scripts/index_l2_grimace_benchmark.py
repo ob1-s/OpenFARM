@@ -37,7 +37,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import index_l2_grimace_lib as lib
 
-PUB_REPORT = Path(__file__).resolve().parents[1] / "docs/research/index-l2-perception/GRIMACE_benchmark_report.json"
+PUB_REPORT_LABELS = Path(__file__).resolve().parents[1] / "docs/research/index-l2-perception/GRIMACE_benchmark_report.json"
+PUB_REPORT_PIXELS = Path(__file__).resolve().parents[1] / "docs/research/index-l2-perception/GRIMACE_benchmark_report_pixels.json"
 
 
 # ---------------------------------------------------------------------------
@@ -271,7 +272,7 @@ def run_labels(manifest_path: Path) -> dict:
             e3[au] = m
         report["exp3_hohlbaum_vs_automatic"] = e3
 
-    PUB_REPORT.write_text(json.dumps(report, indent=2, sort_keys=True))
+    PUB_REPORT_LABELS.write_text(json.dumps(report, indent=2, sort_keys=True))
     return report
 
 
@@ -506,7 +507,7 @@ def run_pixels(manifest_path: Path, splits_path: Path, zip_path: Path) -> dict:
     report["cal_preview_A_gray"] = cal_out
     report["test_vs_gt1"] = test_metrics
 
-    PUB_REPORT.write_text(json.dumps(report, indent=2, sort_keys=True))
+    PUB_REPORT_PIXELS.write_text(json.dumps(report, indent=2, sort_keys=True))
     return report
 
 

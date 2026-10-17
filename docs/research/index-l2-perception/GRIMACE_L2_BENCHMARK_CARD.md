@@ -51,7 +51,7 @@ Per AU, per (model, reference-rater):
 Rater agreement ceilings: leave-one-rater-out strict majority of the other three;
 external raters scored as "label-only weak models" on the same test slice.
 Per-mouse gold support (usable n, counts by ordinal) is reported in
-`GRIMACE_benchmark_report.json` (`test_support_per_mouse`).
+`GRIMACE_benchmark_report_pixels.json` (`test_support_per_mouse`).
 
 ## Results (exp1 test slice: 215 frames = 4 unseen mice; 400-perm animal-blocked null)
 
@@ -132,8 +132,8 @@ contextualizes rater reliability across experiments.
 
 ```bash
 python3 scripts/index_l2_grimace_build.py --zip .prime_data/grimace/Data.zip
-python3 scripts/index_l2_grimace_benchmark.py labels
-uv run --with pillow,numpy,scikit-learn scripts/index_l2_grimace_benchmark.py pixels
+python3 scripts/index_l2_grimace_benchmark.py labels     # -> GRIMACE_benchmark_report.json
+uv run --with pillow,numpy,scikit-learn scripts/index_l2_grimace_benchmark.py pixels  # -> GRIMACE_benchmark_report_pixels.json
 python3 -m unittest tests.test_index_l2_grimace
 ```
 

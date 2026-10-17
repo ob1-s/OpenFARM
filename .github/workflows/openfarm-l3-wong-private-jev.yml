@@ -12,6 +12,7 @@ jobs:
   heldout-wong-jev:
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    # Original source is supplied only as a GitHub Actions secret, never as tracked clinical case files.
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5

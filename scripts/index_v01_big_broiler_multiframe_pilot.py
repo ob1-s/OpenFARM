@@ -4,7 +4,7 @@
 Diagnostic only: four original chronological frames represent each 10-second
 clip, so this is sparse video-derived vision, not continuous video encoding.
 """
-import base64,csv,hashlib,io,json,math,re,statistics,subprocess,tempfile,urllib.request
+import base64,csv,hashlib,io,json,math,re,statistics,subprocess,tempfile,urllib.request,urllib.error
 from pathlib import Path
 from remotezip import RemoteZip
 SRC="https://datasets.ilabt.imec.be/broilertracking/big-broiler_v1.zip"
@@ -42,16 +42,42 @@ def frame(path,f):
     if not b.startswith(bytes.fromhex('ffd8')):raise ValueError('bad source JPEG')
     return 'data:image/jpeg;base64,'+base64.b64encode(b).decode()
 def ask(images):
-    req={"state":"Four chronological 2.5-second-spaced frames from the same 10-second broiler flock video.",
-         "images":images,"questions":{"feather_pecking":{"type":"noul",
-         "instructions":"Does any chicken visibly peck or pull the feathers of another chicken in the sampled sequence? Self-preening does not count."}}}
-    q=urllib.request.Request('http://127.0.0.1:8080/v1/systemone',
-      data=json.dumps(req).encode(),headers={'Content-Type':'application/json'},method='POST')
-    with urllib.request.urlopen(q,timeout=120) as r:x=json.loads(r.read(130000))
-    ans=x['answers']['feather_pecking']
+    def request(one_or_many):
+        req={"state":"Four chronological 2.5-second-spaced frames from the same 10-second broiler flock video.",
+             "images":one_or_many,"questions":{"feather_pecking":{"type":"noul",
+             "instructions":"Does any chicken visibly peck or pull feathers of another chicken in the sampled sequence? Self-preening does not count."}}}
+        q=urllib.request.Request('http://127.0.0.1:8080/v1/systemone',
+            data=json.dumps(req).encode(),headers={'Content-Type':'application/json'},method='POST')
+        try:
+            with urllib.request.urlopen(q,timeout=120) as response:
+                return json.loads(response.read(130000))
+        except urllib.error.HTTPError as e:
+            body=e.read(900).decode(errors='replace')
+            print('MULTIFRAME_HTTP_SCHEMA_DIAGNOSTIC',json.dumps({'status':e.code,'body':body[:700]}),flush=True)
+            raise
+    kind='four_sequential_images'
+    try:
+        response=request(images)
+    except urllib.error.HTTPError as e:
+        if e.code!=501:raise
+        from PIL import Image
+        # Fall back to ONE image containing all four frames in chronological order.
+        # This tests image capability but is NOT a true video or multi-image model.
+        tiles=[Image.open(io.BytesIO(base64.b64decode(x.split(',',1)[1]))).convert('RGB') for x in images]
+        size=tiles[0].size
+        canvas=Image.new('RGB',(size[0]*2,size[1]*2))
+        for i,im in enumerate(tiles):
+            canvas.paste(im,((i%2)*size[0],(i//2)*size[1]))
+        buffer=io.BytesIO();canvas.save(buffer,format='JPEG',quality=78)
+        single='data:image/jpeg;base64,'+base64.b64encode(buffer.getvalue()).decode()
+        response=request([single])
+        kind='single_temporal_2x2_montage_fallback'
+    ans=response['answers']['feather_pecking']
     p=ans.get('noul')
-    if ans.get('type')!='noul' or not isinstance(p,(int,float)) or not math.isfinite(p) or not 0<=p<=1:raise ValueError('invalid multimodal model response')
-    return float(p)
+    if ans.get('type')!='noul' or not isinstance(p,(int,float)) or not math.isfinite(p) or not 0<=p<=1:
+        raise ValueError('invalid multimodal model response')
+    return float(p),kind
+
 def main():
     scores=[];source=[]
     with RemoteZip(SRC,initial_buffer_size=4*1024*1024) as z:
@@ -69,9 +95,9 @@ def main():
                 for end,gold in selected:
                     # Fixed without inspecting inside-window annotations.
                     imgs=[frame(path,end-249+i) for i in (0,62,125,187)]
-                    p=ask(imgs)
+                    p,representation=ask(imgs)
                     scores.append({'setup':int(stem.split('_')[1]),'source_video':stem,
-                                   'end_frame':end,'expert_window_label':gold,'p_model':p})
+                                   'end_frame':end,'expert_window_label':gold,'p_model':p,'representation_used':representation})
                     print('MULTIFRAME_LIQUID_CASE',stem,'gold',gold,'prob',round(p,4),flush=True)
             source.append({'stem':stem,'source_sha256':sha,'n_scorable_windows':nscorable})
     mean=statistics.mean((r['p_model']-r['expert_window_label'])**2 for r in scores)

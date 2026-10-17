@@ -53,4 +53,6 @@ jobs:
             reports/index_l3_vet/farrow_jev_aggregate.json
             reports/index_l3_vet/farrow_jev_jev-1_13_0_aggregate.json
             reports/index_l3_vet/farrow_jev_jev-1_14_0_aggregate.json
+            reports/index_l3_vet/farrow_jev_jev-1_13_0_case_predictions.json
+            reports/index_l3_vet/farrow_jev_jev-1_14_0_case_predictions.json
           retention-days: 7

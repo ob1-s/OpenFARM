@@ -15,7 +15,7 @@ def main():
     if not key:raise ValueError('Actions API secret unavailable')
     cases=sorted(json.loads(Path('reports/index_l3_farrow/cases_local_reference.json').read_text()),key=lambda c:c['id'])
     if len(cases)!=30 or len(set(c['id'] for c in cases))!=30:raise ValueError('unexpected case manifest')
-    scores=[];fail=collections.Counter();tokens=0;served=set();lat=[];pred_classes=collections.Counter()
+    scores=[];pairs=[];fail=collections.Counter();tokens=0;served=set();lat=[];pred_classes=collections.Counter()
     for i,case in enumerate(cases,1):
         gold=CATS.index(case['reference'])
         body={'model':model,'state':case['state'],'questions':{'urgency':{'type':'choice','instructions':'Based on this dog owner’s report, how soon should they seek professional veterinary care? Choose the safest proportionate published time interval.','criteria':RULES}}}
@@ -35,8 +35,9 @@ def main():
                 lat.append((time.perf_counter()-start)*1000);break
             fail['invalid_schema_retry']+=1;time.sleep(.2)
         if result is None:
-            fail['unscorable_cases']+=1;print('JEV_UNSCORABLE_CASE',i,'/30',flush=True);continue
+            fail['unscorable_cases']+=1;pairs.append({'vignette_id':case['id'],'reference':case['reference'],'status':'invalid_response'});print('JEV_UNSCORABLE_CASE',i,'/30',flush=True);continue
         pred=max(range(6),key=lambda x:result[x]);pred_classes[CATS[pred]]+=1
+        pairs.append({'vignette_id':case['id'],'reference':case['reference'],'prediction':CATS[pred],'probabilities':dict(zip(CATS,result)),'status':'valid'})
         scores.append({'exact':int(pred==gold),'undertriage':int(pred>gold),'overtriage':int(pred<gold),
             'ordinal_mae':abs(pred-gold),
             'brier':sum((result[j]-(1 if j==gold else 0))**2 for j in range(6))})
@@ -49,6 +50,8 @@ def main():
          'reference':'30 Farrow author-scored veterinarian consensus categories; 14 individual votes unavailable',
          'limitations':'Retrospective owner-first-contact triage, no deployment validity. Unscorable predictions excluded but explicitly counted.'}
     f=Path('reports/index_l3_vet/farrow_jev_'+model.replace('.','_')+'_aggregate.json');f.parent.mkdir(parents=True,exist_ok=True);f.write_text(json.dumps(out,indent=2)+'\n')
+    pair_file=Path('reports/index_l3_vet/farrow_jev_'+model.replace('.','_')+'_case_predictions.json')
+    pair_file.write_text(json.dumps(pairs,indent=2)+'\n')
     print('FARROW_JEV_FINAL',json.dumps(out,sort_keys=True),flush=True)
     if not scores:raise RuntimeError('No valid model responses')
 if __name__=='__main__':main()

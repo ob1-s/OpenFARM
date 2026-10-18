@@ -63,7 +63,9 @@ def extract(raw):
     if not require.issubset(set(header.values())):raise ValueError("Original required columns missing")
     keys={v:k for k,v in header.items()}
     feature_cols={idx:name for idx,name in header.items() if name.lower().startswith(("dur_","freq_"))}
-    if len(feature_cols)<70:raise ValueError("Insufficient original 78 AU features")
+    if len(feature_cols)<70:
+        print("ASK2024_ORIGINAL_COLUMN_NAMES",json.dumps(list(header.values())),flush=True)
+        raise ValueError("Insufficient original 78 AU features; inspect source names before accepting activity input")
     videos=[];ids=set();counts=collections.Counter()
     for raw_row in raw[1:]:
         animal=str(raw_row.get(keys["subj"],"")).strip()

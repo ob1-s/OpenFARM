@@ -63,7 +63,7 @@ def model_features(z,rows):
     model.eval()
     transform=ResNet18_Weights.DEFAULT.transforms()
     deep=[];weak=[]
-    region_border=[];region_center=[];gray_only=[];rgb_means=[]
+    region_border=[];region_center=[];gray_only=[];rgb_means=[];rgb_chroma=[];luminance_mean=[]
     def color_hist(a):
         features=[]
         for channel in range(3):
@@ -94,13 +94,18 @@ def model_features(z,rows):
         lum,_=np.histogram(luminance,bins=16,range=(0,256),density=False)
         gray_only.append((lum/max(lum.sum(),1)).tolist())
         rgb_means.append(np.mean(small,axis=(0,1)).tolist())
+        means=np.mean(small,axis=(0,1))
+        rgb_chroma.append((means/max(means.sum(),1e-8)).tolist())
+        luminance_mean.append([float(np.mean(luminance))])
         if i%100==0:print("HORSE_SPECIALIST_FEATURES",i,"/605",flush=True)
     return {"resnet18_frozen":np.asarray(deep,dtype=np.float64),
             "rgb_histogram_control":np.asarray(weak,dtype=np.float64),
             "rgb_border_only_histogram":np.asarray(region_border,dtype=np.float64),
             "rgb_center_only_histogram":np.asarray(region_center,dtype=np.float64),
             "grayscale_histogram_control":np.asarray(gray_only,dtype=np.float64),
-            "rgb_channel_means_control":np.asarray(rgb_means,dtype=np.float64)}
+            "rgb_channel_means_control":np.asarray(rgb_means,dtype=np.float64),
+            "rgb_normalized_chromaticity_control":np.asarray(rgb_chroma,dtype=np.float64),
+            "grayscale_mean_only_control":np.asarray(luminance_mean,dtype=np.float64)}
 def evaluate(y,probs):
     hard=(probs>=.5).astype(int)
     n=len(y)
@@ -144,6 +149,21 @@ def main():
       "split_counts":{name:{"frames":len(ix),"videos":len(set(rows[i]["video"] for i in ix)),
                             "pain":int(y[ix].sum()),"nopain":int(len(ix)-y[ix].sum())} for name,ix in splits.items()},
       "models":{},"note":"Small 11-horse single-source correlated frames; expert-reported pain face != physiological nociception. Same 22 source video ids inferred across author releases. Training/evaluation research only."}
+    # This is source metadata evidence only, not another trained model.
+    # Detect acquisition/white-balance correlations at each original horse.
+    means=features["rgb_channel_means_control"]
+    diagnostics={}
+    for horsename in sorted(set(x["horse"] for x in rows)):
+        diagnostics[horsename]={}
+        for label in (0,1):
+            ids=[i for i,x in enumerate(rows) if x["horse"]==horsename and x["gold"]==label]
+            if ids:
+                vals=means[ids]
+                diagnostics[horsename][str(label)]={"n":len(ids),
+                    "mean_rgb":[round(float(v),4) for v in np.mean(vals,axis=0)],
+                    "mean_grayscale":round(float(np.mean(vals)),4)}
+    out["per_horse_condition_color_diagnostic"]=diagnostics
+    out["shortcut_warning"]="Three unstructured mean RGB numbers already separate the original retrospective pain-face labels; do not interpret as pain perception without recording-condition controls."
     Cs=[.001,.03,.3,3,30]
     for name,X in features.items():
         candidates=[]

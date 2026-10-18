@@ -106,6 +106,43 @@ def model_features(z,rows):
             "rgb_channel_means_control":np.asarray(rgb_means,dtype=np.float64),
             "rgb_normalized_chromaticity_control":np.asarray(rgb_chroma,dtype=np.float64),
             "grayscale_mean_only_control":np.asarray(luminance_mean,dtype=np.float64)}
+def source_label_confound_audit(rows,splits):
+    """Source metadata only; no media, clinical inputs or image features exported.
+
+    Animal-grouped splits can still have outcome confounding by recording:
+    a video may contain only pain or only no-pain examples.
+    """
+    per_video=collections.defaultdict(collections.Counter)
+    per_horse=collections.defaultdict(collections.Counter)
+    videos_by_horse=collections.defaultdict(set)
+    for row in rows:
+        per_video[row["video"]][row["gold"]]+=1
+        per_horse[row["horse"]][row["gold"]]+=1
+        videos_by_horse[row["horse"]].add(row["video"])
+    def table(groups):
+        return {str(k):{"pain":int(v[1]),"nopain":int(v[0]),
+                        "frames":int(sum(v.values())),
+                        "both_classes":bool(v[1] and v[0])}
+                for k,v in sorted(groups.items())}
+    video_table=table(per_video)
+    horse_table=table(per_horse)
+    mixed_video=sum(x["both_classes"] for x in video_table.values())
+    mixed_horse=sum(x["both_classes"] for x in horse_table.values())
+    return {
+        "video_label_counts":video_table,
+        "inferred_horse_label_counts":horse_table,
+        "videos_per_inferred_horse":{str(k):len(v) for k,v in sorted(videos_by_horse.items())},
+        "mixed_label_videos":mixed_video,
+        "mixed_label_horses":mixed_horse,
+        "single_label_recordings_only":mixed_video==0,
+        "single_label_inferred_horses_only":mixed_horse==0,
+        "split_horse_class_support":{
+            name:{str(h):{"pain":int(per_horse[h][1]),"nopain":int(per_horse[h][0])}
+                  for h in sorted({rows[i]["horse"] for i in indices})}
+            for name,indices in splits.items()},
+        "scientific_warning":"Acquisition/recording context may encode the target. Without both classes for each animal, no within-animal pain discrimination is measured. Horse IDs are still cross-release inferred.",
+    }
+
 def evaluate(y,probs):
     hard=(probs>=.5).astype(int)
     n=len(y)
@@ -113,9 +150,9 @@ def evaluate(y,probs):
     ans={"n":n,"reference_pain_fraction":p,
         "brier":float(brier_score_loss(y,probs)),
         "accuracy":float(np.mean(hard==y)),
-        "balanced_accuracy":float(balanced_accuracy_score(y,hard)),
-        "pain_recall":float(np.mean(hard[y==1]==1)),
-        "no_pain_specificity":float(np.mean(hard[y==0]==0)),
+        "balanced_accuracy":float(balanced_accuracy_score(y,hard)) if len(set(y))==2 else None,
+        "pain_recall":float(np.mean(hard[y==1]==1)) if np.any(y==1) else None,
+        "no_pain_specificity":float(np.mean(hard[y==0]==0)) if np.any(y==0) else None,
         "positive_predictions":int(hard.sum()),
         "mean_predicted_pain":float(np.mean(probs)),
         "min_predicted_pain":float(np.min(probs)),
@@ -149,6 +186,14 @@ def main():
       "split_counts":{name:{"frames":len(ix),"videos":len(set(rows[i]["video"] for i in ix)),
                             "pain":int(y[ix].sum()),"nopain":int(len(ix)-y[ix].sum())} for name,ix in splits.items()},
       "models":{},"note":"Small 11-horse single-source correlated frames; expert-reported pain face != physiological nociception. Same 22 source video ids inferred across author releases. Training/evaluation research only."}
+    out["source_label_confound_audit"]=source_label_confound_audit(rows,splits)
+    if out["source_label_confound_audit"]["single_label_inferred_horses_only"]:
+        out["benchmark_admission_warning"]="BLOCKED: one source label per inferred horse, so within-animal target contrast absent."
+    elif out["source_label_confound_audit"]["single_label_recordings_only"]:
+        out["benchmark_admission_warning"]="BLOCKED: recording identity predicts pain-face label; acquisition confounding unresolved."
+    else:
+        out["benchmark_admission_warning"]="BLOCKED: color shortcut and cross-release horse identity controls remain unresolved."
+    print("HORSE_SOURCE_LABEL_CONFOUNDS",json.dumps(out["source_label_confound_audit"],sort_keys=True),flush=True)
     # This is source metadata evidence only, not another trained model.
     # Detect acquisition/white-balance correlations at each original horse.
     means=features["rgb_channel_means_control"]
@@ -222,7 +267,7 @@ def main():
     prior=float(np.average(y[train],weights=weights))
     out["models"]["constant_train_pain_prior"]={"test":evaluate(y[test],np.full(len(test),prior))}
     opt.output.parent.mkdir(parents=True,exist_ok=True)
-    opt.output.write_text(json.dumps(out,indent=2)+"\n")
+    opt.output.write_text(json.dumps(out,indent=2,allow_nan=False)+"\n")
     print("HORSE_SPECIALIST_REAL_SOURCE_RESULT",json.dumps({"status":out["status"],"split_counts":out["split_counts"],
           "models":{k:v["test"] for k,v in out["models"].items()}},sort_keys=True),flush=True)
 if __name__=="__main__":main()

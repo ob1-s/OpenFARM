@@ -22,15 +22,18 @@
         "2": 193
       },
       "original_images": "https://lab-msp.com/WhiteFurredMiceDataset/Eyes_detection.zip",
-      "admission_status": "ORIGINAL_ANNOTATIONS_VERIFIED_ORIGINAL_IMAGE_ACCESS_AND_RIGHTS_PENDING",
+      "admission_status": "ORIGINAL_ANNOTATIONS_AND_ALL_1087_IMAGES_VERIFIED_LICENSE_UNCONFIRMED",
       "independence": "different original study / lab from 2026 GrimACE; 8 animal IDs, image frames within animals correlated",
       "leakage": "source has bounding boxes; image should not include label, subject ID, or intervention metadata",
       "evaluation": "External animal-disjoint orbital tightening; not equivalent to five-AU GrimACE composite.",
       "blockers": [
-        "confirm exact source pixels and image-to-record match",
+        "Confirm dataset authors permit noncommercial evaluation, model training and potential commercial deployment (distinct permissions)",
         "verify dataset license and permitted redistribution/commercial model training",
         "ensure exposure/annotation provenance and proper task equivalence"
-      ]
+      ],
+      "original_image_archive_sha256": "57c8a2dc112232544b25726a9d4a594795c44c2c528956128d9a2ad647c4064e",
+      "original_image_archive_bytes": 493247093,
+      "image_label_pair_validation_run": "https://github.com/ob1-s/OpenFARM/actions/runs/39103207180"
     },
     {
       "id": "dryad2026_calf_wound_nociceptive_threshold",

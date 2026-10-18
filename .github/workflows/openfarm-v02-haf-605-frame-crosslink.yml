@@ -1,0 +1,31 @@
+name: OpenFARM original 605 horse pixels cross-release identity link
+on:
+  push:
+    branches: [research/openfarm-next-evidence-calibration-2026-10]
+    paths:
+      - scripts/index_v02_haf_crossrelease_frame_verify.py
+      - .github/workflows/openfarm-v02-haf-605-frame-crosslink.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  original-image-animal-link:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install ranged ZIP and image similarity tools
+        run: python -m pip install "remotezip>=0.12,<1.0" "requests>=2.31,<3" "pillow>=10"
+      - name: Byte/pixel-verify source 605 images against horse-ID-tagged 25fps videos
+        run: python scripts/index_v02_haf_crossrelease_frame_verify.py
+      - name: Publish image-hash/linkage statistics, no photo files
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: haf-original605-to-2025-animal-id-frame-linkage
+          path: reports/source_gates/haf2024_605_to_25fps_frame_linkage.json
+          if-no-files-found: ignore
+          retention-days: 30

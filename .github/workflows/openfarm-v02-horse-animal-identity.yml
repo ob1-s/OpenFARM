@@ -1,0 +1,31 @@
+name: OpenFARM horse 605frame independent animal identity from metadata
+on:
+  push:
+    branches: [research/openfarm-next-evidence-calibration-2026-10]
+    paths:
+      - scripts/index_v02_haf_horse_identity_range.py
+      - .github/workflows/openfarm-v02-horse-animal-identity.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  animal-id-source-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install small HTTP byte-ranged ZIP directory reader
+        run: python -m pip install 'remotezip>=0.12,<1.0' 'requests>=2.31,<3'
+      - name: Resolve video identity from published author filenames, no bulk media download
+        run: python scripts/index_v02_haf_horse_identity_range.py
+      - name: Retain mapping metadata only; no animal images
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: haf-horse-id-original-source-mapping
+          path: reports/source_gates/haf2024_605frame_animal_mapping.json
+          if-no-files-found: ignore
+          retention-days: 30

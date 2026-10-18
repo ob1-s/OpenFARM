@@ -1,0 +1,305 @@
+{
+  "schema_version": "openfarm-decision-index-new-sources-v0.2",
+  "status": "PRE_ADMISSION",
+  "frozen_v01_branch": "research/decision-index-v01-frozen",
+  "frozen_v01_commit": "132618bc21c1cb6254b5c40c74c1a305c13ce3d2",
+  "description": "External data sources are NOT silently added to the frozen v0.1 eight-task benchmark.",
+  "candidates": [
+    {
+      "id": "vidal2022_external_mouse_orbital_grimace",
+      "level": "L2",
+      "species": "mouse",
+      "modality": "original_RBG_eye_region_images",
+      "target": "human ordinal orbital-tightening score 0/1/2",
+      "reference_source": "https://github.com/AndreaVidal/WhiteFurredMice_Dataset",
+      "doi": "10.1016/j.mlwa.2022.100312",
+      "annotation_sha256": "754d3442b056b14aee137643adab101c166dee27f42338397ef7a1f869cb9ad2",
+      "annotation_count": 1087,
+      "animal_count": 8,
+      "score_counts": {
+        "0": 552,
+        "1": 342,
+        "2": 193
+      },
+      "original_images": "https://lab-msp.com/WhiteFurredMiceDataset/Eyes_detection.zip",
+      "admission_status": "ORIGINAL_ANNOTATIONS_AND_ALL_1087_IMAGES_VERIFIED_LICENSE_UNCONFIRMED",
+      "independence": "different original study / lab from 2026 GrimACE; 8 animal IDs, image frames within animals correlated",
+      "leakage": "source has bounding boxes; image should not include label, subject ID, or intervention metadata",
+      "evaluation": "External animal-disjoint orbital tightening; not equivalent to five-AU GrimACE composite.",
+      "blockers": [
+        "Confirm dataset authors permit noncommercial evaluation, model training and potential commercial deployment (distinct permissions)",
+        "verify dataset license and permitted redistribution/commercial model training",
+        "ensure exposure/annotation provenance and proper task equivalence"
+      ],
+      "original_image_archive_sha256": "57c8a2dc112232544b25726a9d4a594795c44c2c528956128d9a2ad647c4064e",
+      "original_image_archive_bytes": 493247093,
+      "image_label_pair_validation_run": "https://github.com/ob1-s/OpenFARM/actions/runs/39103207180"
+    },
+    {
+      "id": "haf2024_uk_copenhagen_equine_pain_face",
+      "level": "L2",
+      "species": "horse",
+      "modality": "original_equine_RGB_face_crop_images",
+      "reference": "human expert binary face pain/no-pain annotation",
+      "source": "https://zenodo.org/records/14541977",
+      "doi": "10.5281/zenodo.14541977",
+      "source_archive_md5": "be09a4ac6c1d3db3c4908cad1aeca075",
+      "n_original_png": 605,
+      "n_videos": 22,
+      "reported_horses": 11,
+      "label_counts": {
+        "pain": 314,
+        "nopain": 291
+      },
+      "rights": "CC-BY-4.0 as reported by Zenodo metadata; attribution required",
+      "admission_status": "QUARANTINED: VIDEO_LABEL_CONFOUND; ORIGINAL_TEST_TWO_HORSES_ONE_CLASS_EACH; IDENTITY_LINK_PARTIAL",
+      "reference_independence": "Original 2024 Copenhagen dataset, distinct source from OpenFARM older Mendeley 2021 HGS region dataset; animal ID and image overlap not independently confirmed",
+      "source_validation_run": "https://github.com/ob1-s/OpenFARM/actions/runs/39104112076",
+      "split_warning": "Original 'test' consisted entirely of horse 10 pain and horse 11 nopain, despite both classes pooled. Animal-grouped but no within-horse contrast. Cross-release pixel mapping only matched 19/22 videos, so inferred group identities are still provisional.",
+      "target_warning": "Binary human expert visual pain-face reference, not instrumented pain physiology or observed benefit of treatment",
+      "blockers": [
+        "Map original 22 video IDs to 11 horse identities or obtain author table",
+        "Check any possible cross-source image and animal overlap with legacy Mendeley horse-region data",
+        "Confirm any publisher-dependent rights beyond Zenodo CC-BY-4.0 and commercial requirements",
+        "Replace original label-confounded developmental test; no valid blind pain-perception result",
+        "Do not select/test hyperparameters using reused paired-horse stress split",
+        "Verify 22-video/11-horse source identities by original pixel linkage (19/22 currently matched)",
+        "Control recording/session/color/lighting confounds and replicate on independent horses/sites"
+      ],
+      "source_horse_id_mapping": {
+        "new_record": "10.5281/zenodo.17389614",
+        "n_videos": 22,
+        "n_horses": 11,
+        "status": "VERIFIED_IN_AUTHOR_25FPS_RELEASE; ORIGINAL_605_IDENTITIES_NOT_YET_PIXEL_LINKED",
+        "workflow": "https://github.com/ob1-s/OpenFARM/actions/runs/39107433054",
+        "frozen_mapping_path": "benchmarks/decision-index/v0.2/haf2024-video-horse-id-map.json"
+      },
+      "original_split_forensics": {
+        "workflow": "https://github.com/ob1-s/OpenFARM/actions/runs/39129116170",
+        "source_video_all_one_label": true,
+        "per_horse_n_both_classes": 9,
+        "n_inferred_horses": 11,
+        "original_dev_test_horse_10": {
+          "pain": 65,
+          "nopain": 0
+        },
+        "original_dev_test_horse_11": {
+          "pain": 0,
+          "nopain": 61
+        },
+        "implication": "Original 126-image test compares two separate horses that are perfectly confounded with pain-face label."
+      },
+      "post_audit_paired_horse_stress": {
+        "workflow": "https://github.com/ob1-s/OpenFARM/actions/runs/39129677203",
+        "status": "POST_HOC_DEVELOPMENTAL_NOT_BLIND",
+        "split": {
+          "train_horses": [
+            "1",
+            "2",
+            "3",
+            "4",
+            "5"
+          ],
+          "calibration_horses": [
+            "6",
+            "7"
+          ],
+          "test_horses": [
+            "8",
+            "9"
+          ]
+        },
+        "n_test_frames": 90,
+        "n_test_pain": 45,
+        "n_test_nopain": 45,
+        "rgb_channel_means_auroc": 0.2508641975308642,
+        "resnet18_frozen_auroc": 0.8128395061728395,
+        "resnet18_frozen_mean_within_horse_auroc": 0.7289084022038568,
+        "implication": "Earlier RGB means AUROC 0.991 on invalid contrast falls to 0.251 on paired-horse stress. No clinical generalization claim."
+      }
+    },
+    {
+      "id": "dryad2026_calf_wound_nociceptive_threshold",
+      "level": "L2",
+      "species": "calf",
+      "modality": "time_causal_wound_assessment_and_nociceptive_measurements",
+      "target": "independently instrumented mechanical nociceptive threshold and recorded wound healing",
+      "source": "https://doi.org/10.5061/dryad.k3j9kd5qt",
+      "published_original_study": {
+        "animals": 48,
+        "mnt_measurements": 2050,
+        "tissue_records": 1502,
+        "independence": "animal and 12 replicate cohorts"
+      },
+      "admission_status": "SOURCE_PUBLISHED_BUT_BYTE_DOWNLOAD_BLOCKED_FROM_CI",
+      "access_gate_runs": [
+        "https://github.com/ob1-s/OpenFARM/actions/runs/39102344240",
+        "https://github.com/ob1-s/OpenFARM/actions/runs/39102445652"
+      ],
+      "blockers": [
+        "Original Dryad individual-file and public dataset API returned HTTP 403 to automation",
+        "need authorized or human-mediated original downloads with checksum verification",
+        "choose forward-only wound history vs later MNT; avoid using current/future nociceptive target as input",
+        "check 48 animal IDs and longitudinal split / publication license"
+      ]
+    },
+    {
+      "id": "independent_external_veterinary_triage_cases",
+      "level": "L3",
+      "species": "dog_cat",
+      "target": "original pre-hospital or hospital veterinary priority, multi-rater and independent clinic outcomes",
+      "admission_status": "NOT_ACQUIRED",
+      "minimum_requirements": [
+        "unique cases not derivatives of Wong/Farrow or the same 30 vignette variants",
+        "at least two independent expert urgencies with timestamp/origin metadata",
+        "truly independent animals/sites where feasible",
+        "exclude later diagnostic confirmation from model-visible owner presentation",
+        "independent critical cases and prospective outcomes preferred",
+        "data license and clinical de-identification approval"
+      ],
+      "blockers": [
+        "no suitable independently expert-rated open case-level source yet verified",
+        "requires data owner collaboration or another genuine new original corpus"
+      ]
+    },
+    {
+      "id": "wizenty2026_berlin_emergency_4579",
+      "level": "L3",
+      "source": "https://doi.org/10.3390/vetsci13090899",
+      "study": "2026 retrospective 4579 dog and cat after-hours visits Berlin; 2021 source EHR, first-author five-tier Manchester color urgency",
+      "source_counts": {
+        "visits": 4579,
+        "dog": 3189,
+        "cat": 1390
+      },
+      "case_records": "NOT_ACQUIRED",
+      "label_reference": "Single first-author retrospective grade from complete clinical record, including post-arrival diagnosis, diagnostics, administered treatments",
+      "scientific_admission": "PROSPECT_AUTHOR_CONTROLLED_INTAKE_ONLY_SOURCE_REQUIRED",
+      "critical_leakage_gate": "Split at-arrival complaint/initial signs from later diagnosis and care; retrospective label itself uses later information and cannot claim at-arrival safety without blind reannotation",
+      "independence": "Single clinic; repeat patients were unlinked; patient-level independence unavailable from source study",
+      "requested_collaboration": [
+        "At-intake deidentified case text/vitals separately timestamped",
+        "Restricted outcome and escalation reference",
+        "Independent blind veterinarians rating at-arrival acuity",
+        "Patient/visit grouping under permitted privacy-preserving terms",
+        "Distinct research vs commercial vs external API permissions"
+      ],
+      "github_issue": "https://github.com/ob1-s/OpenFARM/issues/10"
+    },
+    {
+      "id": "ask2024_348_horse_equifacs_orthopedic_condition",
+      "level": "L2",
+      "species": "horse",
+      "source": "https://doi.org/10.1038/s41598-023-50383-y",
+      "original_supplement": "https://static-content.springer.com/esm/art%3A10.1038%2Fs41598-023-50383-y/MediaObjects/41598_2023_50383_MOESM1_ESM.xlsx",
+      "original_sha256": "7df3174b0190dc6b8f51a58648957500f221bf6fc16aa97252f67211f61367ad",
+      "data_counts": {
+        "animals": 8,
+        "video_sequences": 348,
+        "facial_action_features": 78,
+        "source_event_rows": 37072
+      },
+      "model_visible_modality": "original human EquiFACS facial action video-frequency/total-duration features; not raw pixels",
+      "original_reference": "reported pain condition tied to experimentally induced joint inflammation and objective gait asymmetry; source binary yes/no code in 348-row table",
+      "target": "Noul probability of original experiment's pain condition from full video facial actions",
+      "scientific_status": "ORIGINAL_SOURCE_VERIFIED_GROUP_SPLIT_EXPERIMENTAL; NOT CLINICALLY_ADMITTED",
+      "split": {
+        "train_horses": [
+          "h1",
+          "h2",
+          "h3",
+          "h4",
+          "h5"
+        ],
+        "calibration_horses": [
+          "h6"
+        ],
+        "developmental_test_horses": [
+          "h7",
+          "h8"
+        ]
+      },
+      "metrics": [
+        "video_binary_brier",
+        "balanced_accuracy",
+        "horse_group_AUROC",
+        "AUPRC",
+        "pain_condition_sensitivity",
+        "no_pain_specificity",
+        "n_valid",
+        "abstain"
+      ],
+      "source_gate": "https://github.com/ob1-s/OpenFARM/actions/runs/39108571350",
+      "original_rights": "Article/supplement licensed CC BY 4.0 subject to any third-party limitations; raw video footage not verified available",
+      "scientific_flags": [
+        "single 8-horse induced-arthritis experimental protocol",
+        "human-coded facial AU features are not native video/image model input",
+        "pain category is gait/induction-linked proxy not confirmed causal response to treatment",
+        "temporal sequences repeated within horse; group by actual horse",
+        "raw source also includes timestamp-level annotated facial actions but direct video media not verified"
+      ],
+      "status": "SOURCE_GATE_PASSED; L2 PROVISIONAL BENCHMARK; TRAINING_WORKFLOW_RUNNING"
+    },
+    {
+      "id": "rashid2020_equiFACS_experimental_clinical_horse",
+      "level": "L2",
+      "species": "horse",
+      "doi": "10.1371/journal.pone.0231608",
+      "source": "https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0231608",
+      "modality": "original_experimental_video_plus_annotated_FACS; clinical_FACS_and_pain_XLSX_but_video_missing",
+      "study_claims": {
+        "experimental_animals": 6,
+        "experimental_videos": 12,
+        "clinical_animals": 21,
+        "clinical_vet_raters": 3
+      },
+      "original_xlsx_verified": {
+        "experimental": {
+          "sha256": "2df498362259cbd75a5dc7eb40c580fef5368c53314a1d6451ffc22efe613612",
+          "bytes": 45555,
+          "sheets": {
+            "FACS": "185 rows x 89 cols",
+            "Pain": "13 rows x 4 cols"
+          }
+        },
+        "clinical": {
+          "sha256": "f33fe32b8bd1283072df222038a36e6d9c34308adba7a174c6d6d47f960d2214",
+          "bytes": 105566,
+          "sheets": {
+            "FACS": "1450 rows x 6 cols",
+            "PAIN": "168 rows x 6 cols"
+          }
+        }
+      },
+      "original_video_archive": {
+        "url": "https://journals.plos.org/plosone/article/file?id=10.1371/journal.pone.0231608.s001&type=supplementary",
+        "range_request": "206 bytes 0-0/923308687",
+        "video_decoded": false
+      },
+      "admission_status": "ORIGINAL_EXPERIMENT_AND_CLINICAL_XLSX_PINNED; CLINICAL_HAS_THREE_ANNOTATOR_VALUES; CLINICAL_RAW_VIDEO_UNVERIFIED",
+      "source_gate_run": "https://github.com/ob1-s/OpenFARM/actions/runs/39129893021",
+      "rights": "Paper CC-BY; check supplemental data and training/reuse scope before admitting",
+      "blockers": [
+        "No original 21 clinical videos established",
+        "Check if workbook retains each of 3 veterinarian votes",
+        "Test animal-level identity and overlap with existing equine sources",
+        "Verify rights and input/reference chronology",
+        "Video content not yet downloaded or decoded",
+        "Authenticate clinical rater-by-horse-by-interval labels and temporal alignment without publishing private source rows"
+      ],
+      "clinical_annotation_schema_forensics": {
+        "run": "https://github.com/ob1-s/OpenFARM/actions/runs/39130773197",
+        "authenticated_sha256": "f33fe32b8bd1283072df222038a36e6d9c34308adba7a174c6d6d47f960d2214",
+        "sheet": "PAIN",
+        "sheet_rows_including_header": 168,
+        "populated_annotation_rows": 167,
+        "column_5_safe_header": "Pain",
+        "column_6_safe_header": "Annotator",
+        "column_6_unique_values": 3,
+        "column_1_distinct_values": 21,
+        "verdict": "ORIGINAL_RECORDS_APPEAR_TO_PRESERVE_3_ANNOTATOR_IDENTITIES; exact rater/horse/interval linkage and independent veterinary scoring still to be decoded and source-checked"
+      }
+    }
+  ],
+  "no_leaderboard_until_admission": true
+}

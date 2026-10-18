@@ -1,0 +1,31 @@
+name: OpenFARM external Vidal L2 original PNG pixel and label gate
+on:
+  push:
+    branches: [research/openfarm-next-evidence-calibration-2026-10]
+    paths:
+      - scripts/source_gate_vidal_2022_original_pixels.py
+      - .github/workflows/openfarm-external-vidal-pixels.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  validate-author-image-archive:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install image decoder
+        run: python -m pip install 'pillow>=10,<13'
+      - name: Retrieve author-hosted original eye archive and match all grimace annotations
+        run: python scripts/source_gate_vidal_2022_original_pixels.py
+      - name: Preserve only hash/counts and sampled decode evidence, no images
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: original-vidal-2022-image-label-source-proof
+          path: reports/source_gates/vidal_2022_independent_pixels_verified.json
+          retention-days: 30
+          if-no-files-found: ignore

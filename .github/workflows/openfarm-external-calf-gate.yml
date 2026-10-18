@@ -1,0 +1,29 @@
+name: OpenFARM external L2 calf original-data gate
+on:
+  push:
+    branches: [research/openfarm-next-evidence-calibration-2026-10]
+    paths:
+      - scripts/source_gate_dryad_2026_calves.py
+      - .github/workflows/openfarm-external-calf-gate.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  calf-public-source-access:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Fetch two original Dryad XLSX sources and audit animal alignment
+        run: python scripts/source_gate_dryad_2026_calves.py
+      - name: Preserve only counts, source hashes and access status
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: external-calf-48-original-source-gate
+          path: reports/source_gates/dryad_2026_calves_original_gate.json
+          retention-days: 30
+          if-no-files-found: ignore

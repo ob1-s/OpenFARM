@@ -140,7 +140,37 @@ def main():
         for horse in sorted({rows[i]["horse"] for i in test}):
             ids=np.asarray([j for j,i in enumerate(test) if rows[i]["horse"]==horse])
             by_horse[horse]=evaluate(y[test][ids],p[ids])
+        # Separate probability estimator from action threshold, chosen solely on
+        # the two calibration horses, no heldout leakage in threshold selection.
+        cp=clf.predict_proba(X[cal])[:,1]
+        unique=np.unique(cp)
+        thresholds=sorted(set([0.0,0.5,1.0]+[(float(a)+float(b))/2 for a,b in zip(unique[:-1],unique[1:])]))
+        candidates_t=[]
+        for t in thresholds:
+            macro=[]
+            for horse in sorted({rows[i]["horse"] for i in cal}):
+                indices=np.asarray([j for j,i in enumerate(cal) if rows[i]["horse"]==horse])
+                yy=y[cal][indices]
+                if len(set(yy))==2:
+                    macro.append(balanced_accuracy_score(yy,(cp[indices]>=t).astype(int)))
+            if macro:
+                candidates_t.append((float(statistics.mean(macro)),int(sum(cp>=t)),t))
+        selected_t=sorted(candidates_t,key=lambda r:(-r[0],r[1],abs(r[2]-.5)))[0]
+        selected_threshold=selected_t[2]
+        policy_hard=(p>=selected_threshold).astype(int)
+        # This research test has already been examined, so new threshold numbers
+        # are exploratory; do not compare as an untouched final benchmark.
+        policy={"threshold_calibration_only":selected_threshold,
+          "calibration_macro_balanced_accuracy":selected_t[0],
+          "calibration_positive_actions":selected_t[1],
+          "test_positive_actions":int(policy_hard.sum()),
+          "test_accuracy":float(np.mean(policy_hard==y[test])),
+          "test_balanced_accuracy":float(balanced_accuracy_score(y[test],policy_hard)),
+          "test_pain_face_recall":float(np.mean(policy_hard[y[test]==1]==1)),
+          "test_no_pain_face_specificity":float(np.mean(policy_hard[y[test]==0]==0)),
+          "warning":"Threshold selected on just two calibration horses; 126 previously explored frames, no deployment significance."}
         out["models"][name]={
+           "calibration_selected_binary_action_policy":policy,
            "selected_C":C,"mean_horse_calibration_brier":best[0],
            "test":vals,"test_per_horse":by_horse,
            "source_feature_dim":int(X.shape[1]),

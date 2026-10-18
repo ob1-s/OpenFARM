@@ -6,7 +6,7 @@ archive. Actual Liquid d1 multimodal ggml decision-head CPU inference.
 No image bytes, embeddings, models or sample screenshots are distributed.
 96 label-stratified sample images across all 8 mice (not natural prevalence).
 """
-import base64,collections,hashlib,io,json,math,statistics,tempfile,urllib.request,urllib.error,zipfile
+import base64,collections,hashlib,io,json,math,os,statistics,tempfile,urllib.request,urllib.error,zipfile
 from pathlib import Path
 import PIL.Image
 
@@ -55,11 +55,14 @@ def image_payload(raw):
         rgb.save(out,format='JPEG',quality=83)
     return 'data:image/jpeg;base64,'+base64.b64encode(out.getvalue()).decode('ascii')
 def predict(image):
+    primitive=os.environ.get("VIDAL_PRIMITIVE","score")
+    if primitive not in ("score","choice"):raise ValueError("Unknown primitive")
+    crit=["0 = absent orbital tightening, eyes open","1 = moderate narrowing of eyes","2 = obvious orbital tightening, strongly narrowed eyes"]
     question={"state":"An original eye-region image of a laboratory mouse in a standardized experiment.",
       "images":[image],"questions":{"orbital_tightening":{
-        "type":"score",
+        "type":primitive,
         "instructions":"Score the visible Mouse Grimace Scale orbital tightening ONLY. The ordered scale is: 0 no orbital tightening, eyes wide/open; 1 moderately narrowed eyes; 2 clearly narrowed or closed eyes. Do not infer the surgery or intervention.",
-        "criteria":["0 = absent orbital tightening, eyes open","1 = moderate narrowing of eyes","2 = obvious orbital tightening, strongly narrowed eyes"]}}}
+        "criteria":crit if primitive=="score" else {str(i):crit[i] for i in range(3)}}}}
     req=urllib.request.Request('http://127.0.0.1:8080/v1/systemone',
        method='POST',data=json.dumps(question).encode(),
        headers={'Content-Type':'application/json'})
@@ -67,7 +70,7 @@ def predict(image):
     answer=res.get('answers',{}).get('orbital_tightening',{})
     p=answer.get('probabilities')
     p=[p.get(str(i)) for i in range(3)] if isinstance(p,dict) else p
-    if answer.get('type')!='score' or not isinstance(p,list) or len(p)!=3 or any(
+    if answer.get('type')!=primitive or not isinstance(p,list) or len(p)!=3 or any(
         not isinstance(x,(int,float)) or not math.isfinite(x) or x<0 for x in p):
         raise ValueError("Invalid native ordinal Score response")
     total=sum(p)
@@ -76,11 +79,11 @@ def predict(image):
 def main():
     ann,groups=load()
     examples=pick(groups)
-    d={'status':'STARTED','original_source_images':1087,'n_source_animals':8,
+    d={'status':'STARTED','original_source_images':1087,'output_primitive':os.environ.get('VIDAL_PRIMITIVE','score'),'n_source_animals':8,
       'evaluation_sample':'96 label-stratified original eye frames, 12/mouse (enriched)',
       'source_annotation_sha256':ANNSHA,'source_archive_sha256':ZIP_SHA,
       'model':'LiquidAI/d1-omni-600M-GGUF Q8 + exact multimodal projector on GitHub Actions CPU',
-      'primitive':'Score[0,1,2]','media_rights':'unknown; non-redistributed research pilot, no commercial training',
+      'primitive':os.environ.get('VIDAL_PRIMITIVE','score')+'[0,1,2]','media_rights':'unknown; non-redistributed research pilot, no commercial training',
       'per_mouse':{},'invalid_count':0}
     rows=[];errors=collections.Counter()
     with tempfile.TemporaryDirectory() as td:
@@ -118,7 +121,7 @@ def main():
           'uniform_3way_onehot_brier':2/3}
     d['status']='RESEARCH_EVAL_COMPLETE' if len(rows)==96 else 'INCOMPLETE_RESEARCH_EVAL'
     d['limit']='96 original frames but just 8 independent animals; source label validity and license must be separately reviewed. This test cannot establish animal clinical pain outcomes.'
-    dest=Path('reports/decision-index/v02_vidal_actual_visual_model_96.json')
+    dest=Path('reports/decision-index/v02_vidal_actual_visual_model_96_'+os.environ.get('VIDAL_PRIMITIVE','score')+'.json')
     dest.parent.mkdir(parents=True,exist_ok=True);dest.write_text(json.dumps(d,indent=2)+'\n')
     print('VIDAL_L2_LIQUID_RESULT',json.dumps(d,sort_keys=True),flush=True)
     if len(rows)!=96:raise RuntimeError('96-image L2 evaluation incomplete')

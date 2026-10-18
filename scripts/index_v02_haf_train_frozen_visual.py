@@ -161,6 +161,61 @@ def evaluate(y,probs):
     if len(set(y))==2:
         ans.update(auroc=float(roc_auc_score(y,probs)),auprc=float(average_precision_score(y,probs)))
     return ans
+def paired_horse_developmental_stress(rows,y,features):
+    """Second, explicitly post-audit exploratory split with within-horse class support.
+
+    This split was chosen after the original test had already been inspected.
+    Never represent it as a fresh/blind score, and do not compare its numbers
+    head-to-head with the previous 7/2/2 split.
+    """
+    horse_sets={"train":["1","2","3","4","5"],
+                "calibration":["6","7"],"test":["8","9"]}
+    idx={k:[i for i,r in enumerate(rows) if r["horse"] in members]
+         for k,members in horse_sets.items()}
+    for fold,ids in idx.items():
+        if not ids:raise ValueError("No samples in paired "+fold)
+        for horse in horse_sets[fold]:
+            labels={rows[i]["gold"] for i in ids if rows[i]["horse"]==horse}
+            if labels!={0,1}:raise ValueError("Paired-horse split requires both labels for "+horse)
+    train,cal,test=[idx[k] for k in ("train","calibration","test")]
+    counts=collections.Counter(rows[i]["horse"] for i in train)
+    weights=np.asarray([1/counts[rows[i]["horse"]] for i in train],dtype=float)
+    weights*=len(train)/weights.sum()
+    result={
+        "status":"POST_HOC_DEVELOPMENTAL_STRESS_TEST_NOT_BLIND",
+        "purpose":"Correct class-absent heldout horses: each test horse has both class labels from distinct videos.",
+        "caveats":"Horse mapping inferred across releases; one label per video; same 605 images previously inspected; only two heldout horses; acquisition shift not controlled.",
+        "split_horses":horse_sets,
+        "split_counts":{k:{"frames":len(v),"pain":int(y[v].sum()),
+                           "nopain":int(len(v)-y[v].sum())} for k,v in idx.items()},
+        "models":{}
+    }
+    for name,X in features.items():
+        candidates=[]
+        for C in [.001,.03,.3,3,30]:
+            clf=LogisticRegression(C=C,max_iter=2500,random_state=20261018)
+            clf.fit(X[train],y[train],sample_weight=weights)
+            cp=clf.predict_proba(X[cal])[:,1]
+            horse_errors=[]
+            for h in horse_sets["calibration"]:
+                positions=[j for j,i in enumerate(cal) if rows[i]["horse"]==h]
+                horse_errors.append(float(np.mean((y[cal][positions]-cp[positions])**2)))
+            candidates.append((float(statistics.mean(horse_errors)),C,clf))
+        cal_brier,C,clf=min(candidates,key=lambda x:(x[0],x[1]))
+        pp=clf.predict_proba(X[test])[:,1]
+        grouped={}
+        for h in horse_sets["test"]:
+            pos=np.asarray([j for j,i in enumerate(test) if rows[i]["horse"]==h])
+            grouped[h]=evaluate(y[test][pos],pp[pos])
+        result["models"][name]={
+            "selected_C_by_two_cal_horses":C,
+            "mean_horse_calibration_brier":cal_brier,
+            "test":evaluate(y[test],pp),
+            "test_per_horse":grouped,
+            "mean_within_horse_test_auroc":float(statistics.mean(v["auroc"] for v in grouped.values()))
+        }
+    return result
+
 def main():
     args=argparse.ArgumentParser();args.add_argument("--output",type=Path,default=Path("reports/decision-index/v02_haf605_cpu_specialist.json"))
     opt=args.parse_args()
@@ -264,6 +319,13 @@ def main():
            "test":vals,"test_per_horse":by_horse,
            "source_feature_dim":int(X.shape[1]),
            "calibration_search":[{"C":cc,"cal_brier":bb} for bb,cc,_ in candidates]}
+    out["paired_horse_dual_condition_developmental"]=paired_horse_developmental_stress(rows,y,features)
+    print("HORSE_PAIRED_CONTRAST_DEVELOPMENTAL",json.dumps({
+        "status":out["paired_horse_dual_condition_developmental"]["status"],
+        "split_counts":out["paired_horse_dual_condition_developmental"]["split_counts"],
+        "models":{k:{"test":v["test"],"mean_within_horse_test_auroc":v["mean_within_horse_test_auroc"]}
+                  for k,v in out["paired_horse_dual_condition_developmental"]["models"].items()}
+    },sort_keys=True),flush=True)
     prior=float(np.average(y[train],weights=weights))
     out["models"]["constant_train_pain_prior"]={"test":evaluate(y[test],np.full(len(test),prior))}
     opt.output.parent.mkdir(parents=True,exist_ok=True)

@@ -1,0 +1,30 @@
+name: OpenFARM Rashid 2020 clinical rater sheet forensic
+on:
+  push:
+    branches: [research/openfarm-next-evidence-calibration-2026-10]
+    paths:
+      - scripts/index_v02_rashid_rater_schema.py
+      - .github/workflows/openfarm-v02-rashid-rater-schema.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  workbook-schema-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install "openpyxl>=3.1,<4"
+      - name: Verify original spreadsheet hashes and extract only aggregate column types
+        run: python scripts/index_v02_rashid_rater_schema.py
+      - name: Publish aggregate source schema only
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rashid-2020-aggregated-rater-schema
+          path: reports/source_gates/rashid2020_rater_schema_metadata.json
+          retention-days: 30
+          if-no-files-found: ignore

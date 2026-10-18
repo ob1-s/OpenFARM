@@ -48,11 +48,13 @@ jobs:
           print('ORIGINAL_MULTIMODAL_LIQUID_READY',flush=True)
           PY
           python scripts/index_v02_vidal_liquid_ordinal.py
+          VIDAL_PRIMITIVE=choice python scripts/index_v02_vidal_liquid_ordinal.py
       - name: Upload aggregate and per-mouse statistics, never original images
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: vidal-original-mouse-external-l2-liquid-score
-          path: reports/decision-index/v02_vidal_actual_visual_model_96.json
+          path: reports/decision-index/v02_vidal_actual_visual_model_96_score.json
+            reports/decision-index/v02_vidal_actual_visual_model_96_choice.json
           retention-days: 30
           if-no-files-found: ignore

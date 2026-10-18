@@ -36,6 +36,34 @@
       "image_label_pair_validation_run": "https://github.com/ob1-s/OpenFARM/actions/runs/39103207180"
     },
     {
+      "id": "haf2024_uk_copenhagen_equine_pain_face",
+      "level": "L2",
+      "species": "horse",
+      "modality": "original_equine_RGB_face_crop_images",
+      "reference": "human expert binary face pain/no-pain annotation",
+      "source": "https://zenodo.org/records/14541977",
+      "doi": "10.5281/zenodo.14541977",
+      "source_archive_md5": "be09a4ac6c1d3db3c4908cad1aeca075",
+      "n_original_png": 605,
+      "n_videos": 22,
+      "reported_horses": 11,
+      "label_counts": {
+        "pain": 314,
+        "nopain": 291
+      },
+      "rights": "CC-BY-4.0 as reported by Zenodo metadata; attribution required",
+      "admission_status": "ORIGINAL_SOURCE_MEDIA_AND_LABEL_VERIFIED_ANIMAL_MAPPING_NOT_PROVEN",
+      "reference_independence": "Original 2024 Copenhagen dataset, distinct source from OpenFARM older Mendeley 2021 HGS region dataset; animal ID and image overlap not independently confirmed",
+      "source_validation_run": "https://github.com/ob1-s/OpenFARM/actions/runs/39104112076",
+      "split_warning": "Video identity is not a horse identity; animal-disjoint generalization must not be claimed",
+      "target_warning": "Binary human expert visual pain-face reference, not instrumented pain physiology or observed benefit of treatment",
+      "blockers": [
+        "Map original 22 video IDs to 11 horse identities or obtain author table",
+        "Check any possible cross-source image and animal overlap with legacy Mendeley horse-region data",
+        "Confirm any publisher-dependent rights beyond Zenodo CC-BY-4.0 and commercial requirements"
+      ]
+    },
+    {
       "id": "dryad2026_calf_wound_nociceptive_threshold",
       "level": "L2",
       "species": "calf",

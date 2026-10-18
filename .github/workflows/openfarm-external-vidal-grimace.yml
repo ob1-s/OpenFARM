@@ -1,0 +1,29 @@
+name: OpenFARM independent L2 mouse grimace source admission
+on:
+  push:
+    branches: [research/openfarm-next-evidence-calibration-2026-10]
+    paths:
+      - scripts/source_gate_vidal_mouse_2022.py
+      - .github/workflows/openfarm-external-vidal-grimace.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  audit-original-annotations:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate Vidal 2022 original independently collected grimace labels
+        run: python scripts/source_gate_vidal_mouse_2022.py
+      - name: Preserve source hashes and aggregate label audit, not mouse image files
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: independent-vidal-mouse-grimace-source-gate
+          path: reports/source_gates/vidal_2022_mouse_orbital_grimace.json
+          retention-days: 30
+          if-no-files-found: ignore

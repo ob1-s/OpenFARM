@@ -60,6 +60,7 @@ def main():
     dest=Path("reports/source_gates/haf2024_605frame_animal_mapping.json")
     dest.parent.mkdir(parents=True,exist_ok=True)
     dest.write_text(json.dumps(out,indent=2)+"\n")
+    print("HORSE_ID_RECOVERY_VIDEO_MAP",json.dumps(out["video_to_animal"],sort_keys=True),flush=True)
     print("HORSE_ID_RECOVERY_SUMMARY",json.dumps({"status":out["status"],"videos":len(mapping),"horses":len(unique_anon),
            "conflicts":len(out["conflicting_video_horse_mapping"])}),flush=True)
     if out["status"]!="SOURCE_VIDEO_TO_ANIMAL_MAP_VERIFIED":raise RuntimeError("Animal identity evidence incomplete")

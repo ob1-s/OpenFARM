@@ -47,7 +47,7 @@ def main():
         if out['original_files']['eyes']['animal_count']!=8:raise ValueError('unexpected animal identity count')
         try:
             page=get(IMAGE_HOST,1_000_000).decode(errors='replace')
-            links=re.findall(r'href=[\"\']([^\"\']+\\.zip)[\"\']',page,re.I)
+            links=re.findall(r'href=[\"\']([^\"\']+?\\.zip(?:\\?[^\"\']*)?)[\"\']',page,re.I)
             out['source_image_download_site']={'accessible':True,'html_bytes':len(page),
               'zip_archive_link_count':len(links),'archive_filenames':[x.split('/')[-1] for x in links],
               'license_metadata_present':bool(re.search(r'Creative Commons|license|research only',page,re.I))}

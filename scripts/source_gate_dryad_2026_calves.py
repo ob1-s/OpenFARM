@@ -21,18 +21,27 @@ def fetch(url):
     with urllib.request.urlopen(req,timeout=60) as r:
         return r.read(10_000_000)
 def source_file(key):
-    last=None
-    candidates=[URLS[key]]
-    # Primary Dryad download links from its published HTML. Try verified
-    # API mirror only when the named stable file_stream endpoint fails.
-    for url in candidates:
+    import io
+    full="https://datadryad.org/api/v2/datasets/doi%3A10.5061%2Fdryad.k3j9kd5qt/download"
+    all_urls=[URLS[key],full]
+    errors=[]
+    for url in all_urls:
         try:
             blob=fetch(url)
-            if not zipfile.is_zipfile(__import__("io").BytesIO(blob)):
-                raise ValueError("download did not return an XLSX ZIP")
-            return blob,url
-        except Exception as e:last=type(e).__name__
-    raise RuntimeError("Dryad source fetch inaccessible: "+key+" "+str(last))
+            if not zipfile.is_zipfile(io.BytesIO(blob)):
+                raise ValueError("response not ZIP content")
+            with zipfile.ZipFile(io.BytesIO(blob)) as z:
+                names=z.namelist()
+                if "xl/workbook.xml" in names:
+                    return blob,url
+                candidates=[name for name in names if name.endswith(NAMES[key])]
+                if len(candidates)!=1:raise ValueError("full dataset ZIP missing exactly one required source XLSX")
+                sub=z.read(candidates[0])
+                if not zipfile.is_zipfile(io.BytesIO(sub)):raise ValueError("inner XLSX bytes corrupted")
+                return sub,url+"#"+candidates[0]
+        except Exception as e:
+            errors.append(type(e).__name__)
+    raise RuntimeError("Dryad original XLSX download failed for "+key+" via file_stream and public dataset archive: "+",".join(errors))
 def spreadsheet(blob):
     import io
     with zipfile.ZipFile(io.BytesIO(blob)) as z:

@@ -1,0 +1,29 @@
+name: OpenFARM independent orthopedic equine L2 original source XLSX
+on:
+  push:
+    branches: [research/openfarm-next-evidence-calibration-2026-10]
+    paths:
+      - scripts/index_v02_ask2024_equiFACS_supplement_gate.py
+      - .github/workflows/openfarm-v02-ask2024-source.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  published-multi-horse-physiology-source:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify original Scientific Reports supplement SHA and workbook feature headers
+        run: python scripts/index_v02_ask2024_equiFACS_supplement_gate.py
+      - name: Archive scientific source schema evidence only
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ask2024-original-equiFACS-video-sequence-source-gate
+          path: reports/source_gates/ask2024_equiFACS_original_supplement_gate.json
+          if-no-files-found: ignore
+          retention-days: 30

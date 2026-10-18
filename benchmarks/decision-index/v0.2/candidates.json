@@ -192,6 +192,53 @@
         "raw source also includes timestamp-level annotated facial actions but direct video media not verified"
       ],
       "status": "SOURCE_GATE_PASSED; L2 PROVISIONAL BENCHMARK; TRAINING_WORKFLOW_RUNNING"
+    },
+    {
+      "id": "rashid2020_equiFACS_experimental_clinical_horse",
+      "level": "L2",
+      "species": "horse",
+      "doi": "10.1371/journal.pone.0231608",
+      "source": "https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0231608",
+      "modality": "original_experimental_video_plus_annotated_FACS; clinical_FACS_and_pain_XLSX_but_video_missing",
+      "study_claims": {
+        "experimental_animals": 6,
+        "experimental_videos": 12,
+        "clinical_animals": 21,
+        "clinical_vet_raters": 3
+      },
+      "original_xlsx_verified": {
+        "experimental": {
+          "sha256": "2df498362259cbd75a5dc7eb40c580fef5368c53314a1d6451ffc22efe613612",
+          "bytes": 45555,
+          "sheets": {
+            "FACS": "185 rows x 89 cols",
+            "Pain": "13 rows x 4 cols"
+          }
+        },
+        "clinical": {
+          "sha256": "f33fe32b8bd1283072df222038a36e6d9c34308adba7a174c6d6d47f960d2214",
+          "bytes": 105566,
+          "sheets": {
+            "FACS": "1450 rows x 6 cols",
+            "PAIN": "168 rows x 6 cols"
+          }
+        }
+      },
+      "original_video_archive": {
+        "url": "https://journals.plos.org/plosone/article/file?id=10.1371/journal.pone.0231608.s001&type=supplementary",
+        "range_request": "206 bytes 0-0/923308687",
+        "video_decoded": false
+      },
+      "admission_status": "ANNOTATION_WORKBOOKS_AUTHENTICATED; CLINICAL_PIXELS_AND_VOTE_ROWS_UNVERIFIED",
+      "source_gate_run": "https://github.com/ob1-s/OpenFARM/actions/runs/39129893021",
+      "rights": "Paper CC-BY; check supplemental data and training/reuse scope before admitting",
+      "blockers": [
+        "No original 21 clinical videos established",
+        "Check if workbook retains each of 3 veterinarian votes",
+        "Test animal-level identity and overlap with existing equine sources",
+        "Verify rights and input/reference chronology",
+        "Video content not yet downloaded or decoded"
+      ]
     }
   ],
   "no_leaderboard_until_admission": true

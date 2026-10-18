@@ -61,7 +61,15 @@
         "Map original 22 video IDs to 11 horse identities or obtain author table",
         "Check any possible cross-source image and animal overlap with legacy Mendeley horse-region data",
         "Confirm any publisher-dependent rights beyond Zenodo CC-BY-4.0 and commercial requirements"
-      ]
+      ],
+      "source_horse_id_mapping": {
+        "new_record": "10.5281/zenodo.17389614",
+        "n_videos": 22,
+        "n_horses": 11,
+        "status": "VERIFIED_IN_AUTHOR_25FPS_RELEASE; ORIGINAL_605_IDENTITIES_NOT_YET_PIXEL_LINKED",
+        "workflow": "https://github.com/ob1-s/OpenFARM/actions/runs/39107433054",
+        "frozen_mapping_path": "benchmarks/decision-index/v0.2/haf2024-video-horse-id-map.json"
+      }
     },
     {
       "id": "dryad2026_calf_wound_nociceptive_threshold",
@@ -106,6 +114,30 @@
         "no suitable independently expert-rated open case-level source yet verified",
         "requires data owner collaboration or another genuine new original corpus"
       ]
+    },
+    {
+      "id": "wizenty2026_berlin_emergency_4579",
+      "level": "L3",
+      "source": "https://doi.org/10.3390/vetsci13090899",
+      "study": "2026 retrospective 4579 dog and cat after-hours visits Berlin; 2021 source EHR, first-author five-tier Manchester color urgency",
+      "source_counts": {
+        "visits": 4579,
+        "dog": 3189,
+        "cat": 1390
+      },
+      "case_records": "NOT_ACQUIRED",
+      "label_reference": "Single first-author retrospective grade from complete clinical record, including post-arrival diagnosis, diagnostics, administered treatments",
+      "scientific_admission": "PROSPECT_AUTHOR_CONTROLLED_INTAKE_ONLY_SOURCE_REQUIRED",
+      "critical_leakage_gate": "Split at-arrival complaint/initial signs from later diagnosis and care; retrospective label itself uses later information and cannot claim at-arrival safety without blind reannotation",
+      "independence": "Single clinic; repeat patients were unlinked; patient-level independence unavailable from source study",
+      "requested_collaboration": [
+        "At-intake deidentified case text/vitals separately timestamped",
+        "Restricted outcome and escalation reference",
+        "Independent blind veterinarians rating at-arrival acuity",
+        "Patient/visit grouping under permitted privacy-preserving terms",
+        "Distinct research vs commercial vs external API permissions"
+      ],
+      "github_issue": "https://github.com/ob1-s/OpenFARM/issues/10"
     }
   ],
   "no_leaderboard_until_admission": true

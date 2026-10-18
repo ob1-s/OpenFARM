@@ -1,0 +1,81 @@
+{
+  "schema_version": "openfarm-decision-index-new-sources-v0.2",
+  "status": "PRE_ADMISSION",
+  "frozen_v01_branch": "research/decision-index-v01-frozen",
+  "frozen_v01_commit": "132618bc21c1cb6254b5c40c74c1a305c13ce3d2",
+  "description": "External data sources are NOT silently added to the frozen v0.1 eight-task benchmark.",
+  "candidates": [
+    {
+      "id": "vidal2022_external_mouse_orbital_grimace",
+      "level": "L2",
+      "species": "mouse",
+      "modality": "original_RBG_eye_region_images",
+      "target": "human ordinal orbital-tightening score 0/1/2",
+      "reference_source": "https://github.com/AndreaVidal/WhiteFurredMice_Dataset",
+      "doi": "10.1016/j.mlwa.2022.100312",
+      "annotation_sha256": "754d3442b056b14aee137643adab101c166dee27f42338397ef7a1f869cb9ad2",
+      "annotation_count": 1087,
+      "animal_count": 8,
+      "score_counts": {
+        "0": 552,
+        "1": 342,
+        "2": 193
+      },
+      "original_images": "https://lab-msp.com/WhiteFurredMiceDataset/Eyes_detection.zip",
+      "admission_status": "ORIGINAL_ANNOTATIONS_VERIFIED_ORIGINAL_IMAGE_ACCESS_AND_RIGHTS_PENDING",
+      "independence": "different original study / lab from 2026 GrimACE; 8 animal IDs, image frames within animals correlated",
+      "leakage": "source has bounding boxes; image should not include label, subject ID, or intervention metadata",
+      "evaluation": "External animal-disjoint orbital tightening; not equivalent to five-AU GrimACE composite.",
+      "blockers": [
+        "confirm exact source pixels and image-to-record match",
+        "verify dataset license and permitted redistribution/commercial model training",
+        "ensure exposure/annotation provenance and proper task equivalence"
+      ]
+    },
+    {
+      "id": "dryad2026_calf_wound_nociceptive_threshold",
+      "level": "L2",
+      "species": "calf",
+      "modality": "time_causal_wound_assessment_and_nociceptive_measurements",
+      "target": "independently instrumented mechanical nociceptive threshold and recorded wound healing",
+      "source": "https://doi.org/10.5061/dryad.k3j9kd5qt",
+      "published_original_study": {
+        "animals": 48,
+        "mnt_measurements": 2050,
+        "tissue_records": 1502,
+        "independence": "animal and 12 replicate cohorts"
+      },
+      "admission_status": "SOURCE_PUBLISHED_BUT_BYTE_DOWNLOAD_BLOCKED_FROM_CI",
+      "access_gate_runs": [
+        "https://github.com/ob1-s/OpenFARM/actions/runs/39102344240",
+        "https://github.com/ob1-s/OpenFARM/actions/runs/39102445652"
+      ],
+      "blockers": [
+        "Original Dryad individual-file and public dataset API returned HTTP 403 to automation",
+        "need authorized or human-mediated original downloads with checksum verification",
+        "choose forward-only wound history vs later MNT; avoid using current/future nociceptive target as input",
+        "check 48 animal IDs and longitudinal split / publication license"
+      ]
+    },
+    {
+      "id": "independent_external_veterinary_triage_cases",
+      "level": "L3",
+      "species": "dog_cat",
+      "target": "original pre-hospital or hospital veterinary priority, multi-rater and independent clinic outcomes",
+      "admission_status": "NOT_ACQUIRED",
+      "minimum_requirements": [
+        "unique cases not derivatives of Wong/Farrow or the same 30 vignette variants",
+        "at least two independent expert urgencies with timestamp/origin metadata",
+        "truly independent animals/sites where feasible",
+        "exclude later diagnostic confirmation from model-visible owner presentation",
+        "independent critical cases and prospective outcomes preferred",
+        "data license and clinical de-identification approval"
+      ],
+      "blockers": [
+        "no suitable independently expert-rated open case-level source yet verified",
+        "requires data owner collaboration or another genuine new original corpus"
+      ]
+    }
+  ],
+  "no_leaderboard_until_admission": true
+}

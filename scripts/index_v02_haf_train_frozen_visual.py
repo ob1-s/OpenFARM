@@ -63,6 +63,13 @@ def model_features(z,rows):
     model.eval()
     transform=ResNet18_Weights.DEFAULT.transforms()
     deep=[];weak=[]
+    region_border=[];region_center=[];gray_only=[];rgb_means=[];rgb_chroma=[];luminance_mean=[]
+    def color_hist(a):
+        features=[]
+        for channel in range(3):
+            hist,_=np.histogram(a[:,channel],bins=16,range=(0,256),density=False)
+            features.extend((hist/max(hist.sum(),1)).tolist())
+        return features
     for i,row in enumerate(rows,1):
         with Image.open(io.BytesIO(z.read(row["source_member"]))) as im:
             rgb=im.convert("RGB")
@@ -77,9 +84,65 @@ def model_features(z,rows):
             h,_=np.histogram(small[:,:,ch],bins=16,range=(0,256),density=False)
             hist.extend((h/h.sum()).tolist())
         weak.append(hist)
+        border=np.ones((64,64),dtype=bool)
+        border[12:52,12:52]=False
+        center=np.zeros((64,64),dtype=bool)
+        center[16:48,16:48]=True
+        region_border.append(color_hist(small[border]))
+        region_center.append(color_hist(small[center]))
+        luminance=np.mean(small,axis=2)
+        lum,_=np.histogram(luminance,bins=16,range=(0,256),density=False)
+        gray_only.append((lum/max(lum.sum(),1)).tolist())
+        rgb_means.append(np.mean(small,axis=(0,1)).tolist())
+        means=np.mean(small,axis=(0,1))
+        rgb_chroma.append((means/max(means.sum(),1e-8)).tolist())
+        luminance_mean.append([float(np.mean(luminance))])
         if i%100==0:print("HORSE_SPECIALIST_FEATURES",i,"/605",flush=True)
     return {"resnet18_frozen":np.asarray(deep,dtype=np.float64),
-            "rgb_histogram_control":np.asarray(weak,dtype=np.float64)}
+            "rgb_histogram_control":np.asarray(weak,dtype=np.float64),
+            "rgb_border_only_histogram":np.asarray(region_border,dtype=np.float64),
+            "rgb_center_only_histogram":np.asarray(region_center,dtype=np.float64),
+            "grayscale_histogram_control":np.asarray(gray_only,dtype=np.float64),
+            "rgb_channel_means_control":np.asarray(rgb_means,dtype=np.float64),
+            "rgb_normalized_chromaticity_control":np.asarray(rgb_chroma,dtype=np.float64),
+            "grayscale_mean_only_control":np.asarray(luminance_mean,dtype=np.float64)}
+def source_label_confound_audit(rows,splits):
+    """Source metadata only; no media, clinical inputs or image features exported.
+
+    Animal-grouped splits can still have outcome confounding by recording:
+    a video may contain only pain or only no-pain examples.
+    """
+    per_video=collections.defaultdict(collections.Counter)
+    per_horse=collections.defaultdict(collections.Counter)
+    videos_by_horse=collections.defaultdict(set)
+    for row in rows:
+        per_video[row["video"]][row["gold"]]+=1
+        per_horse[row["horse"]][row["gold"]]+=1
+        videos_by_horse[row["horse"]].add(row["video"])
+    def table(groups):
+        return {str(k):{"pain":int(v[1]),"nopain":int(v[0]),
+                        "frames":int(sum(v.values())),
+                        "both_classes":bool(v[1] and v[0])}
+                for k,v in sorted(groups.items())}
+    video_table=table(per_video)
+    horse_table=table(per_horse)
+    mixed_video=sum(x["both_classes"] for x in video_table.values())
+    mixed_horse=sum(x["both_classes"] for x in horse_table.values())
+    return {
+        "video_label_counts":video_table,
+        "inferred_horse_label_counts":horse_table,
+        "videos_per_inferred_horse":{str(k):len(v) for k,v in sorted(videos_by_horse.items())},
+        "mixed_label_videos":mixed_video,
+        "mixed_label_horses":mixed_horse,
+        "single_label_recordings_only":mixed_video==0,
+        "single_label_inferred_horses_only":mixed_horse==0,
+        "split_horse_class_support":{
+            name:{str(h):{"pain":int(per_horse[h][1]),"nopain":int(per_horse[h][0])}
+                  for h in sorted({rows[i]["horse"] for i in indices})}
+            for name,indices in splits.items()},
+        "scientific_warning":"Acquisition/recording context may encode the target. Without both classes for each animal, no within-animal pain discrimination is measured. Horse IDs are still cross-release inferred.",
+    }
+
 def evaluate(y,probs):
     hard=(probs>=.5).astype(int)
     n=len(y)
@@ -87,14 +150,72 @@ def evaluate(y,probs):
     ans={"n":n,"reference_pain_fraction":p,
         "brier":float(brier_score_loss(y,probs)),
         "accuracy":float(np.mean(hard==y)),
-        "balanced_accuracy":float(balanced_accuracy_score(y,hard)),
-        "pain_recall":float(np.mean(hard[y==1]==1)),
-        "no_pain_specificity":float(np.mean(hard[y==0]==0)),
+        "balanced_accuracy":float(balanced_accuracy_score(y,hard)) if len(set(y))==2 else None,
+        "pain_recall":float(np.mean(hard[y==1]==1)) if np.any(y==1) else None,
+        "no_pain_specificity":float(np.mean(hard[y==0]==0)) if np.any(y==0) else None,
         "positive_predictions":int(hard.sum()),
-        "mean_predicted_pain":float(np.mean(probs))}
+        "mean_predicted_pain":float(np.mean(probs)),
+        "min_predicted_pain":float(np.min(probs)),
+        "max_predicted_pain":float(np.max(probs)),
+        "std_predicted_pain":float(np.std(probs))}
     if len(set(y))==2:
         ans.update(auroc=float(roc_auc_score(y,probs)),auprc=float(average_precision_score(y,probs)))
     return ans
+def paired_horse_developmental_stress(rows,y,features):
+    """Second, explicitly post-audit exploratory split with within-horse class support.
+
+    This split was chosen after the original test had already been inspected.
+    Never represent it as a fresh/blind score, and do not compare its numbers
+    head-to-head with the previous 7/2/2 split.
+    """
+    horse_sets={"train":["1","2","3","4","5"],
+                "calibration":["6","7"],"test":["8","9"]}
+    idx={k:[i for i,r in enumerate(rows) if r["horse"] in members]
+         for k,members in horse_sets.items()}
+    for fold,ids in idx.items():
+        if not ids:raise ValueError("No samples in paired "+fold)
+        for horse in horse_sets[fold]:
+            labels={rows[i]["gold"] for i in ids if rows[i]["horse"]==horse}
+            if labels!={0,1}:raise ValueError("Paired-horse split requires both labels for "+horse)
+    train,cal,test=[idx[k] for k in ("train","calibration","test")]
+    counts=collections.Counter(rows[i]["horse"] for i in train)
+    weights=np.asarray([1/counts[rows[i]["horse"]] for i in train],dtype=float)
+    weights*=len(train)/weights.sum()
+    result={
+        "status":"POST_HOC_DEVELOPMENTAL_STRESS_TEST_NOT_BLIND",
+        "purpose":"Correct class-absent heldout horses: each test horse has both class labels from distinct videos.",
+        "caveats":"Horse mapping inferred across releases; one label per video; same 605 images previously inspected; only two heldout horses; acquisition shift not controlled.",
+        "split_horses":horse_sets,
+        "split_counts":{k:{"frames":len(v),"pain":int(y[v].sum()),
+                           "nopain":int(len(v)-y[v].sum())} for k,v in idx.items()},
+        "models":{}
+    }
+    for name,X in features.items():
+        candidates=[]
+        for C in [.001,.03,.3,3,30]:
+            clf=LogisticRegression(C=C,max_iter=2500,random_state=20261018)
+            clf.fit(X[train],y[train],sample_weight=weights)
+            cp=clf.predict_proba(X[cal])[:,1]
+            horse_errors=[]
+            for h in horse_sets["calibration"]:
+                positions=[j for j,i in enumerate(cal) if rows[i]["horse"]==h]
+                horse_errors.append(float(np.mean((y[cal][positions]-cp[positions])**2)))
+            candidates.append((float(statistics.mean(horse_errors)),C,clf))
+        cal_brier,C,clf=min(candidates,key=lambda x:(x[0],x[1]))
+        pp=clf.predict_proba(X[test])[:,1]
+        grouped={}
+        for h in horse_sets["test"]:
+            pos=np.asarray([j for j,i in enumerate(test) if rows[i]["horse"]==h])
+            grouped[h]=evaluate(y[test][pos],pp[pos])
+        result["models"][name]={
+            "selected_C_by_two_cal_horses":C,
+            "mean_horse_calibration_brier":cal_brier,
+            "test":evaluate(y[test],pp),
+            "test_per_horse":grouped,
+            "mean_within_horse_test_auroc":float(statistics.mean(v["auroc"] for v in grouped.values()))
+        }
+    return result
+
 def main():
     args=argparse.ArgumentParser();args.add_argument("--output",type=Path,default=Path("reports/decision-index/v02_haf605_cpu_specialist.json"))
     opt=args.parse_args()
@@ -114,12 +235,35 @@ def main():
     weights=weights*len(weights)/weights.sum()
     out={"status":"EXPLORATORY_RESEARCH_NOT_CLINICAL","original_source_md5":MD5,
       "animal_mapping_status":m["status"],"source_evidence":m["source_evidence_run"],
-      "modeling":"frozen torchvision ResNet18 ImageNet embedding + logistic vs RGB histogram shortcut",
+      "modeling":"frozen torchvision ResNet18 ImageNet embedding + logistic vs full/edge/center RGB histograms, grayscale and RGB mean shortcuts",
       "selected_by":"mean per-horse calibration Brier, 2 calibration horses; test not used for selection",
       "split_horses":m["proposed_split_inferred_horse_ids"],
       "split_counts":{name:{"frames":len(ix),"videos":len(set(rows[i]["video"] for i in ix)),
                             "pain":int(y[ix].sum()),"nopain":int(len(ix)-y[ix].sum())} for name,ix in splits.items()},
       "models":{},"note":"Small 11-horse single-source correlated frames; expert-reported pain face != physiological nociception. Same 22 source video ids inferred across author releases. Training/evaluation research only."}
+    out["source_label_confound_audit"]=source_label_confound_audit(rows,splits)
+    if out["source_label_confound_audit"]["single_label_inferred_horses_only"]:
+        out["benchmark_admission_warning"]="BLOCKED: one source label per inferred horse, so within-animal target contrast absent."
+    elif out["source_label_confound_audit"]["single_label_recordings_only"]:
+        out["benchmark_admission_warning"]="BLOCKED: recording identity predicts pain-face label; acquisition confounding unresolved."
+    else:
+        out["benchmark_admission_warning"]="BLOCKED: color shortcut and cross-release horse identity controls remain unresolved."
+    print("HORSE_SOURCE_LABEL_CONFOUNDS",json.dumps(out["source_label_confound_audit"],sort_keys=True),flush=True)
+    # This is source metadata evidence only, not another trained model.
+    # Detect acquisition/white-balance correlations at each original horse.
+    means=features["rgb_channel_means_control"]
+    diagnostics={}
+    for horsename in sorted(set(x["horse"] for x in rows)):
+        diagnostics[horsename]={}
+        for label in (0,1):
+            ids=[i for i,x in enumerate(rows) if x["horse"]==horsename and x["gold"]==label]
+            if ids:
+                vals=means[ids]
+                diagnostics[horsename][str(label)]={"n":len(ids),
+                    "mean_rgb":[round(float(v),4) for v in np.mean(vals,axis=0)],
+                    "mean_grayscale":round(float(np.mean(vals)),4)}
+    out["per_horse_condition_color_diagnostic"]=diagnostics
+    out["shortcut_warning"]="Three unstructured mean RGB numbers already separate the original retrospective pain-face labels; do not interpret as pain perception without recording-condition controls."
     Cs=[.001,.03,.3,3,30]
     for name,X in features.items():
         candidates=[]
@@ -175,10 +319,17 @@ def main():
            "test":vals,"test_per_horse":by_horse,
            "source_feature_dim":int(X.shape[1]),
            "calibration_search":[{"C":cc,"cal_brier":bb} for bb,cc,_ in candidates]}
+    out["paired_horse_dual_condition_developmental"]=paired_horse_developmental_stress(rows,y,features)
+    print("HORSE_PAIRED_CONTRAST_DEVELOPMENTAL",json.dumps({
+        "status":out["paired_horse_dual_condition_developmental"]["status"],
+        "split_counts":out["paired_horse_dual_condition_developmental"]["split_counts"],
+        "models":{k:{"test":v["test"],"mean_within_horse_test_auroc":v["mean_within_horse_test_auroc"]}
+                  for k,v in out["paired_horse_dual_condition_developmental"]["models"].items()}
+    },sort_keys=True),flush=True)
     prior=float(np.average(y[train],weights=weights))
     out["models"]["constant_train_pain_prior"]={"test":evaluate(y[test],np.full(len(test),prior))}
     opt.output.parent.mkdir(parents=True,exist_ok=True)
-    opt.output.write_text(json.dumps(out,indent=2)+"\n")
+    opt.output.write_text(json.dumps(out,indent=2,allow_nan=False)+"\n")
     print("HORSE_SPECIALIST_REAL_SOURCE_RESULT",json.dumps({"status":out["status"],"split_counts":out["split_counts"],
           "models":{k:v["test"] for k,v in out["models"].items()}},sort_keys=True),flush=True)
 if __name__=="__main__":main()

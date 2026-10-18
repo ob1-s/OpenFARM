@@ -52,15 +52,19 @@
         "nopain": 291
       },
       "rights": "CC-BY-4.0 as reported by Zenodo metadata; attribution required",
-      "admission_status": "ORIGINAL_SOURCE_MEDIA_AND_LABEL_VERIFIED_ANIMAL_MAPPING_NOT_PROVEN",
+      "admission_status": "QUARANTINED: VIDEO_LABEL_CONFOUND; ORIGINAL_TEST_TWO_HORSES_ONE_CLASS_EACH; IDENTITY_LINK_PARTIAL",
       "reference_independence": "Original 2024 Copenhagen dataset, distinct source from OpenFARM older Mendeley 2021 HGS region dataset; animal ID and image overlap not independently confirmed",
       "source_validation_run": "https://github.com/ob1-s/OpenFARM/actions/runs/39104112076",
-      "split_warning": "Video identity is not a horse identity; animal-disjoint generalization must not be claimed",
+      "split_warning": "Original 'test' consisted entirely of horse 10 pain and horse 11 nopain, despite both classes pooled. Animal-grouped but no within-horse contrast. Cross-release pixel mapping only matched 19/22 videos, so inferred group identities are still provisional.",
       "target_warning": "Binary human expert visual pain-face reference, not instrumented pain physiology or observed benefit of treatment",
       "blockers": [
         "Map original 22 video IDs to 11 horse identities or obtain author table",
         "Check any possible cross-source image and animal overlap with legacy Mendeley horse-region data",
-        "Confirm any publisher-dependent rights beyond Zenodo CC-BY-4.0 and commercial requirements"
+        "Confirm any publisher-dependent rights beyond Zenodo CC-BY-4.0 and commercial requirements",
+        "Replace original label-confounded developmental test; no valid blind pain-perception result",
+        "Do not select/test hyperparameters using reused paired-horse stress split",
+        "Verify 22-video/11-horse source identities by original pixel linkage (19/22 currently matched)",
+        "Control recording/session/color/lighting confounds and replicate on independent horses/sites"
       ],
       "source_horse_id_mapping": {
         "new_record": "10.5281/zenodo.17389614",
@@ -69,6 +73,49 @@
         "status": "VERIFIED_IN_AUTHOR_25FPS_RELEASE; ORIGINAL_605_IDENTITIES_NOT_YET_PIXEL_LINKED",
         "workflow": "https://github.com/ob1-s/OpenFARM/actions/runs/39107433054",
         "frozen_mapping_path": "benchmarks/decision-index/v0.2/haf2024-video-horse-id-map.json"
+      },
+      "original_split_forensics": {
+        "workflow": "https://github.com/ob1-s/OpenFARM/actions/runs/39129116170",
+        "source_video_all_one_label": true,
+        "per_horse_n_both_classes": 9,
+        "n_inferred_horses": 11,
+        "original_dev_test_horse_10": {
+          "pain": 65,
+          "nopain": 0
+        },
+        "original_dev_test_horse_11": {
+          "pain": 0,
+          "nopain": 61
+        },
+        "implication": "Original 126-image test compares two separate horses that are perfectly confounded with pain-face label."
+      },
+      "post_audit_paired_horse_stress": {
+        "workflow": "https://github.com/ob1-s/OpenFARM/actions/runs/39129677203",
+        "status": "POST_HOC_DEVELOPMENTAL_NOT_BLIND",
+        "split": {
+          "train_horses": [
+            "1",
+            "2",
+            "3",
+            "4",
+            "5"
+          ],
+          "calibration_horses": [
+            "6",
+            "7"
+          ],
+          "test_horses": [
+            "8",
+            "9"
+          ]
+        },
+        "n_test_frames": 90,
+        "n_test_pain": 45,
+        "n_test_nopain": 45,
+        "rgb_channel_means_auroc": 0.2508641975308642,
+        "resnet18_frozen_auroc": 0.8128395061728395,
+        "resnet18_frozen_mean_within_horse_auroc": 0.7289084022038568,
+        "implication": "Earlier RGB means AUROC 0.991 on invalid contrast falls to 0.251 on paired-horse stress. No clinical generalization claim."
       }
     },
     {

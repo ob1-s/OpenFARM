@@ -63,6 +63,13 @@ def model_features(z,rows):
     model.eval()
     transform=ResNet18_Weights.DEFAULT.transforms()
     deep=[];weak=[]
+    region_border=[];region_center=[];gray_only=[];rgb_means=[]
+    def color_hist(a):
+        features=[]
+        for channel in range(3):
+            hist,_=np.histogram(a[:,channel],bins=16,range=(0,256),density=False)
+            features.extend((hist/max(hist.sum(),1)).tolist())
+        return features
     for i,row in enumerate(rows,1):
         with Image.open(io.BytesIO(z.read(row["source_member"]))) as im:
             rgb=im.convert("RGB")
@@ -77,9 +84,23 @@ def model_features(z,rows):
             h,_=np.histogram(small[:,:,ch],bins=16,range=(0,256),density=False)
             hist.extend((h/h.sum()).tolist())
         weak.append(hist)
+        border=np.ones((64,64),dtype=bool)
+        border[12:52,12:52]=False
+        center=np.zeros((64,64),dtype=bool)
+        center[16:48,16:48]=True
+        region_border.append(color_hist(small[border]))
+        region_center.append(color_hist(small[center]))
+        luminance=np.mean(small,axis=2)
+        lum,_=np.histogram(luminance,bins=16,range=(0,256),density=False)
+        gray_only.append((lum/max(lum.sum(),1)).tolist())
+        rgb_means.append(np.mean(small,axis=(0,1)).tolist())
         if i%100==0:print("HORSE_SPECIALIST_FEATURES",i,"/605",flush=True)
     return {"resnet18_frozen":np.asarray(deep,dtype=np.float64),
-            "rgb_histogram_control":np.asarray(weak,dtype=np.float64)}
+            "rgb_histogram_control":np.asarray(weak,dtype=np.float64),
+            "rgb_border_only_histogram":np.asarray(region_border,dtype=np.float64),
+            "rgb_center_only_histogram":np.asarray(region_center,dtype=np.float64),
+            "grayscale_histogram_control":np.asarray(gray_only,dtype=np.float64),
+            "rgb_channel_means_control":np.asarray(rgb_means,dtype=np.float64)}
 def evaluate(y,probs):
     hard=(probs>=.5).astype(int)
     n=len(y)
@@ -91,7 +112,10 @@ def evaluate(y,probs):
         "pain_recall":float(np.mean(hard[y==1]==1)),
         "no_pain_specificity":float(np.mean(hard[y==0]==0)),
         "positive_predictions":int(hard.sum()),
-        "mean_predicted_pain":float(np.mean(probs))}
+        "mean_predicted_pain":float(np.mean(probs)),
+        "min_predicted_pain":float(np.min(probs)),
+        "max_predicted_pain":float(np.max(probs)),
+        "std_predicted_pain":float(np.std(probs))}
     if len(set(y))==2:
         ans.update(auroc=float(roc_auc_score(y,probs)),auprc=float(average_precision_score(y,probs)))
     return ans
@@ -114,7 +138,7 @@ def main():
     weights=weights*len(weights)/weights.sum()
     out={"status":"EXPLORATORY_RESEARCH_NOT_CLINICAL","original_source_md5":MD5,
       "animal_mapping_status":m["status"],"source_evidence":m["source_evidence_run"],
-      "modeling":"frozen torchvision ResNet18 ImageNet embedding + logistic vs RGB histogram shortcut",
+      "modeling":"frozen torchvision ResNet18 ImageNet embedding + logistic vs full/edge/center RGB histograms, grayscale and RGB mean shortcuts",
       "selected_by":"mean per-horse calibration Brier, 2 calibration horses; test not used for selection",
       "split_horses":m["proposed_split_inferred_horse_ids"],
       "split_counts":{name:{"frames":len(ix),"videos":len(set(rows[i]["video"] for i in ix)),

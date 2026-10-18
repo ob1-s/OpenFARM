@@ -27,6 +27,14 @@ Real Liquid `d1-omni-600M-GGUF Q8` and exact Q8 multimodal projector via CPU `ll
 - **Rights**: public archive access is not itself an explicit grant for redistribution, external API uploads, model training or commercial use. Research-original-image source gate is complete; license assessment still pending. Work tracked in [issue #11](https://github.com/ob1-s/OpenFARM/issues/11).
 - An original-image local-CPU evaluation is implemented in `scripts/index_v02_vidal_liquid_ordinal.py` with source bytes pinned; 96 deterministic label-enriched images across all eight mice. No image file or embedding is committed.
 
+## Newly verified public equine L2 source (Rashid et al. 2020; **pre-admission**)
+
+- Published original [EquiFACS study](https://doi.org/10.1371/journal.pone.0231608) covers **6 experimental horses and 12 paired condition recordings**, plus **21 clinical horse videos** for which the article reports ratings by **three veterinarians**. These are distinct from the HAF 2024 cropped-pixel source; cross-dataset individual overlap has **not** yet been independently audited.
+- [Original-source GitHub Actions gate](https://github.com/ob1-s/OpenFARM/actions/runs/39129893021) authenticated two PLOS supplementary XLSX byte streams, without committing any source rows: experiment 45,555 bytes, SHA256 `2df498362259cbd75a5dc7eb40c580fef5368c53314a1d6451ffc22efe613612`; clinical 105,566 bytes, SHA256 `f33fe32b8bd1283072df222038a36e6d9c34308adba7a174c6d6d47f960d2214`.
+- Verified original workbook structure: experimental `FACS` 185×89 and `Pain` 13×4; clinical `FACS` 1450×6 and `PAIN` 168×6 (sheet dimensions include headers; **not case counts**). The **880 MB experimental-video ZIP** responded to HTTP 206 byte-range `bytes 0-0/923308687`, but actual video decoding was not performed.
+- Original *clinical video pixels* have **not** been acquired or verified. The paper reports three veterinarians, but we have **not** established that all three per-horse raw votes are retained as separate rows in the downloadable workbook.
+- **Admission blocked:** inspect column schemas, animal IDs and scoring provenance privately, verify clinical video availability and rights, avoid mixing human-derived facial action features with raw-video perception, and freeze new horse-disjoint splits before training. Annotation spreadsheet access does **not** establish clinical L2 model validity.
+
 ## Original clinical physiology candidate — 2026 Dryad 48 calves
 
 - `10.5061/dryad.k3j9kd5qt`: original publication declares 48 identified calves in 12 balanced replicates, 2,050 mechanical nociceptive tests and 1,502 tissue assessments.

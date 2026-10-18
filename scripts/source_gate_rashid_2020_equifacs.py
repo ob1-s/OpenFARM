@@ -52,14 +52,12 @@ def workbook_metadata(raw):
     try:
         sheets = []
         for ws in wb.worksheets:
-            fields = []
-            for row in ws.iter_rows(min_row=1, max_row=1, max_col=min(ws.max_column or 0, 40), values_only=True):
-                fields = [str(cell).strip()[:90] if cell is not None else "" for cell in row]
+            # Do not expose ANY worksheet cell values, even a potential
+            # 'header' row: the first row might contain research subjects.
             sheets.append({
                 "sheet": ws.title,
                 "reported_rows": ws.max_row,
                 "reported_columns": ws.max_column,
-                "first_row_fields_not_confirmed_as_headers": fields,
             })
         return sheets
     finally:

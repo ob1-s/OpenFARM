@@ -50,7 +50,8 @@ def main():
             links=re.findall(r'href=[\"\']([^\"\']+?\\.zip(?:\\?[^\"\']*)?)[\"\']',page,re.I)
             out['source_image_download_site']={'accessible':True,'html_bytes':len(page),
               'zip_archive_link_count':len(links),'archive_filenames':[x.split('/')[-1] for x in links],
-              'license_metadata_present':bool(re.search(r'Creative Commons|license|research only',page,re.I))}
+              'license_metadata_present':bool(re.search(r'Creative Commons|license|research only',page,re.I)),
+              'landing_html_excerpt':page[:850]}
         except urllib.error.HTTPError as error:
             out['source_image_download_site']={'accessible':False,'status_code':error.code}
         except Exception as error:

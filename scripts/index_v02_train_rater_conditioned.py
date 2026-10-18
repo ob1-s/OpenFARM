@@ -21,9 +21,9 @@ def brier(p,q):
 def votes_in_order(rows):
     return np.array([CATS.index(x) for r in rows for x in r['vet_votes']])
 def model_input(x,scale,train):
-    if scale==0:return np.repeat(x,3,axis=0) if train else x
+    if scale==0:return x[np.repeat(np.arange(x.shape[0]),3)] if train else x
     if train:
-        x=np.repeat(x,3,axis=0)
+        x=x[np.repeat(np.arange(x.shape[0]),3)]
         raters=np.tile(np.arange(3),x.shape[0]//3)
         o=csr_matrix((np.full(len(raters),scale),(np.arange(len(raters)),raters)),shape=(len(raters),3))
         return hstack([x,o],format='csr')
@@ -51,7 +51,7 @@ def policy(rows,p,t):
             'vote_overtriage':float(np.mean([sum(a<v for v in vs)/3 for a,vs in zip(prediction,votes)])),
             'immediate_median_reference_n':sum(m==0 for m in med),
             'immediate_median_detected':sum(a==0 and m==0 for a,m in zip(prediction,med)),
-            'cases_sent_immediate':sum(prediction==0),
+            'cases_sent_immediate':int(np.sum(prediction==0)),
             'any_vet_immediate_n':sum(0 in vs for vs in votes),
             'any_vet_immediate_detected':sum(a==0 and 0 in vs for a,vs in zip(prediction,votes))}
 def main():

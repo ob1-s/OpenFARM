@@ -110,3 +110,15 @@ Data under `data/broiler/cache/` is gitignored; only aggregate JSON/CSV reports 
 3. Span-IoU operating-point optimization and calibration by camera family (best remaining improvement lever for a real L2 slice, per this follow-up's segment-IoU report).
 4. Multi-annotator consensus replication (92 consensus windows across 5 IAA videos) as the next label-replication cutoff.
 5. Operator A handoff of the join schema + evidence package; no linkage without A.
+
+## 2026-10-18 full 92-video LOSO source-clip stress test — completed
+
+[Original 102-CSV source verification and 92-video model run](https://github.com/ob1-s/OpenFARM/actions/runs/39131052484), source [reproducible workflow](../../../.github/workflows/openfarm-broiler-natural-clip-loso.yml), [aggregate script](../../../scripts/index_behavior_broiler_natural_loso.py).
+
+- **Population:** all 92 source clips not reserved for annotator-agreement study, comprising **10.8335 annotated clip-hours**. The 3 LOSO models each hold out an entire camera-setup family, producing one prediction per source clip from a model trained on the other two setups. No event-informed eval-video *selection* or label-informed split repair in this evaluation. Clips themselves were curated at collection, so prevalence is **not natural farm prevalence**; geometry is released tracked boxes, **not raw video pixels**.
+- **Reference window positive prevalence:** 8.63% over heldout scorable states. Episode matcher follows existing fixed script (overlapping positive-state runs, gap up to 3 states).
+- **ExtraTrees:** episodes TP/FP/FN = **47/84/74**, F1 **0.3730**, 7.754 false episodes per annotated clip-hour; stratified by source setup, 400 video-cluster bootstrap estimate of 95% interval **[5.68, 9.99]** false episodes/clip-hour. Window F1 0.1736.
+- **Logistic L2:** episodes TP/FP/FN = **35/145/86**, F1 **0.2326**, 13.384 false episodes per annotated clip-hour; 95% video-cluster bootstrap interval **[9.02, 18.19]**. Window F1 0.1597.
+- Thresholds in LOSO are selected only on the **other two source camera setups' training windows**; not tuned on the target setup. However, the source dataset and evaluation program have been explored previously; these are new descriptive developmental statistics, not untouched prospective outcomes.
+- **Practical judgement:** geometry-only detection fails as unattended care alerting: substantial false episodes and missed episodes; no pig/chicken lesion, independent physiological welfare or caretaker-action endpoint. Real farm-hour false-alarm burden must be measured on uncensored continuous deployment footage at ordinary prevalence before claiming commercial welfare-monitor usability.
+- **Follow-on:** run the actual video-native model over a large unselected all-camera subset or all 92 original MP4 clips, with timestamps/episodes, persistent model version, adaptive event-level screening permitted only on training/cal footage. Do not compare six chosen Liquid windows to this geometry LOSO as if inputs/eval units were matched.

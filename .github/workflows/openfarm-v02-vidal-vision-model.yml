@@ -1,0 +1,58 @@
+name: OpenFARM independent L2 mouse original-image Liquid Score
+on:
+  push:
+    branches: [research/openfarm-next-evidence-calibration-2026-10]
+    paths:
+      - scripts/index_v02_vidal_liquid_ordinal.py
+      - .github/workflows/openfarm-v02-vidal-vision-model.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  truly-independent-vision-l2:
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install only reference image decoder and model download
+        run: |
+          python -m pip install 'pillow>=10,<13' 'huggingface_hub>=0.34'
+          mkdir -p models
+          python - <<'PY'
+          from huggingface_hub import hf_hub_download
+          for filename in ('d1-omni-600M-Q8_0.gguf','mmproj-d1-omni-600M-Q8_0.gguf'):
+              print(hf_hub_download('LiquidAI/d1-omni-600M-GGUF',filename=filename,local_dir='models'))
+          PY
+      - name: Build original multimodal ggml CPU decision inference
+        run: |
+          git clone --depth 1 https://github.com/ggml-org/llama.cpp.git
+          cmake -S llama.cpp -B llama.cpp/build -DCMAKE_BUILD_TYPE=Release -DGGML_CUDA=OFF
+          cmake --build llama.cpp/build --target llama-server -j 4
+      - name: Evaluate 96 original mouse eye images without exporting the photos
+        run: |
+          ./llama.cpp/build/bin/llama-server -m models/d1-omni-600M-Q8_0.gguf --mmproj models/mmproj-d1-omni-600M-Q8_0.gguf --no-mmproj-offload -c 4096 -b 4096 -ub 4096 -t 4 --host 127.0.0.1 --port 8080 >/tmp/openfarm-l2-vidal-server.log 2>&1 &
+          MODEL=$!
+          trap 'kill "$MODEL" 2>/dev/null || true' EXIT
+          python - <<'PY'
+          import time,urllib.request
+          for i in range(150):
+              try:
+                  with urllib.request.urlopen('http://127.0.0.1:8080/health',timeout=2) as response:
+                      if response.status==200:break
+              except Exception:pass
+              time.sleep(2)
+          else:raise RuntimeError('multimodal decision server did not start')
+          print('ORIGINAL_MULTIMODAL_LIQUID_READY',flush=True)
+          PY
+          python scripts/index_v02_vidal_liquid_ordinal.py
+      - name: Upload aggregate and per-mouse statistics, never original images
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: vidal-original-mouse-external-l2-liquid-score
+          path: reports/decision-index/v02_vidal_actual_visual_model_96.json
+          retention-days: 30
+          if-no-files-found: ignore

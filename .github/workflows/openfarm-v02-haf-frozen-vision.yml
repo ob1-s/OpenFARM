@@ -1,7 +1,7 @@
 name: OpenFARM original equine L2 frozen-vision specialist
 on:
   push:
-    branches: [research/openfarm-next-evidence-calibration-2026-10]
+    branches: [research/openfarm-next-evidence-calibration-2026-10, research/v02-haf-color-shortcut-2026-10-18]
     paths:
       - scripts/index_v02_haf_train_frozen_visual.py
       - benchmarks/decision-index/v0.2/haf2024-video-horse-id-map.json

@@ -276,7 +276,7 @@
         "range_request": "206 bytes 0-0/923308687",
         "video_decoded": false
       },
-      "admission_status": "ANNOTATION_WORKBOOKS_AUTHENTICATED; CLINICAL_PIXELS_AND_VOTE_ROWS_UNVERIFIED",
+      "admission_status": "ORIGINAL_EXPERIMENT_AND_CLINICAL_XLSX_PINNED; CLINICAL_HAS_THREE_ANNOTATOR_VALUES; CLINICAL_RAW_VIDEO_UNVERIFIED",
       "source_gate_run": "https://github.com/ob1-s/OpenFARM/actions/runs/39129893021",
       "rights": "Paper CC-BY; check supplemental data and training/reuse scope before admitting",
       "blockers": [
@@ -284,8 +284,21 @@
         "Check if workbook retains each of 3 veterinarian votes",
         "Test animal-level identity and overlap with existing equine sources",
         "Verify rights and input/reference chronology",
-        "Video content not yet downloaded or decoded"
-      ]
+        "Video content not yet downloaded or decoded",
+        "Authenticate clinical rater-by-horse-by-interval labels and temporal alignment without publishing private source rows"
+      ],
+      "clinical_annotation_schema_forensics": {
+        "run": "https://github.com/ob1-s/OpenFARM/actions/runs/39130773197",
+        "authenticated_sha256": "f33fe32b8bd1283072df222038a36e6d9c34308adba7a174c6d6d47f960d2214",
+        "sheet": "PAIN",
+        "sheet_rows_including_header": 168,
+        "populated_annotation_rows": 167,
+        "column_5_safe_header": "Pain",
+        "column_6_safe_header": "Annotator",
+        "column_6_unique_values": 3,
+        "column_1_distinct_values": 21,
+        "verdict": "ORIGINAL_RECORDS_APPEAR_TO_PRESERVE_3_ANNOTATOR_IDENTITIES; exact rater/horse/interval linkage and independent veterinary scoring still to be decoded and source-checked"
+      }
     }
   ],
   "no_leaderboard_until_admission": true

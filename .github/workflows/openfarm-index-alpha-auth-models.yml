@@ -1,0 +1,45 @@
+name: OpenFARM Stage B accessible original sources model gate
+on:
+  push:
+    branches: [research/index-alpha-model-gate-2026-10-19]
+    paths:
+      - scripts/index_alpha_stage_b_auth_sources.py
+      - .github/workflows/openfarm-index-alpha-auth-models.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  two-authenticated-sources:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      OPENFARM_HOTPIG_SOURCE_PATH: .cache/hotpig/series.zip
+      OMP_NUM_THREADS: '2'
+      OPENBLAS_NUM_THREADS: '2'
+      MKL_NUM_THREADS: '2'
+      PYTHONHASHSEED: '0'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install CPU scientific model environment
+        run: |
+          python -m pip install 'pandas>=2.2,<3' 'numpy>=1.26,<3' 'scikit-learn>=1.5,<2' requests scipy
+          python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
+      - uses: actions/cache@v4
+        with:
+          path: .cache/hotpig/series.zip
+          key: hotpig-17090997-series-1ba5125167224b96-v1
+      - name: Source runner syntax validity
+        run: python -m py_compile scripts/index_alpha_stage_b_auth_sources.py
+      - name: Train classical baselines, source-specific neural specialists, and shared tiny model
+        run: python scripts/index_alpha_stage_b_auth_sources.py --out reports/index-alpha/stage-b-authenticated-two-source.json
+      - name: Publish aggregate-only source-matched decision report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: openfarm-stage-b-two-original-independent-source-gate
+          path: reports/index-alpha/stage-b-authenticated-two-source.json
+          retention-days: 60
+          if-no-files-found: ignore

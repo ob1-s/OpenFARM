@@ -25,19 +25,56 @@ NAME="cattle_behavior_data_time_V2.csv"
 BEHAVIORS=["GR","WA","RE","RU"]
 SITES={"RC":"Jornada","AH":"Jornada","BR":"Chihuahuan_Desert","BH":"Chihuahuan_Desert"}
 def source():
-    meta=requests.get(f"https://api.figshare.com/v2/articles/{FIG}",timeout=25).json()
+    """Official Figshare file retrieval with hash-pinned cache and fallback.
+
+    Figshare's ndownloader intermittently returned HTTP 500 on Actions
+    (2026-10-19). Try documented public API download and browser endpoint;
+    never accept alternate bytes without BOTH source MD5 and frozen SHA256.
+    """
+    import time
+    meta=requests.get(f"https://api.figshare.com/v2/articles/{FIG}",timeout=25)
+    meta.raise_for_status()
+    meta=meta.json()
     if meta.get("license",{}).get("name")!="CC BY 4.0":
         raise RuntimeError("Figshare cattle source's license changed")
     matches=[x for x in meta["files"] if x.get("name")==NAME]
     if len(matches)!=1:raise RuntimeError("Timestamped human annotations not found")
-    f=matches[0];r=requests.get(f["download_url"],timeout=45)
-    r.raise_for_status()
-    b=r.content
-    if hashlib.md5(b).hexdigest()!=f.get("supplied_md5"):
-        raise RuntimeError("Original Figshare file checksum failure")
-    df=pd.read_csv(io.BytesIO(b))
+    f=matches[0]
+    source_sha="b4d6e14d6ff029dbf497287a774aaa27ec471e7ed1ef5884e9cf0207c784fe37"
+    cache=Path(".cache/cattle/cattle_behavior_data_time_V2.csv")
+    def good(blob):
+        return hashlib.md5(blob).hexdigest()==f.get("supplied_md5") and hashlib.sha256(blob).hexdigest()==source_sha
+    blob=None
+    if cache.exists():
+        candidate=cache.read_bytes()
+        if good(candidate):blob=candidate
+    if blob is None:
+        fid=f["id"]
+        routes=[f["download_url"],
+                f"https://api.figshare.com/v2/file/download/{fid}",
+                f"https://figshare.com/ndownloader/files/{fid}"]
+        failures=[]
+        for attempt in range(3):
+            for url in dict.fromkeys(routes):
+                try:
+                    resp=requests.get(url,timeout=55,headers={"User-Agent":"Mozilla/5.0 OpenFARM-source-audit/0.2"})
+                    resp.raise_for_status()
+                    if not good(resp.content):
+                        raise RuntimeError("Figshare source checksum/content mismatch")
+                    blob=resp.content
+                    break
+                except (requests.RequestException,RuntimeError) as exc:
+                    failures.append(f"{url.split('/')[2]}:{type(exc).__name__}:{str(exc)[:90]}")
+            if blob is not None:break
+            time.sleep(2*(attempt+1))
+        if blob is None:
+            raise RuntimeError("Original pinned cattle CSV inaccessible through official URLs: "+
+                               "; ".join(failures[-6:]))
+        cache.parent.mkdir(parents=True,exist_ok=True)
+        cache.write_bytes(blob)
+    df=pd.read_csv(io.BytesIO(blob))
     return df,{"article_id":FIG,"doi":meta.get("doi"),"version":meta.get("version"),
-               "file_md5":hashlib.md5(b).hexdigest(),"file_sha256":hashlib.sha256(b).hexdigest(),
+               "file_md5":hashlib.md5(blob).hexdigest(),"file_sha256":source_sha,
                "license":"CC BY 4.0"}
 def prepare(df):
     expected={"Breed","ID","Time.MTD","MI","State","Behavior"}

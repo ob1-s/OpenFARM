@@ -1,0 +1,51 @@
+name: OpenFARM Index alpha real-source reproducibility
+on:
+  push:
+    branches: [research/index-alpha-model-gate-2026-10-19]
+    paths:
+      - scripts/index_alpha_runner.py
+      - scripts/build_public_cattle_behavior_v0.py
+      - benchmarks/index-alpha/**
+      - .github/workflows/openfarm-index-alpha.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  alpha:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        task:
+          - hotpig.feeder-current.noul
+          - cattle.mi-behavior.choice
+          - brazil.cow-locomotion-risk.noul
+    env:
+      OMP_NUM_THREADS: '2'
+      OPENBLAS_NUM_THREADS: '2'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install 'pandas>=2.2,<3' 'numpy>=1.26,<3' 'scikit-learn>=1.5,<2' requests scipy
+      - uses: actions/cache@v4
+        if: matrix.task == 'hotpig.feeder-current.noul'
+        with:
+          path: .cache/hotpig/series.zip
+          key: hotpig-17090997-series-1ba5125167224b96-v1
+      - name: Check alpha manifest and original source task contracts
+        run: python -m py_compile scripts/index_alpha_runner.py scripts/benchmark_hotpig_system1.py scripts/build_public_cattle_behavior_v0.py scripts/stress_test_cow_welfare_leave_one_farm_out.py
+      - name: Rebuild source-pinned original task and write strict metrics
+        env:
+          OPENFARM_HOTPIG_SOURCE_PATH: .cache/hotpig/series.zip
+        run: python scripts/index_alpha_runner.py --task "${{ matrix.task }}" --out-dir reports/index-alpha
+      - name: Upload only aggregate original-source metrics and scorecard
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: openfarm-index-alpha-${{ matrix.task }}
+          path: reports/index-alpha/*.json
+          retention-days: 30
+          if-no-files-found: ignore

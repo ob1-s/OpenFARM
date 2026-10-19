@@ -1,0 +1,46 @@
+{
+  "schema": "openfarm-index-alpha-2026-10-19",
+  "scope": "THREE bounded source tasks; NO aggregate animal welfare score or untouched leaderboard",
+  "grouping_rule": "Never treat repeated minutes, cows or cattle scores as independent study sites",
+  "tasks": [
+    {
+      "id": "hotpig.feeder-current.noul",
+      "source": "10.5281/zenodo.17090997",
+      "source_sha256": "1ba5125167224b969281509b88ef7b3cba121114aeb0532f3903894c796df7e8",
+      "license": "CC BY 4.0",
+      "input": "12 author camera-derived count channels for the current minute",
+      "reference": "independent electronic feeder current-minute positive intake",
+      "split": "16 train pigs, 4 calibration pigs, 4 test pigs (same farm/study)",
+      "task_kind": "Noul",
+      "primary_metric": "heldout pig-cluster Brier and feeder-episode detection",
+      "builder": "scripts/benchmark_hotpig_system1.py",
+      "cautions": ["upstream vision detector supplies features","four test pigs","not welfare ground truth","developmental test reused"]
+    },
+    {
+      "id": "cattle.mi-behavior.choice",
+      "source": "10.6084/m9.figshare.28801181.v2",
+      "source_sha256": "b4d6e14d6ff029dbf497287a774aaa27ec471e7ed1ef5884e9cf0207c784fe37",
+      "license": "CC BY 4.0",
+      "input": "one author wearable motion-index scalar",
+      "reference": "human video-reviewed choice grazing, walking, resting, ruminating",
+      "split": "16/4/4 cow-disjoint; plus two directional whole-site exploratory transfers",
+      "task_kind": "Choice",
+      "primary_metric": "heldout cow-cluster multiclass Brier with macro F1 secondary",
+      "builder": "scripts/build_public_cattle_behavior_v0.py",
+      "cautions": ["one scalar only","non-unique source time key","two sites breed-confounded","reused developmental protocol"]
+    },
+    {
+      "id": "brazil.cow-locomotion-risk.noul",
+      "source": "10.5281/zenodo.3408818",
+      "source_sha256": "3b345fa0a0c2495aab40e313b5703c7e7c5d0688393a1759684b801179e6b529",
+      "license": "CC BY 4.0",
+      "input": "breed, lactation number and days in milk; no observed gait or milk production",
+      "reference": "original human clinical gait score >=3; BCS independent second family",
+      "split": "16-fold leave-one-farm-out from 5,529-cow subset",
+      "task_kind": "Noul",
+      "primary_metric": "farm-unweighted Brier gain over train-farm prior",
+      "builder": "scripts/stress_test_cow_welfare_leave_one_farm_out.py",
+      "cautions": ["contemporaneous demographic association not perception","retrospective","reused 16 farms","no diagnosis or action validation"]
+    }
+  ]
+}

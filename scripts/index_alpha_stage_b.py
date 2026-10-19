@@ -188,7 +188,7 @@ def strong_baselines(hp,hpraw,ca,cs):
         "logistic":make_pipeline(StandardScaler(),LogisticRegression(max_iter=500,C=1,random_state=17)),
         "tiny_tree":HistGradientBoostingClassifier(max_iter=75,max_depth=3,max_leaf_nodes=7,
             min_samples_leaf=30,learning_rate=.08,l2_regularization=2.,
-            random_state=17,early_stopping=False)}}
+            random_state=17,early_stopping=False)}
     }
     out={"hotpig":{},"cattle":{}}
     for task,train,y in (("hotpig",train_hp,y_hp),("cattle",train_c,y_c)):

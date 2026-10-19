@@ -4,6 +4,7 @@ on:
     branches: [research/index-alpha-model-gate-2026-10-19]
     paths:
       - scripts/index_alpha_runner.py
+      - scripts/build_public_cattle_behavior_v0.py
       - benchmarks/index-alpha/**
       - .github/workflows/openfarm-index-alpha.yml
   workflow_dispatch:

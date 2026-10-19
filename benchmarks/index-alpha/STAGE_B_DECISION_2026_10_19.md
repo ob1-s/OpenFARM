@@ -1,6 +1,12 @@
 # Stage B scientific decision gate — 2026-10-19
 
-**Decision: BLOCKED.** The present trained two-source shared-trunk architecture does **not** justify replacing task-specific trained decision models. We reached this result by *successfully executing* source-verified training and inference, **not** by interpreting an infrastructure outage as a model failure.
+**Corrected interpretation (2026-10-19): NARROW ARCHITECTURE PILOT DID NOT MEET ITS OWN THRESHOLD; TRANSFER AND PRETRAINED-MODEL HYPOTHESES NOT TESTED.** We successfully trained a randomly initialized ~1.8k-parameter shared trunk on two unrelated numerical tasks and compared it with inexpensive specialists. Its fixed within-run benchmark criterion failed. **This is not a blocking failure of the OpenFARM Stage B foundation-model hypothesis or a scientific stop signal against LoRA, pretrained billion-parameter backbones, task-conditioned decision learning, cross-task transfer, or scaling.** The original experiment had no pretrained backbone, no task/question representation, no unseen-task evaluation, no few-shot transfer curve and no matched pretrained-model comparator. There was therefore no observable way to establish the transfer property under discussion.
+
+## Important distinction: sharing parameters is not transferring capabilities
+
+This run had two source-specific numerical input adapters, two source-specific binary output heads, and a small jointly optimized intermediate layer. It had **no pretrained knowledge, no language/question conditioning, no images/audio, no new-task zero-shot or few-shot assessment**. Its two supervision channels (feeder instrument vs cow clinical score based on demographics) barely share relevant causal structure. A randomly initialized trunk could in principle discover some common feature, but the experimental regime gave it neither useful shared representations nor any way to establish cross-task transfer. Calling this a test of an animal foundation model was a category error.
+
+A proper test should ask: *Does training on other animal tasks improve decisions on a genuinely held-out task or reduce how much labeled data the new task needs, relative to the same pretrained backbone without that additional training?* It must also compare the **quality–latency–cost frontier** with independently trained low-cost specialists. We have not run that test.
 
 ## Execution and provenance
 
@@ -32,11 +38,11 @@ This is already a *developmental* evaluation, not a pre-registered clinical/publ
 
 **Clinical cow:** shared is about **0.075% better relative Brier** than the separate neural, a minuscule improvement; it wins on just **1 of 3** farms relative to the separate network. It does not meet either predeclared clinical-cow condition.
 
-**Overall gate:** FAIL both source tasks. Stage B **blocking failure, not generic model success**. No OpenFARM generalist model should be claimed from this evidence.
+**Original narrow gate:** FAIL for both source tasks. The shared architecture's predeclared Brier/group-win threshold was not met. **The user-facing Stage B completion criterion remains UNRESOLVED for pretrained and transferable OpenFARM models**, not a success or a genuine blocking failure of that research hypothesis. Do not claim an OpenFARM generalist from this pilot.
 
 ## What this does and does not falsify
 
-This **does falsify the specific engineering claim** that the tested small shared-trunk model offers sufficiently better real-source decisions than simple specialists on these two tasks under fixed protocols. We have working source ingestion, baselines, a trained 1,818-parameter joint head and matched heldout evaluation.
+This demonstrates only that **one randomly initialized, small, jointly supervised model instance** did not meet a particular 2%-plus-group-wins threshold on **two already explored developmental test partitions**. With one random seed, little matched architecture tuning, and four pig/three farm groups, even a general claim that this architecture categorically cannot help would be too strong. We have working source ingestion, baselines, a trained 1,818-parameter joint head and source-matched measurements. Joint-training performance on two known tasks is **not evidence of transfer to another task**, since neither task was held out during training and no pretrained representation was transferred.
 
 This does **not** prove that a better multimodal encoder, more varied supervised tasks, pretrained model, other training objective, or new field data cannot enable beneficial shared decisions. A shared model with separate input/output adapters is not truly zero-shot task generalization anyway. The original expert outcome and the feeder instrument do not validate positive emotions, pain, welfare, or caregiver attention.
 
@@ -50,4 +56,4 @@ A fair *same-input pretrained foundation-model comparison* remains absent. Liqui
 
 ## Next scientific decision
 
-**Do not scale this specific shared trunk now.** Keep the tiny HotPig specialist and plain Cow gait logistic/trees as reference baselines. To revisit the shared-model hypothesis, find a new dataset or model-visible input type that actually supplies transferable information or a new independent welfare label, freeze unseen groups and all training decisions, then test the hypothesized transfer rather than merely reuse two tiny unrelated tabular prediction tasks. Index can launch as a **developmental alpha**, clearly separated from approved blind benchmark or deployment status.
+**Do not interpret this tiny cold-start model as a valid gate on scaling or fine-tuning pretrained models.** Keep the tiny HotPig specialist and clinical cow logistic/tree as strong controls. The actual next Stage B experiment must use a pretrained encoder/backbone and a question-conditioned decision interface; compare zero-shot, frozen-embedding + learned head, LoRA/adapters, and separately trained specialist heads under matched task-visible states and reasonable compute budgets. To measure **transfer**, hold out one task/domain from the joint training phase, vary labeled target examples (zero/few/many), compare against exactly the same backbone with no source-task fine-tuning, and use independent animal/site splits plus calibration and cost. Merely improving two trained tasks via sharing does not test unseen-task transfer. The Index can launch as a **developmental alpha**, separate from blind benchmark or deployment readiness.

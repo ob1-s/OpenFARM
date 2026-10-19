@@ -4,6 +4,7 @@ on:
     branches: [research/index-alpha-model-gate-2026-10-19]
     paths:
       - scripts/index_alpha_stage_b.py
+      - scripts/build_public_cattle_behavior_v0.py
       - .github/workflows/openfarm-index-alpha-stage-b.yml
   workflow_dispatch:
 permissions:
